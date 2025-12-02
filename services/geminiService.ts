@@ -1,7 +1,20 @@
 import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { Criteria, AnalysisResult } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Global instance to be initialized lazily
+let aiInstance: GoogleGenAI | null = null;
+
+// Helper to get or initialize the AI client
+const getAI = () => {
+  if (!aiInstance) {
+    // We access process.env.API_KEY here. 
+    // If process is undefined (without polyfill), this would crash, so we polyfilled it in index.html.
+    // If API_KEY is missing, we use a placeholder to prevent initialization crash, though calls will fail.
+    const apiKey = process.env.API_KEY || '';
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+};
 
 export const analyzeTranscript = async (
   transcript: string,
@@ -27,6 +40,9 @@ export const analyzeTranscript = async (
     Evaluate it against these criteria:
     ${criteriaPrompt}
   `;
+
+  // Lazily get the AI instance
+  const ai = getAI();
 
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
@@ -70,6 +86,7 @@ export const analyzeTranscript = async (
 };
 
 export const generateMockTranscript = async (): Promise<string> => {
+   const ai = getAI();
    const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: "Generate a realistic, slightly problematic customer service chat transcript between a customer (Sarah) and an agent (John) regarding a refund delay. It should be about 10-15 lines long. Do not include markdown formatting, just the text.",
@@ -78,6 +95,7 @@ export const generateMockTranscript = async (): Promise<string> => {
 };
 
 export const createChatSession = (): Chat => {
+  const ai = getAI();
   return ai.chats.create({
     model: 'gemini-3-pro-preview',
     config: {
