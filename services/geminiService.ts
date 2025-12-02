@@ -85,6 +85,25 @@ export const analyzeTranscript = async (
   return JSON.parse(resultText) as Omit<AnalysisResult, 'id' | 'timestamp' | 'rawTranscript'>;
 };
 
+export const transcribeMedia = async (base64Data: string, mimeType: string): Promise<string> => {
+  const ai = getAI();
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: {
+      parts: [
+        { text: "Transcribe the following audio/video verbatim. Identify speakers if possible (e.g., Speaker 1, Speaker 2)." },
+        {
+          inlineData: {
+            mimeType: mimeType,
+            data: base64Data
+          }
+        }
+      ]
+    }
+  });
+  return response.text || "";
+};
+
 export const generateMockTranscript = async (): Promise<string> => {
    const ai = getAI();
    const response = await ai.models.generateContent({
