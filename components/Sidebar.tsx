@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, FileText, History, Settings, X, Palette, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, FileText, History, Settings, X, Sun, Moon, LogOut } from 'lucide-react';
 import { ViewState } from '../types';
 
 interface SidebarProps {
@@ -9,15 +9,27 @@ interface SidebarProps {
   onClose: () => void;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
+  onLogout: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, onClose, theme, toggleTheme }) => {
+// Reusing the same Logo logic locally to ensure it's self-contained. 
+// Ideally this would be in a shared component.
+const RevuLogo = ({ className = "h-8" }: { className?: string }) => (
+  <svg viewBox="0 0 146 44" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M22 11C22 11 20.5 0 7.5 0C-5.5 0 -0.5 22 -0.5 22C-0.5 38 2.5 44 15.5 44H20V28H24L28 44H39L34 25C34 25 40 22 40 14C40 6 30 11 30 11H22V21H12V11H22Z" fill="currentColor"/>
+    <path d="M12 17L15 20L21 14" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M47 23C47 15 52 11 60 11C67 11 71 15 72 21H58C58 24 60 26 62 26C64 26 65 25 66 24H75C74 31 68 34 61 34C52 34 47 28 47 23ZM62 19C60 19 58 20 58 22H66C66 20 64 19 62 19Z" fill="currentColor"/>
+    <path d="M80 11H90L96 30L102 11H112L101 43H91L80 11Z" fill="currentColor"/>
+    <path d="M119 11H129V29C129 30 131 31 132 31C134 31 135 30 135 29V11H145V28C145 38 141 40 135 40C131 40 128 39 126 37L123 42L119 40V11Z" fill="currentColor"/>
+  </svg>
+);
+
+export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, onClose, theme, toggleTheme, onLogout }) => {
   const navItems: { id: ViewState; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
     { id: 'analyze', label: 'Analyze New', icon: <FileText size={20} /> },
     { id: 'history', label: 'History', icon: <History size={20} /> },
     { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
-    { id: 'demo', label: 'UI Demo', icon: <Palette size={20} /> },
   ];
 
   return (
@@ -41,14 +53,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 shrink-0">
-          <div className="flex items-center gap-3">
-            {/* Professional Logo Mark */}
-            <div className="w-8 h-8 bg-[#0500e2] rounded-lg flex items-center justify-center shrink-0">
-               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                 <polyline points="20 6 9 17 4 12" />
-               </svg>
-            </div>
-            <span className="text-slate-900 dark:text-white font-bold text-2xl tracking-tight">Revu<span className="text-[#4b53fa]">QA</span></span>
+          <div className="flex items-center gap-3 text-[#0500e2] dark:text-[#4b53fa]">
+            <RevuLogo className="h-7" />
           </div>
           {/* Close button for mobile */}
           <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-slate-900 dark:hover:text-white">
@@ -95,14 +101,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
               </button>
           </div>
 
-          <div className="flex items-center gap-3 px-4 py-2">
-            <div className="w-8 h-8 rounded-full bg-[#4b53fa] flex items-center justify-center text-xs font-bold text-white">
-              JD
+          <div className="flex items-center justify-between px-4 py-2">
+            <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#0500e2] text-white flex items-center justify-center text-sm font-bold shadow-sm">
+                    JD
+                </div>
+                <div className="overflow-hidden">
+                <p className="text-sm font-medium truncate text-slate-900 dark:text-white">
+                    Jane Doe
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                    jane@revuqa.com
+                </p>
+                </div>
             </div>
-            <div className="overflow-hidden">
-              <p className="text-sm font-medium truncate text-slate-900 dark:text-white">Jane Doe</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">QA Manager</p>
-            </div>
+            <button 
+                onClick={onLogout}
+                className="text-slate-400 hover:text-red-600 dark:hover:text-red-400 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-all"
+                title="Log out"
+            >
+                <LogOut size={18} />
+            </button>
           </div>
         </div>
       </div>
