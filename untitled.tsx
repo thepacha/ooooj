@@ -1,5 +1,3 @@
-// VITE_GEMINI_API_KEY=AIzaSyAkPKQwSjPH60tuTsMcmcZrHQc7U8XsNRE
-// Note: This looks like an environment variable definition. 
-// It should be placed in a .env file, not a .tsx file.
-// The application expects process.env.API_KEY to be set.
+// This file was holding temporary keys. 
+// The API key has been moved to services/geminiService.ts
 export {};

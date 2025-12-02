@@ -9,8 +9,8 @@ const getAI = () => {
   if (!aiInstance) {
     // We access process.env.API_KEY here. 
     // If process is undefined (without polyfill), this would crash, so we polyfilled it in index.html.
-    // If API_KEY is missing, we use a placeholder to prevent initialization crash, though calls will fail.
-    const apiKey = process.env.API_KEY || '';
+    // We use the provided key as a fallback if the environment variable is missing.
+    const apiKey = process.env.API_KEY || 'AIzaSyDAWDUzUCo4FWtm6tAlaqGSvVXbyQdrB7I';
     aiInstance = new GoogleGenAI({ apiKey });
   }
   return aiInstance;
