@@ -15,6 +15,18 @@ const RevuLogo = ({ className = "h-8" }: { className?: string }) => (
   </svg>
 );
 
+const StarBorderButton = ({ children, onClick }: { children: React.ReactNode, onClick: () => void }) => {
+  return (
+    <button className="star-border-container" onClick={onClick}>
+      <div className="border-gradient-bottom"></div>
+      <div className="border-gradient-top"></div>
+      <div className="inner-content">
+        {children}
+      </div>
+    </button>
+  );
+};
+
 export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-white selection:bg-[#0500e2] selection:text-white overflow-x-hidden">
@@ -35,9 +47,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
 
         <div className="flex items-center gap-6">
             <button onClick={onEnterApp} className="hidden md:block text-sm font-medium hover:text-[#0500e2] transition-colors">Log in</button>
-            <button onClick={onEnterApp} className="bg-black dark:bg-white text-white dark:text-black px-6 py-3 rounded-full text-sm font-medium hover:scale-105 transition-transform">
+            <StarBorderButton onClick={onEnterApp}>
                 Apply Now — It's Free
-            </button>
+            </StarBorderButton>
         </div>
       </nav>
 
@@ -85,10 +97,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
                 </div>
 
                 <div className="flex items-center gap-4 pt-4">
-                    <button onClick={onEnterApp} className="bg-black dark:bg-white text-white dark:text-black px-8 py-4 rounded-full font-medium hover:scale-105 transition-transform shadow-xl">
+                    <StarBorderButton onClick={onEnterApp}>
                         Start Analyzing — It's Free
-                    </button>
-                    <button onClick={onEnterApp} className="px-8 py-4 rounded-full font-medium border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                    </StarBorderButton>
+                    <button onClick={onEnterApp} className="px-8 py-3 rounded-full font-medium border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
                         Our Process
                     </button>
                 </div>
