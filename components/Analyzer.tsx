@@ -132,30 +132,30 @@ ${result.rawTranscript}
   };
 
   const getScoreTextClass = (score: number) => {
-    if (score >= 90) return 'text-green-600';
-    if (score >= 75) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 90) return 'text-green-600 dark:text-green-400';
+    if (score >= 75) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
   const getBadgeClass = (score: number) => {
-     if (score >= 90) return 'bg-green-100 text-green-700 border-green-200';
-     if (score >= 75) return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-     return 'bg-red-100 text-red-700 border-red-200';
+     if (score >= 90) return 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800';
+     if (score >= 75) return 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800';
+     return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800';
   };
 
   return (
     <div className="space-y-6 animate-fade-in pb-10">
       {!result ? (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-4 md:p-6 border-b border-slate-100 bg-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-              <Sparkles className="text-[#0500e2]" size={20} />
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
+          <div className="p-4 md:p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <h2 className="text-lg font-semibold text-slate-800 dark:text-white flex items-center gap-2">
+              <Sparkles className="text-[#0500e2] dark:text-[#4b53fa]" size={20} />
               New Evaluation
             </h2>
              <button
                 onClick={loadDemoData}
                 disabled={isAnalyzing}
-                className="text-sm text-[#0500e2] hover:text-[#4b53fa] font-medium disabled:opacity-50"
+                className="text-sm text-[#0500e2] dark:text-[#4b53fa] hover:text-[#4b53fa] dark:hover:text-[#636bfa] font-medium disabled:opacity-50"
               >
                 Auto-fill Demo Transcript
               </button>
@@ -163,21 +163,21 @@ ${result.rawTranscript}
           
           <div className="p-4 md:p-6 space-y-6">
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700">Transcript Input</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Transcript Input</label>
               <textarea
                 value={transcript}
                 onChange={(e) => setTranscript(e.target.value)}
                 placeholder="Paste conversation transcript here (e.g., Agent: ..., Customer: ...)..."
-                className="w-full h-64 p-4 rounded-lg border border-slate-300 focus:ring-2 focus:ring-[#0500e2] focus:border-[#0500e2] transition-all resize-none text-sm font-mono leading-relaxed"
+                className="w-full h-64 p-4 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[#0500e2] focus:border-[#0500e2] transition-all resize-none text-sm font-mono leading-relaxed"
                 disabled={isAnalyzing}
               />
             </div>
 
             <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                 <label className="flex items-center justify-center gap-2 px-4 py-3 md:py-2 rounded-lg border border-slate-300 cursor-pointer hover:bg-slate-50 transition-colors w-full md:w-auto">
-                  <Upload size={18} className="text-slate-500" />
-                  <span className="text-sm font-medium text-slate-600">Upload Text File</span>
+                 <label className="flex items-center justify-center gap-2 px-4 py-3 md:py-2 rounded-lg border border-slate-300 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors w-full md:w-auto">
+                  <Upload size={18} className="text-slate-500 dark:text-slate-400" />
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Upload Text File</span>
                   <input type="file" accept=".txt" onChange={handleFileUpload} className="hidden" />
                 </label>
               </div>
@@ -206,7 +206,7 @@ ${result.rawTranscript}
             </div>
             
             {error && (
-              <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 flex items-center gap-3 text-sm">
+              <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 flex items-center gap-3 text-sm">
                 <AlertCircle size={20} className="shrink-0" />
                 {error}
               </div>
@@ -218,14 +218,14 @@ ${result.rawTranscript}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 no-print">
                 <button 
                     onClick={() => { setResult(null); setTranscript(''); }}
-                    className="text-slate-500 hover:text-[#0500e2] flex items-center gap-2 text-sm font-medium transition-colors"
+                    className="text-slate-500 dark:text-slate-400 hover:text-[#0500e2] dark:hover:text-[#4b53fa] flex items-center gap-2 text-sm font-medium transition-colors"
                 >
                     ← Start New Analysis
                 </button>
                 <div className="flex gap-2 w-full sm:w-auto">
                      <button
                         onClick={handleDownloadTxt}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-medium transition-colors"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium transition-colors"
                      >
                         <Download size={16} />
                         Export TXT
@@ -248,11 +248,11 @@ ${result.rawTranscript}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Score Card */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col items-center justify-center relative overflow-hidden min-h-[280px] break-inside-avoid">
+                <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex flex-col items-center justify-center relative overflow-hidden min-h-[280px] break-inside-avoid transition-colors">
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#0500e2] to-[#4b53fa] print:hidden"></div>
                     
                     <div className="text-center z-10 w-full">
-                        <h3 className="text-slate-500 font-medium text-sm uppercase tracking-wide mb-6">Overall Quality Score</h3>
+                        <h3 className="text-slate-500 dark:text-slate-400 font-medium text-sm uppercase tracking-wide mb-6">Overall Quality Score</h3>
                         
                         <div className="relative w-48 h-48 mx-auto">
                              <ResponsiveContainer width="100%" height="100%">
@@ -270,7 +270,7 @@ ${result.rawTranscript}
                                         paddingAngle={0}
                                     >
                                         <Cell fill={getScoreColorHex(result.overallScore)} />
-                                        <Cell fill="#f1f5f9" />
+                                        <Cell fill="#f1f5f9" className="dark:fill-slate-800" />
                                     </Pie>
                                 </PieChart>
                              </ResponsiveContainer>
@@ -278,15 +278,15 @@ ${result.rawTranscript}
                                 <span className={`text-5xl font-bold tracking-tight ${getScoreTextClass(result.overallScore)}`}>
                                     {result.overallScore}
                                 </span>
-                                <span className="text-slate-400 text-sm font-medium mt-1">/ 100</span>
+                                <span className="text-slate-400 dark:text-slate-500 text-sm font-medium mt-1">/ 100</span>
                             </div>
                         </div>
                         
                         <div className="mt-2 flex justify-center">
                              <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold border ${
-                                result.sentiment === 'Positive' ? 'bg-green-50 text-green-700 border-green-200' :
-                                result.sentiment === 'Negative' ? 'bg-red-50 text-red-700 border-red-200' :
-                                'bg-slate-50 text-slate-700 border-slate-200'
+                                result.sentiment === 'Positive' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800' :
+                                result.sentiment === 'Negative' ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800' :
+                                'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
                              }`}>
                                 {result.sentiment === 'Positive' ? <CheckCircle size={14} /> : result.sentiment === 'Negative' ? <XCircle size={14} /> : <AlertCircle size={14} />}
                                 {result.sentiment} Sentiment
@@ -296,54 +296,54 @@ ${result.rawTranscript}
                 </div>
 
                 {/* Summary Card */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 lg:col-span-2 break-inside-avoid flex flex-col">
-                     <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-4">
-                        <div className="p-2 bg-indigo-50 rounded-lg text-[#0500e2]">
+                <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 lg:col-span-2 break-inside-avoid flex flex-col transition-colors">
+                     <div className="flex items-center gap-2 mb-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                        <div className="p-2 bg-indigo-50 dark:bg-slate-800 rounded-lg text-[#0500e2] dark:text-[#4b53fa]">
                             <FileText size={20} />
                         </div>
-                        <h3 className="text-[#000000] font-bold text-lg">Executive Summary</h3>
+                        <h3 className="text-[#000000] dark:text-white font-bold text-lg">Executive Summary</h3>
                      </div>
-                     <p className="text-slate-600 leading-relaxed mb-6 flex-grow">
+                     <p className="text-slate-600 dark:text-slate-300 leading-relaxed mb-6 flex-grow">
                         {result.summary}
                      </p>
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mt-auto">
-                        <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 print:border-gray-300">
-                            <span className="block text-slate-400 text-xs uppercase mb-1 font-semibold tracking-wider">Agent Name</span>
-                            <span className="font-semibold text-slate-900 text-lg">{result.agentName}</span>
+                        <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-100 dark:border-slate-800 print:border-gray-300">
+                            <span className="block text-slate-400 dark:text-slate-500 text-xs uppercase mb-1 font-semibold tracking-wider">Agent Name</span>
+                            <span className="font-semibold text-slate-900 dark:text-white text-lg">{result.agentName}</span>
                         </div>
-                        <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 print:border-gray-300">
-                             <span className="block text-slate-400 text-xs uppercase mb-1 font-semibold tracking-wider">Customer Name</span>
-                             <span className="font-semibold text-slate-900 text-lg">{result.customerName}</span>
+                        <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-100 dark:border-slate-800 print:border-gray-300">
+                             <span className="block text-slate-400 dark:text-slate-500 text-xs uppercase mb-1 font-semibold tracking-wider">Customer Name</span>
+                             <span className="font-semibold text-slate-900 dark:text-white text-lg">{result.customerName}</span>
                         </div>
                      </div>
                 </div>
             </div>
 
             {/* Criteria Breakdown - Collapsible */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-6 border-b border-slate-100 bg-slate-50 print:bg-gray-50 print:border-gray-300 flex justify-between items-center break-inside-avoid">
-                    <h3 className="text-lg font-bold text-slate-800">Detailed Criteria Breakdown</h3>
-                    <div className="text-xs text-slate-500 font-medium bg-white px-2 py-1 rounded border border-slate-200">
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 print:bg-gray-50 print:border-gray-300 flex justify-between items-center break-inside-avoid">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white">Detailed Criteria Breakdown</h3>
+                    <div className="text-xs text-slate-500 font-medium bg-white dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-700">
                         {result.criteriaResults.length} metrics evaluated
                     </div>
                 </div>
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
                     {result.criteriaResults.map((criterion, idx) => {
                         const isExpanded = expandedCriteria.includes(idx);
                         return (
-                            <div key={idx} className="bg-white transition-all duration-200 break-inside-avoid">
+                            <div key={idx} className="bg-white dark:bg-slate-900 transition-all duration-200 break-inside-avoid">
                                 <button 
                                     onClick={() => toggleCriterion(idx)}
-                                    className={`w-full flex items-center justify-between p-4 md:p-5 hover:bg-slate-50 transition-colors text-left group focus:outline-none ${isExpanded ? 'bg-slate-50/80' : ''}`}
+                                    className={`w-full flex items-center justify-between p-4 md:p-5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left group focus:outline-none ${isExpanded ? 'bg-slate-50/80 dark:bg-slate-800/50' : ''}`}
                                 >
                                     <div className="flex items-center gap-4">
                                         <div className={`w-1.5 h-10 rounded-full ${
                                             criterion.score >= 90 ? 'bg-green-500' : criterion.score >= 75 ? 'bg-yellow-500' : 'bg-red-500'
                                         }`}></div>
                                         <div>
-                                            <h4 className="font-semibold text-slate-800 text-base">{criterion.name}</h4>
+                                            <h4 className="font-semibold text-slate-800 dark:text-slate-100 text-base">{criterion.name}</h4>
                                             {!isExpanded && (
-                                                <p className="text-slate-400 text-xs mt-1 truncate max-w-xs md:max-w-md print:hidden">
+                                                <p className="text-slate-400 dark:text-slate-500 text-xs mt-1 truncate max-w-xs md:max-w-md print:hidden">
                                                     Click to view detailed reasoning...
                                                 </p>
                                             )}
@@ -356,8 +356,8 @@ ${result.rawTranscript}
                                         </div>
                                         <div className="print:hidden">
                                           {isExpanded ? 
-                                              <ChevronUp className="text-slate-400 group-hover:text-[#0500e2]" size={20} /> : 
-                                              <ChevronDown className="text-slate-300 group-hover:text-slate-500" size={20} />
+                                              <ChevronUp className="text-slate-400 group-hover:text-[#0500e2] dark:group-hover:text-[#4b53fa]" size={20} /> : 
+                                              <ChevronDown className="text-slate-300 dark:text-slate-600 group-hover:text-slate-500 dark:group-hover:text-slate-400" size={20} />
                                           }
                                         </div>
                                     </div>
@@ -366,20 +366,20 @@ ${result.rawTranscript}
                                 <div 
                                     className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'} print:max-h-none print:opacity-100 print:transition-none`}
                                 >
-                                    <div className="pl-9 pr-5 pb-6 pt-1 text-slate-600 bg-slate-50/80 border-b border-slate-50 ml-1.5 border-l-0">
+                                    <div className="pl-9 pr-5 pb-6 pt-1 text-slate-600 dark:text-slate-300 bg-slate-50/80 dark:bg-slate-800/30 border-b border-slate-50 dark:border-slate-800 ml-1.5 border-l-0">
                                         <div className="grid gap-4">
                                             <div>
-                                                <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Reasoning</h5>
-                                                <p className="text-slate-700 leading-relaxed bg-white p-3 rounded border border-slate-100 shadow-sm">
+                                                <h5 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Reasoning</h5>
+                                                <p className="text-slate-700 dark:text-slate-300 leading-relaxed bg-white dark:bg-slate-900 p-3 rounded border border-slate-100 dark:border-slate-700 shadow-sm">
                                                     {criterion.reasoning}
                                                 </p>
                                             </div>
                                             {criterion.suggestion && (
                                                 <div>
-                                                    <h5 className="text-xs font-bold text-[#0500e2] uppercase tracking-wider mb-1 flex items-center gap-1">
+                                                    <h5 className="text-xs font-bold text-[#0500e2] dark:text-[#4b53fa] uppercase tracking-wider mb-1 flex items-center gap-1">
                                                         <Sparkles size={12} /> Coaching Tip
                                                     </h5>
-                                                    <div className="bg-indigo-50 p-3 rounded border border-indigo-100 text-[#0500e2] text-sm font-medium">
+                                                    <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded border border-indigo-100 dark:border-indigo-900/50 text-[#0500e2] dark:text-indigo-300 text-sm font-medium">
                                                         {criterion.suggestion}
                                                     </div>
                                                 </div>
@@ -394,13 +394,13 @@ ${result.rawTranscript}
             </div>
             
             {/* Raw Transcript - Added at bottom for reference */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden break-inside-avoid mt-8">
-                <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden break-inside-avoid mt-8 transition-colors">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2">
                     <FileText size={16} className="text-slate-400"/>
-                    <h3 className="font-semibold text-slate-700 text-sm">Transcript Reference</h3>
+                    <h3 className="font-semibold text-slate-700 dark:text-slate-200 text-sm">Transcript Reference</h3>
                 </div>
                 <div className="p-0">
-                    <pre className="whitespace-pre-wrap text-xs md:text-sm text-slate-600 font-mono bg-white p-6 max-h-[400px] overflow-y-auto print:max-h-none print:overflow-visible">
+                    <pre className="whitespace-pre-wrap text-xs md:text-sm text-slate-600 dark:text-slate-300 font-mono bg-white dark:bg-slate-900 p-6 max-h-[400px] overflow-y-auto print:max-h-none print:overflow-visible">
                         {result.rawTranscript}
                     </pre>
                 </div>

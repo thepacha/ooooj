@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { LayoutDashboard, FileText, History, Settings, X, Palette } from 'lucide-react';
+import { LayoutDashboard, FileText, History, Settings, X, Palette, Sun, Moon } from 'lucide-react';
 import { ViewState } from '../types';
 
 interface SidebarProps {
@@ -8,9 +7,11 @@ interface SidebarProps {
   setView: (view: ViewState) => void;
   isOpen: boolean;
   onClose: () => void;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, onClose }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, onClose, theme, toggleTheme }) => {
   const navItems: { id: ViewState; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
     { id: 'analyze', label: 'Analyze New', icon: <FileText size={20} /> },
@@ -31,21 +32,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
 
       {/* Sidebar Container */}
       <div className={`
-        fixed top-0 left-0 h-screen w-64 bg-black text-white shadow-xl z-30 transition-transform duration-300 ease-in-out no-print
+        fixed top-0 left-0 h-screen w-64 
+        bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800
+        text-slate-900 dark:text-white 
+        shadow-xl lg:shadow-none z-30 
+        transition-all duration-300 ease-in-out no-print
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <div className="p-6 flex items-center justify-between border-b border-gray-800">
+        <div className="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            {/* Professional Logo Mark Fallback */}
+            {/* Professional Logo Mark */}
             <div className="w-8 h-8 bg-[#0500e2] rounded-lg flex items-center justify-center shrink-0">
                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
                  <polyline points="20 6 9 17 4 12" />
                </svg>
             </div>
-            <span className="text-white font-bold text-2xl tracking-tight">Revu<span className="text-[#4b53fa]">QA</span></span>
+            <span className="text-slate-900 dark:text-white font-bold text-2xl tracking-tight">Revu<span className="text-[#4b53fa]">QA</span></span>
           </div>
           {/* Close button for mobile */}
-          <button onClick={onClose} className="lg:hidden text-gray-400 hover:text-white">
+          <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-slate-900 dark:hover:text-white">
             <X size={24} />
           </button>
         </div>
@@ -61,10 +66,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                 currentView === item.id
                   ? 'bg-[#0500e2] text-white shadow-lg shadow-[#0500e2]/30'
-                  : 'text-gray-400 hover:bg-gray-900 hover:text-white'
+                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <span className={`${currentView === item.id ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}>
+              <span className={`${currentView === item.id ? 'text-white' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`}>
                 {item.icon}
               </span>
               <span className="font-medium">{item.label}</span>
@@ -72,14 +77,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
           ))}
         </nav>
 
-        <div className="p-4 border-t border-gray-800 absolute bottom-0 w-full bg-black">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800 absolute bottom-0 w-full bg-white dark:bg-slate-950">
+          {/* Theme Toggle */}
+          <div className="mb-4 px-4">
+              <button 
+                  onClick={toggleTheme}
+                  className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-sm font-medium"
+              >
+                  <span className="flex items-center gap-2">
+                      {theme === 'light' ? <Sun size={16} /> : <Moon size={16} />}
+                      {theme === 'light' ? 'Light Mode' : 'Dark Mode'}
+                  </span>
+                  <div className={`w-8 h-4 rounded-full relative transition-colors ${theme === 'light' ? 'bg-slate-300' : 'bg-[#0500e2]'}`}>
+                      <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${theme === 'light' ? 'left-0.5' : 'translate-x-4 left-0.5'}`}></div>
+                  </div>
+              </button>
+          </div>
+
           <div className="flex items-center gap-3 px-4 py-2">
             <div className="w-8 h-8 rounded-full bg-[#4b53fa] flex items-center justify-center text-xs font-bold text-white">
               JD
             </div>
             <div className="overflow-hidden">
-              <p className="text-sm font-medium truncate text-white">Jane Doe</p>
-              <p className="text-xs text-gray-500 truncate">QA Manager</p>
+              <p className="text-sm font-medium truncate text-slate-900 dark:text-white">Jane Doe</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">QA Manager</p>
             </div>
           </div>
         </div>

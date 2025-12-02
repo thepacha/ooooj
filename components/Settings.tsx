@@ -42,8 +42,8 @@ export const Settings: React.FC<SettingsProps> = ({ criteria, setCriteria }) => 
     <div className="space-y-6 animate-fade-in pb-10">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-            <h2 className="text-2xl font-bold text-slate-800">QA Scorecard Settings</h2>
-            <p className="text-slate-500 mt-1">Define the criteria used by the AI to evaluate conversations.</p>
+            <h2 className="text-2xl font-bold text-slate-800 dark:text-white">QA Scorecard Settings</h2>
+            <p className="text-slate-500 dark:text-slate-400 mt-1">Define the criteria used by the AI to evaluate conversations.</p>
         </div>
         <button
           onClick={handleSave}
@@ -54,28 +54,28 @@ export const Settings: React.FC<SettingsProps> = ({ criteria, setCriteria }) => 
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-4 md:p-6 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-            <h3 className="font-semibold text-slate-700">Active Criteria</h3>
-            <button onClick={handleAdd} className="text-sm flex items-center gap-1 text-[#0500e2] font-medium hover:text-[#4b53fa]">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
+        <div className="p-4 md:p-6 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+            <h3 className="font-semibold text-slate-700 dark:text-slate-200">Active Criteria</h3>
+            <button onClick={handleAdd} className="text-sm flex items-center gap-1 text-[#0500e2] dark:text-[#4b53fa] font-medium hover:text-[#4b53fa]">
                 <Plus size={16} /> Add Criteria
             </button>
         </div>
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {localCriteria.map((c) => (
-            <div key={c.id} className="p-4 md:p-6 flex flex-col lg:flex-row gap-6 items-start">
+            <div key={c.id} className="p-4 md:p-6 flex flex-col lg:flex-row gap-6 items-start bg-white dark:bg-slate-900">
               <div className="flex-1 space-y-3 w-full">
                 <input 
                     type="text" 
                     value={c.name} 
                     onChange={(e) => handleTextChange(c.id, 'name', e.target.value)}
-                    className="block w-full text-lg font-semibold text-slate-800 border-none p-0 focus:ring-0 placeholder:text-slate-300"
+                    className="block w-full text-lg font-semibold text-slate-800 dark:text-white bg-transparent border-none p-0 focus:ring-0 placeholder:text-slate-300"
                     placeholder="Criterion Name"
                 />
                 <textarea 
                     value={c.description}
                     onChange={(e) => handleTextChange(c.id, 'description', e.target.value)}
-                    className="block w-full text-slate-500 text-sm border-slate-200 rounded-md focus:border-[#0500e2] focus:ring-[#0500e2] min-h-[60px]"
+                    className="block w-full text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 text-sm border-slate-200 dark:border-slate-700 rounded-md focus:border-[#0500e2] focus:ring-[#0500e2] min-h-[60px]"
                     placeholder="Description of what to look for..."
                 />
               </div>
@@ -90,14 +90,14 @@ export const Settings: React.FC<SettingsProps> = ({ criteria, setCriteria }) => 
                             max="10"
                             value={c.weight}
                             onChange={(e) => handleWeightChange(c.id, parseInt(e.target.value))}
-                            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#0500e2]"
+                            className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-[#0500e2]"
                         />
-                        <span className="font-bold text-[#0500e2] w-6 text-center">{c.weight}</span>
+                        <span className="font-bold text-[#0500e2] dark:text-[#4b53fa] w-6 text-center">{c.weight}</span>
                     </div>
                 </div>
                 <button 
                     onClick={() => handleDelete(c.id)}
-                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                     title="Remove Criterion"
                 >
                     <Trash2 size={20} />
