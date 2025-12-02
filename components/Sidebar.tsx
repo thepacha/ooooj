@@ -37,9 +37,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
         text-slate-900 dark:text-white 
         shadow-xl lg:shadow-none z-30 
         transition-all duration-300 ease-in-out no-print
+        flex flex-col
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <div className="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+        <div className="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
             {/* Professional Logo Mark */}
             <div className="w-8 h-8 bg-[#0500e2] rounded-lg flex items-center justify-center shrink-0">
@@ -55,7 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
           </button>
         </div>
 
-        <nav className="flex-1 p-4 space-y-2 mt-4">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {navItems.map((item) => (
             <button
               key={item.id}
@@ -77,7 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 absolute bottom-0 w-full bg-white dark:bg-slate-950">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 shrink-0">
           {/* Theme Toggle */}
           <div className="mb-4 px-4">
               <button 
