@@ -6,7 +6,7 @@ interface LandingPageProps {
   onEnterApp: () => void;
 }
 
-const StarBorderButton = ({ children, onClick }: { children: React.ReactNode, onClick: () => void }) => {
+const StarBorderButton = ({ children, onClick }: { children?: React.ReactNode, onClick: () => void }) => {
   return (
     <button className="star-border-container" onClick={onClick}>
       <div className="border-gradient-bottom"></div>
@@ -23,9 +23,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-white selection:bg-[#0500e2] selection:text-white overflow-x-hidden">
       
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-6 md:px-12 flex justify-between items-center max-w-7xl mx-auto w-full bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md">
+      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-6 md:px-12 flex justify-between items-center max-w-7xl mx-auto w-full bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md transition-all">
         <div className="flex items-center gap-4 text-[#0500e2]">
-            <RevuLogo className="h-14 w-auto" />
+            <RevuLogo className="h-16 w-auto" />
             <span className="hidden sm:inline-block text-sm font-medium text-slate-400 dark:text-slate-500 border-l border-slate-200 dark:border-slate-800 pl-4">/ sales@revuqa.io</span>
         </div>
         
@@ -46,7 +46,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
 
       {/* Hero Section */}
       <section className="pt-32 pb-20 px-6 md:px-12 max-w-7xl mx-auto w-full">
-        <div className="grid lg:grid-cols-2 gap-16 lg:gap-8 items-center">
+        <div className="grid lg:grid-cols-2 gap-16 lg:gap-12 items-center">
             
             {/* Left Column: Text */}
             <div className="space-y-8 animate-fade-in-up">
@@ -78,7 +78,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
                 </p>
 
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 overflow-hidden border-2 border-white dark:border-slate-900">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 overflow-hidden border-2 border-white dark:border-slate-900 shadow-md">
                         <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Robert" alt="User" />
                     </div>
                     <div>
@@ -97,79 +97,88 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
                 </div>
             </div>
 
-            {/* Right Column: Visuals */}
-            <div className="relative min-h-[500px] flex items-center justify-center perspective-1000 overflow-hidden rounded-[3rem]">
-                {/* Background Gradient (Replaces SplashCursor) */}
-                <div className="absolute inset-0 z-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-white dark:from-slate-900 dark:via-slate-800 dark:to-slate-950">
-                    {/* Decorative abstract shapes */}
-                    <div className="absolute top-0 right-0 w-96 h-96 bg-[#0500e2]/10 rounded-full blur-3xl transform translate-x-1/3 -translate-y-1/3"></div>
-                    <div className="absolute bottom-0 left-0 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl transform -translate-x-1/3 translate-y-1/3"></div>
-                </div>
+            {/* Right Column: Visuals - Restored Clean Design */}
+            <div className="relative h-[600px] w-full flex items-center justify-center bg-slate-100 dark:bg-slate-900 rounded-[3rem] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
                 
-                {/* Main Card */}
-                <div className="relative z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/40 dark:border-slate-700/40 p-6 rounded-3xl shadow-2xl w-full max-w-md transform transition-transform hover:scale-[1.02] duration-500">
-                    <div className="flex justify-between items-start mb-8">
-                        <div className="flex items-center gap-3">
-                             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                                <Shield size={20} className="text-[#0500e2]" />
+                {/* Abstract Background */}
+                <div className="absolute inset-0 overflow-hidden">
+                     {/* Blue Orb */}
+                    <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-[#0500e2]/15 rounded-full blur-[80px] animate-pulse-slow"></div>
+                     {/* Purple Orb */}
+                    <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-purple-500/15 rounded-full blur-[80px] animate-pulse-slow" style={{animationDelay: '1.5s'}}></div>
+                     {/* Noise Texture */}
+                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-30 brightness-100 contrast-150 mix-blend-overlay"></div>
+                </div>
+
+                {/* Content Wrapper - Centered */}
+                <div className="relative z-10 w-full max-w-[380px] perspective-1000">
+                    
+                    {/* Top Floating Badge */}
+                    <div className="absolute -top-8 -right-2 z-20 bg-white dark:bg-slate-800 p-2 pr-4 rounded-xl shadow-xl flex items-center gap-3 animate-bounce-slow border border-slate-100 dark:border-slate-700 max-w-[180px]">
+                         <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 shrink-0">
+                            <Check size={16} strokeWidth={3} />
+                        </div>
+                        <div className="text-[10px] font-semibold leading-tight">
+                             Score <span className="text-green-600">98/100</span> <br/>
+                             <span className="text-slate-400 font-normal">on Empathy</span>
+                        </div>
+                    </div>
+
+                    {/* Main Glass Card */}
+                    <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/60 dark:border-slate-700/60 p-8 rounded-[2.5rem] shadow-2xl relative z-10 transform transition-transform duration-500 hover:scale-[1.02]">
+                        {/* Header */}
+                        <div className="flex justify-between items-start mb-8">
+                             <div className="flex items-center gap-4">
+                                 <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm text-[#0500e2]">
+                                    <Shield size={24} />
+                                 </div>
+                                 <div>
+                                     <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mb-1">Evaluation</p>
+                                     <h3 className="font-bold text-lg text-slate-900 dark:text-white leading-none">Agent Performance</h3>
+                                 </div>
                              </div>
-                             <div>
-                                 <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Evaluation</p>
-                                 <p className="font-bold text-lg">Agent Performance</p>
+                             <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white shadow-lg shadow-green-500/30">
+                                <Check size={16} strokeWidth={3} />
                              </div>
                         </div>
-                        <div className="w-12 h-12 rounded-full bg-green-400 flex items-center justify-center text-white shadow-lg shadow-green-400/30">
-                            <Check size={24} strokeWidth={3} />
+
+                        {/* Card Content */}
+                        <div className="space-y-6">
+                             <div>
+                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Agent Name</label>
+                                 <div className="text-2xl font-medium text-slate-900 dark:text-white tracking-tight">Jenifer Lawrence</div>
+                             </div>
+                             
+                             <div className="grid grid-cols-3 gap-4 pt-6 border-t border-slate-200/50 dark:border-slate-700/50">
+                                 <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Score</label>
+                                    <div className="text-xl font-bold text-slate-900 dark:text-white">98</div>
+                                 </div>
+                                 <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Sentiment</label>
+                                    <div className="text-xl font-bold text-slate-900 dark:text-white">Positive</div>
+                                 </div>
+                                 <div className="text-right">
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Date</label>
+                                    <div className="text-xl font-bold text-slate-900 dark:text-white">Oct 24</div>
+                                 </div>
+                             </div>
                         </div>
                     </div>
 
-                    <div className="space-y-6">
-                         <div>
-                             <p className="text-xs text-slate-400 mb-1">Agent Name</p>
-                             <div className="text-2xl font-mono tracking-tight font-medium">Jenifer Lawrence</div>
-                         </div>
-                         
-                         <div className="flex justify-between items-end">
-                             <div>
-                                <p className="text-xs text-slate-400 mb-1">QA Score</p>
-                                <div className="text-xl font-medium">98/100</div>
-                             </div>
-                             <div>
-                                <p className="text-xs text-slate-400 mb-1">Sentiment</p>
-                                <div className="text-xl font-medium">Positive</div>
-                             </div>
-                             <div>
-                                <p className="text-xs text-slate-400 mb-1">Date</p>
-                                <div className="text-xl font-medium">Oct 24</div>
-                             </div>
-                         </div>
+                    {/* Bottom Floating Badge */}
+                    <div className="absolute -bottom-4 -left-2 z-20 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md p-2 pr-3 rounded-xl shadow-lg flex items-center gap-2.5 border border-slate-100 dark:border-slate-700 animate-pulse-slow max-w-[200px]">
+                        <div className="w-8 h-8 rounded-full bg-[#0500e2] text-white flex items-center justify-center font-bold text-[10px] shrink-0 shadow-md shadow-blue-900/20">
+                            AI
+                        </div>
+                        <div className="overflow-hidden">
+                            <p className="text-[10px] font-bold text-slate-900 dark:text-white truncate">New Coaching Tip</p>
+                            <p className="text-[9px] text-slate-500 leading-tight truncate">"Improve closing tone..."</p>
+                        </div>
+                        <ArrowRight size={12} className="text-slate-400 ml-auto shrink-0" />
                     </div>
-                </div>
 
-                {/* Floating Element Top */}
-                <div className="absolute -top-6 right-8 bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-xl flex items-center gap-3 animate-bounce-slow border border-slate-100 dark:border-slate-700 z-20">
-                    <div className="font-bold text-sm">Jenifer <span className="text-slate-400">scored</span> 98/100 <span className="text-slate-400">on Empathy</span></div>
-                    <div className="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center text-green-600 dark:text-green-400">
-                        <Check size={14} />
-                    </div>
-                    <ArrowUpRight size={14} className="text-slate-400" />
                 </div>
-
-                 {/* Floating Element Bottom */}
-                 <div className="absolute -bottom-8 left-0 md:left-12 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md p-4 pr-6 rounded-full shadow-xl flex items-center gap-4 border border-slate-100 dark:border-slate-700 animate-pulse-slow z-20">
-                    <div className="w-10 h-10 rounded-full overflow-hidden">
-                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" />
-                    </div>
-                    <div>
-                        <p className="text-sm font-bold">New Coaching Tip Available</p>
-                        <p className="text-xs text-slate-500">"Great job handling the objection..."</p>
-                    </div>
-                    <div className="w-8 h-8 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center justify-center">
-                        <span className="font-bold text-xs">!</span>
-                    </div>
-                    <ArrowRight size={14} />
-                </div>
-
             </div>
         </div>
       </section>
@@ -201,12 +210,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
                     { title: "Bias Elimination", desc: "AI evaluates every chat fairly.", icon: <Shield size={24} /> },
                     { title: "Actionable Insights", desc: "Automated coaching tips for agents.", icon: <CheckCircle2 size={24} /> }
                 ].map((item, i) => (
-                    <div key={i} className="p-8 bg-slate-50 dark:bg-slate-950 rounded-3xl hover:bg-[#0500e2] hover:text-white group transition-all duration-300">
-                        <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center mb-6 text-black dark:text-white group-hover:text-[#0500e2]">
+                    <div key={i} className="p-8 bg-slate-50 dark:bg-slate-950 rounded-3xl hover:bg-[#0500e2] hover:text-white group transition-all duration-300 border border-slate-100 dark:border-slate-800 hover:border-transparent hover:shadow-xl hover:-translate-y-1">
+                        <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center mb-6 text-black dark:text-white group-hover:text-[#0500e2] shadow-sm">
                             {item.icon}
                         </div>
                         <h3 className="text-xl font-bold mb-2">{item.title}</h3>
-                        <p className="text-slate-500 group-hover:text-blue-100">{item.desc}</p>
+                        <p className="text-slate-500 group-hover:text-blue-100 transition-colors">{item.desc}</p>
                     </div>
                 ))}
             </div>

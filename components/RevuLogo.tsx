@@ -4,7 +4,7 @@ export const RevuLogo = ({ className }: { className?: string }) => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 
     xmlnsXlink="http://www.w3.org/1999/xlink" 
-    viewBox="10 135 345 110" 
+    viewBox="5 130 355 120" 
     className={className} 
     preserveAspectRatio="xMidYMid meet" 
     fill="none"

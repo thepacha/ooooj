@@ -87,8 +87,7 @@ function App() {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 z-10 flex items-center justify-between shadow-sm h-16 no-print mobile-header transition-colors duration-300">
         <div className="flex items-center gap-2 text-[#0500e2] dark:text-[#4b53fa]">
-          <RevuLogo className="h-10 w-auto" />
-          <span className="font-bold text-xl text-[#000000] dark:text-white tracking-tight">Revu<span className="text-[#0500e2]">QA</span></span>
+          <RevuLogo className="h-12 w-auto" />
         </div>
         <button 
           onClick={() => setIsSidebarOpen(true)}
