@@ -1,5 +1,5 @@
-import React from 'react';
-import { Star, ArrowRight, ArrowUpRight, Check, Shield, Zap, CheckCircle2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Star, ArrowRight, ArrowUpRight, Check, Shield, Zap, CheckCircle2, Menu, X } from 'lucide-react';
 import { RevuLogo } from './RevuLogo';
 
 interface LandingPageProps {
@@ -19,30 +19,96 @@ const StarBorderButton = ({ children, onClick }: { children?: React.ReactNode, o
 };
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-white selection:bg-[#0500e2] selection:text-white overflow-x-hidden">
       
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-6 md:px-12 flex justify-between items-center max-w-7xl mx-auto w-full bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md transition-all">
         <div className="flex items-center gap-4 text-[#0500e2]">
-            <RevuLogo className="h-16 w-auto" />
-            <span className="hidden sm:inline-block text-sm font-medium text-slate-400 dark:text-slate-500 border-l border-slate-200 dark:border-slate-800 pl-4">/ sales@revuqa.io</span>
+            <RevuLogo className="h-10 md:h-16 w-auto transition-all duration-300" />
         </div>
         
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600 dark:text-slate-300">
+        {/* Desktop Links */}
+        <div className="hidden lg:flex items-center gap-8 text-sm font-medium text-slate-600 dark:text-slate-300">
             <a href="#" className="hover:text-black dark:hover:text-white transition-colors">Product</a>
             <a href="#" className="hover:text-black dark:hover:text-white transition-colors">Solutions</a>
             <a href="#" className="hover:text-black dark:hover:text-white transition-colors">Pricing</a>
             <a href="#" className="hover:text-black dark:hover:text-white transition-colors">Developers</a>
         </div>
 
-        <div className="flex items-center gap-6">
-            <button onClick={onEnterApp} className="hidden md:block text-sm font-medium hover:text-[#0500e2] transition-colors">Log in</button>
+        {/* Desktop Actions */}
+        <div className="hidden lg:flex items-center gap-4 sm:gap-6">
+            <button onClick={onEnterApp} className="text-sm font-medium hover:text-[#0500e2] transition-colors">Log in</button>
             <StarBorderButton onClick={onEnterApp}>
-                Apply Now — It's Free
+                Sign Up Now
             </StarBorderButton>
         </div>
+
+        {/* Mobile Menu Trigger (Hamburger) */}
+        <button 
+            className="lg:hidden flex items-center justify-center w-12 h-12 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-900 dark:text-white focus:outline-none"
+            onClick={() => setIsMenuOpen(true)}
+            aria-label="Open Menu"
+        >
+            <Menu size={28} />
+        </button>
       </nav>
+
+      {/* Mobile Menu Overlay */}
+      <div 
+        className={`fixed inset-0 z-[60] bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+      >
+            <div className="flex flex-col h-full p-8 overflow-y-auto">
+                {/* Mobile Menu Header */}
+                <div className="flex justify-between items-center mb-16 shrink-0">
+                     <div className="text-[#0500e2]">
+                        <RevuLogo className="h-10 w-auto" />
+                     </div>
+                     <button 
+                        onClick={() => setIsMenuOpen(false)} 
+                        className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-900 dark:text-white hover:rotate-90 transition-transform duration-300 focus:outline-none"
+                        aria-label="Close Menu"
+                    >
+                         <X size={28} />
+                     </button>
+                </div>
+
+                {/* Mobile Menu Links */}
+                <div className="flex flex-col gap-6">
+                    {['Product', 'Solutions', 'Pricing', 'Developers'].map((item, idx) => (
+                        <a 
+                            key={idx} 
+                            href="#" 
+                            className="text-4xl md:text-5xl font-serif font-medium text-slate-900 dark:text-white hover:text-[#0500e2] dark:hover:text-[#4b53fa] transition-colors flex items-center gap-4 group"
+                            style={{ transitionDelay: `${idx * 50}ms` }}
+                            onClick={() => setIsMenuOpen(false)}
+                        >
+                            {item}
+                            <ArrowUpRight className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-[#0500e2]" size={32} />
+                        </a>
+                    ))}
+                </div>
+
+                {/* Mobile Menu Footer Actions */}
+                <div className="mt-auto pt-12 space-y-4 shrink-0">
+                     <p className="text-slate-500 text-sm mb-4 font-medium uppercase tracking-wider">Get Started</p>
+                     <button 
+                        onClick={() => { setIsMenuOpen(false); onEnterApp(); }} 
+                        className="w-full py-5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 text-lg font-bold text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                    >
+                        Log In
+                     </button>
+                     <button 
+                        onClick={() => { setIsMenuOpen(false); onEnterApp(); }} 
+                        className="w-full py-5 rounded-2xl bg-[#0500e2] text-white text-lg font-bold shadow-xl shadow-blue-600/20 hover:bg-[#0400c0] transition-colors flex items-center justify-center gap-2 group"
+                    >
+                        Sign Up Now <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                     </button>
+                </div>
+            </div>
+      </div>
 
       {/* Hero Section */}
       <section className="pt-32 pb-20 px-6 md:px-12 max-w-7xl mx-auto w-full">
