@@ -18,7 +18,6 @@ function App() {
   const [criteria, setCriteria] = useState<Criteria[]>(DEFAULT_CRITERIA);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedEvaluation, setSelectedEvaluation] = useState<AnalysisResult | null>(null);
-  const [historyFilter, setHistoryFilter] = useState<string>('');
   
   // Theme state
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -61,17 +60,6 @@ function App() {
     setCurrentView('evaluation');
   };
 
-  const handleViewAgentHistory = (agentName: string) => {
-    setHistoryFilter(agentName);
-    setCurrentView('history');
-  };
-
-  const handleSetView = (view: ViewState) => {
-    // Clear filter when navigating manually via sidebar
-    setHistoryFilter('');
-    setCurrentView(view);
-  };
-
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
@@ -79,17 +67,16 @@ function App() {
       case 'analyze':
         return <Analyzer criteria={criteria} onAnalysisComplete={handleAnalysisComplete} />;
       case 'history':
-        return <History history={history} onSelectEvaluation={handleSelectEvaluation} initialSearch={historyFilter} />;
+        return <History history={history} onSelectEvaluation={handleSelectEvaluation} />;
       case 'settings':
         return <Settings criteria={criteria} setCriteria={setCriteria} />;
       case 'evaluation':
-        if (!selectedEvaluation) return <History history={history} onSelectEvaluation={handleSelectEvaluation} initialSearch={historyFilter} />;
+        if (!selectedEvaluation) return <History history={history} onSelectEvaluation={handleSelectEvaluation} />;
         return (
           <EvaluationView 
             result={selectedEvaluation} 
             onBack={() => setCurrentView('history')} 
             backLabel="Back to History"
-            onViewAgentHistory={handleViewAgentHistory}
           />
         );
       default:
@@ -105,7 +92,7 @@ function App() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex font-sans text-slate-900 dark:text-slate-100 print:block print:bg-white print:min-h-0 print:h-auto transition-colors duration-300">
       <Sidebar 
         currentView={currentView === 'evaluation' ? 'history' : currentView} 
-        setView={handleSetView} 
+        setView={setCurrentView} 
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         theme={theme}

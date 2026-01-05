@@ -5,16 +5,10 @@ import { Search, ChevronRight } from 'lucide-react';
 interface HistoryProps {
   history: AnalysisResult[];
   onSelectEvaluation: (result: AnalysisResult) => void;
-  initialSearch?: string;
 }
 
-export const History: React.FC<HistoryProps> = ({ history, onSelectEvaluation, initialSearch = '' }) => {
-  const [searchTerm, setSearchTerm] = React.useState(initialSearch);
-
-  // Sync search term if initialSearch changes
-  React.useEffect(() => {
-    setSearchTerm(initialSearch);
-  }, [initialSearch]);
+export const History: React.FC<HistoryProps> = ({ history, onSelectEvaluation }) => {
+  const [searchTerm, setSearchTerm] = React.useState('');
 
   const filteredHistory = history.filter(
     (item) =>
@@ -55,7 +49,7 @@ export const History: React.FC<HistoryProps> = ({ history, onSelectEvaluation, i
               {filteredHistory.length === 0 ? (
                   <tr>
                       <td colSpan={6} className="p-8 text-center text-slate-400 dark:text-slate-500">
-                          {history.length === 0 ? "No evaluations found." : "No matching evaluations."}
+                          No evaluations found.
                       </td>
                   </tr>
               ) : (

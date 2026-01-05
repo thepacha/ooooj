@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
 import { AnalysisResult } from '../types';
-import { Sparkles, FileText, Download, Printer, ChevronDown, ChevronUp, CheckCircle, ArrowRight, Check, Shield, Search } from 'lucide-react';
+import { Sparkles, FileText, Download, Printer, ChevronDown, ChevronUp, CheckCircle, ArrowRight, Check, Shield } from 'lucide-react';
 
 interface EvaluationViewProps {
   result: AnalysisResult;
   onBack: () => void;
   backLabel?: string;
-  onViewAgentHistory?: (agentName: string) => void;
 }
 
-export const EvaluationView: React.FC<EvaluationViewProps> = ({ result, onBack, backLabel = "Back", onViewAgentHistory }) => {
+export const EvaluationView: React.FC<EvaluationViewProps> = ({ result, onBack, backLabel = "Back" }) => {
   // Auto-expand criteria with low scores (< 75) to highlight issues immediately
   const [expandedCriteria, setExpandedCriteria] = useState<number[]>(() => 
     result.criteriaResults
@@ -140,20 +139,7 @@ ${result.rawTranscript}
                     <div className="space-y-8 md:space-y-10">
                         <div>
                             <label className="text-[9px] md:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2 md:mb-3">Agent Name</label>
-                            <div className="flex items-center gap-3 group w-fit">
-                                <div className="text-2xl md:text-5xl font-serif font-medium text-slate-900 dark:text-white tracking-tight break-words">
-                                    {result.agentName}
-                                </div>
-                                {onViewAgentHistory && (
-                                     <button
-                                        onClick={() => onViewAgentHistory(result.agentName)}
-                                        className="opacity-0 group-hover:opacity-100 transition-all p-2 bg-slate-100 dark:bg-slate-800 text-[#0500e2] dark:text-[#4b53fa] rounded-full hover:bg-[#0500e2] hover:text-white dark:hover:bg-[#4b53fa] dark:hover:text-white"
-                                        title="View Agent History"
-                                     >
-                                        <Search size={16} />
-                                     </button>
-                                )}
-                            </div>
+                            <div className="text-2xl md:text-5xl font-serif font-medium text-slate-900 dark:text-white tracking-tight break-words">{result.agentName}</div>
                         </div>
                         
                         <div className="grid grid-cols-3 gap-4 md:gap-8 pt-6 md:pt-10 border-t border-slate-100 dark:border-slate-800">
