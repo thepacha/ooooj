@@ -25,7 +25,7 @@ export interface AnalysisResult {
   rawTranscript: string;
 }
 
-export type ViewState = 'dashboard' | 'analyze' | 'history' | 'settings';
+export type ViewState = 'dashboard' | 'analyze' | 'history' | 'settings' | 'evaluation';
 
 export const DEFAULT_CRITERIA: Criteria[] = [
   { id: '1', name: 'Empathy & Tone', description: 'Did the agent demonstrate empathy and maintain a professional tone?', weight: 9 },

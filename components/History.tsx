@@ -4,10 +4,17 @@ import { Search, ChevronRight } from 'lucide-react';
 
 interface HistoryProps {
   history: AnalysisResult[];
+  onSelectEvaluation: (result: AnalysisResult) => void;
+  initialSearch?: string;
 }
 
-export const History: React.FC<HistoryProps> = ({ history }) => {
-  const [searchTerm, setSearchTerm] = React.useState('');
+export const History: React.FC<HistoryProps> = ({ history, onSelectEvaluation, initialSearch = '' }) => {
+  const [searchTerm, setSearchTerm] = React.useState(initialSearch);
+
+  // Sync search term if initialSearch changes
+  React.useEffect(() => {
+    setSearchTerm(initialSearch);
+  }, [initialSearch]);
 
   const filteredHistory = history.filter(
     (item) =>
@@ -48,12 +55,16 @@ export const History: React.FC<HistoryProps> = ({ history }) => {
               {filteredHistory.length === 0 ? (
                   <tr>
                       <td colSpan={6} className="p-8 text-center text-slate-400 dark:text-slate-500">
-                          No evaluations found.
+                          {history.length === 0 ? "No evaluations found." : "No matching evaluations."}
                       </td>
                   </tr>
               ) : (
                   filteredHistory.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group cursor-pointer">
+                  <tr 
+                    key={item.id} 
+                    onClick={() => onSelectEvaluation(item)}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group cursor-pointer"
+                  >
                       <td className="p-4 text-sm text-slate-600 dark:text-slate-400">
                       {new Date(item.timestamp).toLocaleDateString()} <span className="text-xs text-slate-400 dark:text-slate-500">{new Date(item.timestamp).toLocaleTimeString()}</span>
                       </td>

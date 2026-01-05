@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Check, Zap, Menu, X, BarChart3, MessageSquare, ShieldCheck, Sparkles, PlayCircle } from 'lucide-react';
 import { RevuLogo } from './RevuLogo';
@@ -25,12 +23,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 font-sans text-slate-900 dark:text-white selection:bg-[#0500e2] selection:text-white overflow-x-hidden">
       
-      {/* Background Grid Pattern */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-          <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-[#0500e2] opacity-20 blur-[100px]"></div>
-      </div>
-
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 md:px-12 flex justify-between items-center max-w-7xl mx-auto w-full bg-white/70 dark:bg-slate-950/70 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 transition-all mt-4 rounded-2xl">
         <div className="flex items-center gap-1 text-[#0500e2] dark:text-[#4b53fa]">

@@ -6,6 +6,7 @@ import { History } from './components/History';
 import { Settings } from './components/Settings';
 import { ChatBot } from './components/ChatBot';
 import { LandingPage } from './components/LandingPage';
+import { EvaluationView } from './components/EvaluationView';
 import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA } from './types';
 import { Menu } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
@@ -16,6 +17,8 @@ function App() {
   const [history, setHistory] = useState<AnalysisResult[]>([]);
   const [criteria, setCriteria] = useState<Criteria[]>(DEFAULT_CRITERIA);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [selectedEvaluation, setSelectedEvaluation] = useState<AnalysisResult | null>(null);
+  const [historyFilter, setHistoryFilter] = useState<string>('');
   
   // Theme state
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -53,6 +56,22 @@ function App() {
       setIsSidebarOpen(false);
   };
 
+  const handleSelectEvaluation = (result: AnalysisResult) => {
+    setSelectedEvaluation(result);
+    setCurrentView('evaluation');
+  };
+
+  const handleViewAgentHistory = (agentName: string) => {
+    setHistoryFilter(agentName);
+    setCurrentView('history');
+  };
+
+  const handleSetView = (view: ViewState) => {
+    // Clear filter when navigating manually via sidebar
+    setHistoryFilter('');
+    setCurrentView(view);
+  };
+
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
@@ -60,9 +79,19 @@ function App() {
       case 'analyze':
         return <Analyzer criteria={criteria} onAnalysisComplete={handleAnalysisComplete} />;
       case 'history':
-        return <History history={history} />;
+        return <History history={history} onSelectEvaluation={handleSelectEvaluation} initialSearch={historyFilter} />;
       case 'settings':
         return <Settings criteria={criteria} setCriteria={setCriteria} />;
+      case 'evaluation':
+        if (!selectedEvaluation) return <History history={history} onSelectEvaluation={handleSelectEvaluation} initialSearch={historyFilter} />;
+        return (
+          <EvaluationView 
+            result={selectedEvaluation} 
+            onBack={() => setCurrentView('history')} 
+            backLabel="Back to History"
+            onViewAgentHistory={handleViewAgentHistory}
+          />
+        );
       default:
         return <Dashboard history={history} />;
     }
@@ -75,8 +104,8 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex font-sans text-slate-900 dark:text-slate-100 print:block print:bg-white print:min-h-0 print:h-auto transition-colors duration-300">
       <Sidebar 
-        currentView={currentView} 
-        setView={setCurrentView} 
+        currentView={currentView === 'evaluation' ? 'history' : currentView} 
+        setView={handleSetView} 
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         theme={theme}
@@ -102,13 +131,15 @@ function App() {
           <div className="max-w-6xl mx-auto print:max-w-none">
             <header className="mb-6 lg:mb-8 no-print">
                 <h1 className="text-2xl lg:text-3xl font-bold text-[#000000] dark:text-white tracking-tight capitalize">
-                  {currentView === 'analyze' ? 'Analyze Interaction' : currentView}
+                  {currentView === 'analyze' ? 'Analyze Interaction' : 
+                   currentView === 'evaluation' ? 'Evaluation Details' : currentView}
                 </h1>
                 <p className="text-sm lg:text-base text-slate-500 dark:text-slate-400 mt-2">
                   {currentView === 'dashboard' && 'Welcome back, Jane. Here is your team\'s quality overview.'}
                   {currentView === 'analyze' && 'Upload transcripts or paste text to generate instant QA insights.'}
                   {currentView === 'history' && 'Review past evaluations and track improvement over time.'}
                   {currentView === 'settings' && 'Customize your quality standards and scorecard weighting.'}
+                  {currentView === 'evaluation' && 'Detailed breakdown of the selected conversation analysis.'}
                 </p>
             </header>
             

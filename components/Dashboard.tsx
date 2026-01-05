@@ -1,14 +1,31 @@
 import React from 'react';
 import { AnalysisResult } from '../types';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, Users, CheckCircle, AlertTriangle } from 'lucide-react';
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer
+} from 'recharts';
+import { 
+  TrendingUp, 
+  Users, 
+  CheckCircle, 
+  AlertTriangle, 
+  Activity, 
+  Award, 
+  BarChart2, 
+  ArrowUpRight 
+} from 'lucide-react';
 
 interface DashboardProps {
   history: AnalysisResult[];
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ history }) => {
-  // Compute metrics
+  // --- Logic (Untouched) ---
   const totalEvaluations = history.length;
   const averageScore = totalEvaluations > 0 
     ? Math.round(history.reduce((acc, curr) => acc + curr.overallScore, 0) / totalEvaluations) 
@@ -17,13 +34,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ history }) => {
   const lowScores = history.filter(h => h.overallScore < 75).length;
   const highScores = history.filter(h => h.overallScore >= 90).length;
 
-  const recentTrendData = history.slice(-10).map((h, i) => ({
+  // Reverse history for chart so it flows left to right chronologically
+  const recentTrendData = [...history].reverse().slice(-10).map((h, i) => ({
     name: `Eval ${i + 1}`,
     score: h.overallScore,
-    agent: h.agentName
+    agent: h.agentName,
+    date: new Date(h.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
   }));
 
-  // Group by Agent for a simple leaderboard
   const agentPerformance: Record<string, { total: number, count: number }> = {};
   history.forEach(h => {
     if (!agentPerformance[h.agentName]) agentPerformance[h.agentName] = { total: 0, count: 0 };
@@ -32,105 +50,216 @@ export const Dashboard: React.FC<DashboardProps> = ({ history }) => {
   });
 
   const leaderboardData = Object.entries(agentPerformance)
-    .map(([name, data]) => ({ name, avg: Math.round(data.total / data.count) }))
+    .map(([name, data]) => ({ name, avg: Math.round(data.total / data.count), count: data.count }))
     .sort((a, b) => b.avg - a.avg)
     .slice(0, 5);
 
+  // --- Helper Functions (Requested) ---
+  const getScoreColor = (score: number) => {
+    if (score >= 90) return 'text-emerald-600 dark:text-emerald-400';
+    if (score >= 75) return 'text-[#0500e2] dark:text-[#4b53fa]';
+    if (score >= 60) return 'text-amber-500';
+    return 'text-red-500';
+  };
+
+  const getScoreBadgeColor = (score: number) => {
+    if (score >= 90) return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20';
+    if (score >= 75) return 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border-blue-200 dark:border-blue-500/20';
+    if (score >= 60) return 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-amber-200 dark:border-amber-500/20';
+    return 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400 border-red-200 dark:border-red-500/20';
+  };
+
+  const getScoreGradient = (score: number) => {
+    if (score >= 90) return 'from-emerald-500/20 to-emerald-500/5 border-emerald-200/50 dark:border-emerald-500/20';
+    if (score >= 75) return 'from-blue-500/20 to-blue-500/5 border-blue-200/50 dark:border-blue-500/20';
+    if (score >= 60) return 'from-amber-500/20 to-amber-500/5 border-amber-200/50 dark:border-amber-500/20';
+    return 'from-red-500/20 to-red-500/5 border-red-200/50 dark:border-red-500/20';
+  };
+
   return (
-    <div className="space-y-6 animate-fade-in pb-10">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 transition-colors">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-slate-500 dark:text-slate-400 font-medium text-sm">Avg Quality Score</h3>
-            <div className="p-2 bg-indigo-50 dark:bg-slate-800 rounded-lg text-[#0500e2] dark:text-[#4b53fa]">
-              <TrendingUp size={20} />
+    <div className="space-y-8 animate-fade-in pb-12">
+      
+      {/* Top Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        {/* Main Score Card */}
+        <div className={`relative overflow-hidden p-6 rounded-3xl bg-gradient-to-br ${getScoreGradient(averageScore)} border bg-white dark:bg-slate-900 shadow-sm group hover:shadow-md transition-all`}>
+          <div className="relative z-10 flex flex-col justify-between h-full">
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+                <Activity size={24} className={getScoreColor(averageScore)} />
+              </div>
+              <span className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full bg-white/50 dark:bg-slate-800/50 ${getScoreColor(averageScore)}`}>
+                <TrendingUp size={12} /> Live
+              </span>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Avg Quality Score</p>
+              <h3 className={`text-4xl font-serif font-bold mt-1 ${getScoreColor(averageScore)}`}>
+                {averageScore}<span className="text-xl align-top">%</span>
+              </h3>
             </div>
           </div>
-          <p className="text-3xl font-bold text-slate-800 dark:text-white">{averageScore}%</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Across all evaluations</p>
+          {/* Background decoration */}
+          <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-current opacity-5 rounded-full blur-2xl group-hover:scale-110 transition-transform text-slate-900 dark:text-white pointer-events-none"></div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 transition-colors">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-slate-500 dark:text-slate-400 font-medium text-sm">Total Evaluations</h3>
-            <div className="p-2 bg-blue-50 dark:bg-slate-800 rounded-lg text-blue-600 dark:text-blue-400">
-              <Users size={20} />
-            </div>
-          </div>
-          <p className="text-3xl font-bold text-slate-800 dark:text-white">{totalEvaluations}</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Lifetime analysis count</p>
+        {/* Total Evaluations */}
+        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+           <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl text-[#0500e2] dark:text-[#4b53fa]">
+                <BarChart2 size={24} />
+              </div>
+           </div>
+           <div>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Evaluated</p>
+              <h3 className="text-4xl font-serif font-bold mt-1 text-slate-900 dark:text-white">{totalEvaluations}</h3>
+           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 transition-colors">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-slate-500 dark:text-slate-400 font-medium text-sm">Top Performers</h3>
-            <div className="p-2 bg-green-50 dark:bg-slate-800 rounded-lg text-green-600 dark:text-green-400">
-              <CheckCircle size={20} />
-            </div>
-          </div>
-          <p className="text-3xl font-bold text-slate-800 dark:text-white">{highScores}</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Evaluations &ge; 90%</p>
+        {/* Top Performers */}
+        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+           <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl text-emerald-600 dark:text-emerald-400">
+                <Award size={24} />
+              </div>
+           </div>
+           <div>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">High Performers</p>
+              <h3 className="text-4xl font-serif font-bold mt-1 text-slate-900 dark:text-white">{highScores}</h3>
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium">Score &ge; 90%</p>
+           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 transition-colors">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-slate-500 dark:text-slate-400 font-medium text-sm">Needs Attention</h3>
-            <div className="p-2 bg-red-50 dark:bg-slate-800 rounded-lg text-red-600 dark:text-red-400">
-              <AlertTriangle size={20} />
-            </div>
-          </div>
-          <p className="text-3xl font-bold text-slate-800 dark:text-white">{lowScores}</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Evaluations &lt; 75%</p>
+        {/* Needs Attention */}
+        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+           <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-2xl text-red-600 dark:text-red-400">
+                <AlertTriangle size={24} />
+              </div>
+           </div>
+           <div>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Critical Review</p>
+              <h3 className="text-4xl font-serif font-bold mt-1 text-slate-900 dark:text-white">{lowScores}</h3>
+              <p className="text-xs text-red-500 dark:text-red-400 mt-1 font-medium">Score &lt; 75%</p>
+           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 transition-colors">
-          <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6">Recent Quality Trend</h3>
-          <div className="h-64">
+      {/* Main Content Area */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Trend Chart */}
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+               <h3 className="text-xl font-bold font-serif text-slate-900 dark:text-white">Quality Trend</h3>
+               <p className="text-sm text-slate-500 dark:text-slate-400">Last 10 evaluations overview</p>
+            </div>
+            <div className="flex gap-2">
+                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                    <div className="w-2 h-2 rounded-full bg-[#0500e2]"></div> Avg Score
+                </span>
+            </div>
+          </div>
+          
+          <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={recentTrendData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-700" />
-                <XAxis dataKey="name" hide />
-                <YAxis domain={[0, 100]} stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip 
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    cursor={{ stroke: '#0500e2', strokeWidth: 2 }}
+              <AreaChart data={recentTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0500e2" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#0500e2" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-800" />
+                <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#94a3b8', fontSize: 12 }} 
+                    dy={10}
                 />
-                <Line 
+                <YAxis 
+                    domain={[0, 100]} 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#94a3b8', fontSize: 12 }} 
+                />
+                <Tooltip 
+                    contentStyle={{ 
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                        borderRadius: '12px', 
+                        border: 'none', 
+                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' 
+                    }}
+                    cursor={{ stroke: '#0500e2', strokeWidth: 1, strokeDasharray: '5 5' }}
+                    labelStyle={{ color: '#64748b', fontWeight: 600, marginBottom: '0.5rem' }}
+                />
+                <Area 
                     type="monotone" 
                     dataKey="score" 
                     stroke="#0500e2" 
-                    strokeWidth={3} 
-                    dot={{ fill: '#0500e2', strokeWidth: 2, r: 4, stroke: '#fff' }}
-                    activeDot={{ r: 6, strokeWidth: 0 }}
+                    strokeWidth={3}
+                    fillOpacity={1} 
+                    fill="url(#colorScore)" 
+                    activeDot={{ r: 8, strokeWidth: 0, fill: '#0500e2' }}
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 transition-colors">
-          <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6">Top Agents</h3>
-          <div className="space-y-4">
+        {/* Leaderboard */}
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+                <h3 className="text-xl font-bold font-serif text-slate-900 dark:text-white">Top Agents</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Based on avg. performance</p>
+            </div>
+            <Users size={20} className="text-slate-400" />
+          </div>
+
+          <div className="flex-1 space-y-6">
             {leaderboardData.length === 0 ? (
-                <p className="text-slate-400 text-sm text-center py-10">No data available</p>
+                <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                    <Users size={40} strokeWidth={1.5} className="mb-2 opacity-50" />
+                    <p className="text-sm">No data available yet</p>
+                </div>
             ) : (
                 leaderboardData.map((agent, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                        <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                                idx === 0 ? 'bg-yellow-400' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-orange-400' : 'bg-[#4b53fa]'
-                            }`}>
-                                {idx + 1}
+                    <div key={idx} className="group">
+                        <div className="flex justify-between items-end mb-2">
+                            <div className="flex items-center gap-3">
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm ${
+                                    idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-orange-400' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                                }`}>
+                                    {idx + 1}
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-none">{agent.name}</p>
+                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">{agent.count} evaluations</p>
+                                </div>
                             </div>
-                            <span className="font-medium text-slate-700 dark:text-slate-200">{agent.name}</span>
+                            <span className={`text-sm font-bold ${getScoreColor(agent.avg)}`}>{agent.avg}%</span>
                         </div>
-                        <span className="font-bold text-[#0500e2] dark:text-[#4b53fa]">{agent.avg}%</span>
+                        {/* Progress Bar */}
+                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div 
+                                className={`h-full rounded-full transition-all duration-1000 ease-out ${
+                                    agent.avg >= 90 ? 'bg-emerald-500' : agent.avg >= 75 ? 'bg-[#0500e2]' : 'bg-amber-500'
+                                }`}
+                                style={{ width: `${agent.avg}%` }}
+                            ></div>
+                        </div>
                     </div>
                 ))
             )}
           </div>
+          
+          <button className="mt-8 w-full py-3 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2">
+            View Full Roster <ArrowUpRight size={16} />
+          </button>
         </div>
       </div>
     </div>
