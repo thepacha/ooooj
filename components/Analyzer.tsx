@@ -3,6 +3,7 @@ import { Upload, Play, Loader2, AlertCircle, FileText, Mic, FileAudio, UploadClo
 import { analyzeTranscript, generateMockTranscript, transcribeMedia } from '../services/geminiService';
 import { AnalysisResult, Criteria } from '../types';
 import { EvaluationView } from './EvaluationView';
+import { generateId } from '../lib/utils';
 
 interface AnalyzerProps {
   criteria: Criteria[];
@@ -36,7 +37,7 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
       const analysis = await analyzeTranscript(textToProcess, criteria);
       const fullResult: AnalysisResult = {
         ...analysis,
-        id: crypto.randomUUID(),
+        id: generateId(),
         timestamp: new Date().toISOString(),
         rawTranscript: textToProcess
       };

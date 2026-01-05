@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Loader2, Sparkles, Minimize2 } from 'lucide-react';
+import { MessageSquare, X, Send, Loader2, Sparkles, Minimize2, AlertTriangle } from 'lucide-react';
 import { createChatSession } from '../services/geminiService';
 import { Chat } from '@google/genai';
 
@@ -15,13 +15,20 @@ export const ChatBot: React.FC = () => {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const chatRef = useRef<Chat | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Initialize chat session once
     if (!chatRef.current) {
-      chatRef.current = createChatSession();
+      try {
+        chatRef.current = createChatSession();
+      } catch (err: any) {
+        console.error("Failed to initialize ChatBot:", err);
+        setError("Chat unavailable: " + (err.message || "Unknown error"));
+        setMessages(prev => [...prev, { role: 'model', text: "I'm currently unavailable due to a configuration issue (API Key missing)." }]);
+      }
     }
   }, []);
 
@@ -31,7 +38,16 @@ export const ChatBot: React.FC = () => {
   }, [messages, isOpen]);
 
   const handleSend = async () => {
-    if (!input.trim() || !chatRef.current) return;
+    if (!input.trim()) return;
+    
+    if (!chatRef.current) {
+        setMessages(prev => [...prev, { role: 'user', text: input }]);
+        setTimeout(() => {
+             setMessages(prev => [...prev, { role: 'model', text: "Chat is not initialized correctly. Please check API configuration." }]);
+        }, 500);
+        setInput('');
+        return;
+    }
 
     const userMessage = input.trim();
     setInput('');
@@ -57,6 +73,12 @@ export const ChatBot: React.FC = () => {
       handleSend();
     }
   };
+
+  if (error && !isOpen) {
+      // Don't render the floating button if there's a critical init error, 
+      // or maybe render it with an error state? 
+      // Let's render it but show error on open.
+  }
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4 no-print">
@@ -118,15 +140,15 @@ export const ChatBot: React.FC = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about QA or coaching..."
+                placeholder={error ? "Chat unavailable" : "Ask about QA or coaching..."}
                 className="w-full pl-4 pr-12 py-3 rounded-full bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-[#0500e2] text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400"
-                disabled={isLoading}
+                disabled={isLoading || !!error}
               />
               <button
                 onClick={handleSend}
-                disabled={!input.trim() || isLoading}
+                disabled={!input.trim() || isLoading || !!error}
                 className={`absolute right-1.5 p-2 rounded-full transition-all ${
-                  !input.trim() || isLoading 
+                  !input.trim() || isLoading || !!error
                     ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500' 
                     : 'bg-[#0500e2] text-white hover:bg-[#0400c0]'
                 }`}
@@ -144,10 +166,12 @@ export const ChatBot: React.FC = () => {
         className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-105 active:scale-95 ${
           isOpen 
             ? 'bg-slate-800 dark:bg-slate-700 text-white' 
-            : 'bg-[#0500e2] hover:bg-[#0400c0] text-white'
+            : error 
+                ? 'bg-red-500 hover:bg-red-600 text-white'
+                : 'bg-[#0500e2] hover:bg-[#0400c0] text-white'
         }`}
       >
-        {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
+        {isOpen ? <X size={24} /> : error ? <AlertTriangle size={24} /> : <MessageSquare size={24} />}
       </button>
     </div>
   );

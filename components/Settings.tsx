@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Criteria } from '../types';
 import { Plus, Trash2, Save } from 'lucide-react';
+import { generateId } from '../lib/utils';
 
 interface SettingsProps {
   criteria: Criteria[];
@@ -28,7 +29,7 @@ export const Settings: React.FC<SettingsProps> = ({ criteria, setCriteria }) => 
   };
 
   const handleAdd = () => {
-      const newId = crypto.randomUUID();
+      const newId = generateId();
       setLocalCriteria([...localCriteria, { id: newId, name: 'New Criterion', description: 'Description here...', weight: 5 }]);
       setIsSaved(false);
   }
