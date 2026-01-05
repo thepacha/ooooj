@@ -4,13 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RevuQA AI</title>
-    <script>
-      // Polyfill for process.env to prevent ReferenceError: process is not defined
-      // This is required for Vercel/Vite deployments where process is not automatically polyfilled in the browser
-      if (typeof process === 'undefined') {
-        window.process = { env: {} };
-      }
-    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
