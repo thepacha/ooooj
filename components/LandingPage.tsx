@@ -251,77 +251,120 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
                 <p className="text-lg text-slate-500">RevuQA replaces manual spreadsheet grading with intelligent, automated analysis that scales with your volume.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 grid-rows-2 gap-6 h-auto md:h-[800px]">
+            {/* Reduced height from 800px to 600px to tighten up space */}
+            <div className="grid grid-cols-1 md:grid-cols-3 grid-rows-2 gap-6 h-auto md:h-[600px]">
                 
-                {/* Feature 1: Main Large Box */}
-                {/* Added bottom padding on mobile (pb-48) to reserve space for the absolute graphic, preventing text overlap */}
-                <div className="md:col-span-2 md:row-span-2 bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] p-8 pb-48 md:p-12 md:pb-12 relative overflow-hidden group border border-slate-100 dark:border-slate-800 transition-all hover:shadow-xl">
-                    <div className="relative z-10 max-w-md">
-                        <div className="w-14 h-14 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-6 shadow-sm text-[#0500e2]">
-                            <BarChart3 size={28} />
+                {/* Feature 1: Main Large Box - Optimized */}
+                <div className="md:col-span-2 md:row-span-2 bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] p-8 pb-64 md:p-10 relative overflow-hidden group border border-slate-100 dark:border-slate-800 transition-all hover:shadow-2xl hover:border-blue-100 dark:hover:border-blue-900/30">
+                     {/* Background decoration */}
+                     <div className="absolute inset-0 bg-[radial-gradient(#0500e2_1px,transparent_1px)] [background-size:20px_20px] opacity-[0.03] dark:opacity-[0.05]"></div>
+                     
+                     <div className="relative z-10 flex flex-col h-full md:max-w-xs lg:max-w-sm pointer-events-none">
+                        <div>
+                            <div className="w-14 h-14 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-6 shadow-sm text-[#0500e2] border border-slate-100 dark:border-slate-700">
+                                <BarChart3 size={28} />
+                            </div>
+                            <h3 className="text-3xl font-serif font-bold mb-4 dark:text-white leading-tight">100% Coverage, <br/>Zero Effort.</h3>
+                            <p className="text-slate-600 dark:text-slate-400 text-base leading-relaxed mb-8">
+                                Stop sampling 2%. Auto-score every interaction for compliance and tone instantly.
+                            </p>
                         </div>
-                        <h3 className="text-3xl font-serif font-bold mb-4 dark:text-white">100% Coverage, Zero Effort</h3>
-                        <p className="text-slate-500 text-lg">Stop sampling 2% of your calls. Our AI analyzes every single interaction for compliance, tone, and accuracy instantly.</p>
                         
-                        <ul className="mt-8 space-y-3">
-                            {['Auto-score 10,000+ chats/hr', 'Detect critical fails immediately', 'Track trends over time'].map((item, i) => (
-                                <li key={i} className="flex items-center gap-3 text-slate-700 dark:text-slate-300 font-medium">
-                                    <div className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center text-green-600">
-                                        <Check size={12} strokeWidth={3} />
+                        <ul className="space-y-4">
+                            {[
+                                { text: 'Scale to 10k+ chats/hr', delay: '0' }, 
+                                { text: 'Real-time fail detection', delay: '100' }, 
+                                { text: 'Bias-free scoring', delay: '200' }
+                            ].map((item, i) => (
+                                <li key={i} className="flex items-center gap-3 text-slate-700 dark:text-slate-300 font-medium" style={{animationDelay: `${item.delay}ms`}}>
+                                    <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-[#0500e2] dark:text-blue-400 shadow-sm border border-blue-200 dark:border-blue-800">
+                                        <Check size={14} strokeWidth={3} />
                                     </div>
-                                    {item}
+                                    {item.text}
                                 </li>
                             ))}
                         </ul>
-                    </div>
-                    {/* Abstract Chart Graphic - Mobile Optimized */}
-                    <div className="absolute bottom-0 right-0 w-full h-[180px] md:w-[60%] md:h-[55%] bg-white dark:bg-slate-950 rounded-tl-[2rem] border-t border-l border-slate-100 dark:border-slate-800 p-6 shadow-2xl overflow-hidden translate-y-4 translate-x-4 md:translate-y-4 md:translate-x-4 group-hover:translate-x-2 group-hover:translate-y-2 transition-transform duration-500">
-                        <div className="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-900 pb-2">
-                             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live Volume</div>
-                             <div className="flex gap-1">
-                                 <div className="w-2 h-2 rounded-full bg-red-400"></div>
-                                 <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
-                                 <div className="w-2 h-2 rounded-full bg-green-400"></div>
-                             </div>
+                     </div>
+
+                     {/* Abstract Chart Graphic - Resized and Enhanced */}
+                     <div className="absolute bottom-0 right-0 w-full h-[240px] md:w-[65%] md:h-[80%] bg-white dark:bg-slate-950 rounded-tl-[3rem] border-t border-l border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-2xl shadow-blue-900/5 translate-y-8 translate-x-8 md:translate-y-6 md:translate-x-6 group-hover:translate-x-4 group-hover:translate-y-4 transition-transform duration-500 ease-out">
+                        
+                        {/* Live Indicator */}
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-900 rounded-full border border-slate-100 dark:border-slate-800">
+                                 <span className="relative flex h-2.5 w-2.5">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                                 </span>
+                                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Live Ingestion</span>
+                            </div>
+                            <div className="text-xs font-mono text-slate-400 dark:text-slate-500">2,492 / min</div>
                         </div>
-                        <div className="h-full w-full flex items-end gap-3 pb-4">
-                            {[30, 50, 45, 70, 60, 85, 95, 65, 75, 80].map((h, i) => (
+
+                        {/* Bars */}
+                        <div className="h-full w-full flex items-end gap-2 md:gap-3 pb-4">
+                            {[35, 50, 45, 70, 60, 85, 95, 65, 75, 80, 55, 90].map((h, i) => (
                                 <div key={i} className="w-full bg-slate-100 dark:bg-slate-900 rounded-t-md relative overflow-hidden h-full">
-                                     <div className="absolute bottom-0 w-full bg-[#0500e2] transition-all duration-700 group-hover:bg-blue-600" style={{height: `${h}%`}}></div>
+                                     <div 
+                                        className="absolute bottom-0 w-full bg-[#0500e2] dark:bg-[#4b53fa] rounded-t-md transition-all duration-700 ease-in-out group-hover:bg-blue-600 group-hover:h-[105%]" 
+                                        style={{height: `${h}%`, transitionDelay: `${i*30}ms`}}
+                                     >
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                                     </div>
                                 </div>
                             ))}
                         </div>
-                    </div>
+                     </div>
                 </div>
 
-                {/* Feature 2: Top Right */}
-                <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] p-8 relative overflow-hidden group border border-slate-100 dark:border-slate-800 hover:shadow-lg transition-all">
-                    <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center mb-4 text-purple-600 shadow-sm">
-                        <MessageSquare size={24} />
-                    </div>
-                    <h3 className="text-2xl font-serif font-bold mb-2 dark:text-white">AI Coaching</h3>
-                    <p className="text-slate-500 text-sm">Automated feedback delivered directly to agents.</p>
-                    <div className="absolute right-4 bottom-4 bg-white dark:bg-slate-800 p-3 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700 max-w-[180px] rotate-3 group-hover:rotate-0 transition-transform">
-                        <div className="flex gap-2 items-center mb-2">
-                             <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-[10px] font-bold">AI</div>
-                             <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">Suggestion</span>
+                {/* Feature 2: Top Right - REDESIGNED */}
+                <div className="bg-slate-50 dark:bg-slate-900 rounded-[2.5rem] p-6 md:p-8 relative overflow-hidden group border border-slate-100 dark:border-slate-800 hover:shadow-lg transition-all flex flex-col justify-between md:min-h-[320px]">
+                    {/* Background Pattern */}
+                    <div className="absolute inset-0 bg-[radial-gradient(#c084fc_1px,transparent_1px)] [background-size:20px_20px] opacity-[0.05]"></div>
+                    
+                    <div className="relative z-10">
+                        <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center mb-4 text-purple-600 shadow-sm border border-slate-100 dark:border-slate-700">
+                            <MessageSquare size={24} />
                         </div>
-                        <div className="text-[10px] text-slate-500 leading-tight">"Try using more empathetic phrasing when denying refunds."</div>
+                        <h3 className="text-2xl font-serif font-bold mb-2 dark:text-white">AI Coaching</h3>
+                        <p className="text-slate-500 text-sm">Real-time nudges for tone and compliance.</p>
+                    </div>
+
+                    <div className="relative z-10 mt-6 space-y-3">
+                        {/* Agent Message */}
+                        <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl rounded-tl-none border border-slate-100 dark:border-slate-700 shadow-sm w-[90%] relative opacity-60">
+                            <div className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Agent</div>
+                            <div className="text-xs text-slate-600 dark:text-slate-300">"We don't offer refunds for that."</div>
+                             <div className="absolute -right-2 -top-2 bg-red-100 text-red-500 rounded-full p-0.5 border-2 border-slate-50 dark:border-slate-900">
+                                <X size={10} strokeWidth={3} />
+                            </div>
+                        </div>
+
+                        {/* AI Suggestion */}
+                        <div className="bg-purple-50 dark:bg-purple-900/20 p-3.5 rounded-2xl rounded-tr-none border border-purple-100 dark:border-purple-800/50 shadow-md ml-auto w-[95%] transform transition-transform duration-300 group-hover:-translate-y-1">
+                             <div className="flex gap-2 items-center mb-1.5">
+                                 <div className="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center text-[8px] font-bold shadow-sm">AI</div>
+                                 <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider">Better Approach</span>
+                            </div>
+                            <div className="text-xs text-slate-700 dark:text-slate-200 font-medium leading-relaxed">
+                                "Try: <span className="italic text-purple-600 dark:text-purple-400">'I wish I could help, but due to policy...'</span>"
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 {/* Feature 3: Bottom Right */}
-                <div className="bg-[#0500e2] rounded-[2.5rem] p-8 relative overflow-hidden text-white group shadow-xl shadow-blue-600/20">
+                <div className="bg-[#0500e2] rounded-[2.5rem] p-8 relative overflow-hidden text-white group shadow-xl shadow-blue-600/20 flex flex-col justify-between">
                     <div className="relative z-10">
-                        <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4 text-white backdrop-blur-sm">
+                        <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4 text-white backdrop-blur-sm border border-white/10">
                             <Zap size={24} />
                         </div>
                         <h3 className="text-2xl font-serif font-bold mb-2">Instant Setup</h3>
                         <p className="text-blue-100 text-sm">Define your scorecard and start grading in under 5 minutes.</p>
-                        <button onClick={onEnterApp} className="mt-6 px-4 py-2 bg-white text-[#0500e2] rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors">
-                            Try Demo
-                        </button>
                     </div>
+                    <button onClick={onEnterApp} className="mt-6 px-4 py-2 bg-white text-[#0500e2] rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors w-fit relative z-10">
+                        Try Demo
+                    </button>
                     <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-colors"></div>
                 </div>
 
