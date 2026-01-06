@@ -8,7 +8,7 @@ let aiInstance: GoogleGenAI | null = null;
 const getAI = () => {
   if (!aiInstance) {
     // Try Vite environment first (Vercel), then process.env (AI Studio)
-    const apiKey = (typeof import.meta !== 'undefined' && import.meta.env?._API_KEY) 
+    const apiKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_KEY) 
       || process.env.API_KEY;
 
     if (!apiKey) {
