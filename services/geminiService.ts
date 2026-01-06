@@ -7,11 +7,12 @@ let aiInstance: GoogleGenAI | null = null;
 // Helper to get or initialize the AI client
 const getAI = () => {
   if (!aiInstance) {
-    // Instructions say: "The API key must be obtained exclusively from the environment variable process.env.API_KEY"
-    const apiKey = process.env.API_KEY;
+    // Support GEMINI_API_KEY as requested, with fallback to API_KEY for standard environments
+    // and VITE_GEMINI_API_KEY for local development if needed.
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
     
     if (!apiKey) {
-      throw new Error('API_KEY environment variable is not set');
+      throw new Error('GEMINI_API_KEY or API_KEY environment variable is not set');
     }
     
     aiInstance = new GoogleGenAI({ apiKey });
@@ -48,7 +49,7 @@ export const analyzeTranscript = async (
   const ai = getAI();
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.5-flash',
     contents: prompt,
     config: {
       systemInstruction: systemInstruction,
@@ -91,7 +92,7 @@ export const analyzeTranscript = async (
 export const transcribeMedia = async (base64Data: string, mimeType: string): Promise<string> => {
   const ai = getAI();
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.5-flash',
     contents: {
       parts: [
         { text: "Transcribe the following audio/video verbatim. Identify speakers if possible (e.g., Speaker 1, Speaker 2)." },
@@ -110,7 +111,7 @@ export const transcribeMedia = async (base64Data: string, mimeType: string): Pro
 export const generateMockTranscript = async (): Promise<string> => {
    const ai = getAI();
    const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.5-flash',
     contents: "Generate a realistic, slightly problematic customer service chat transcript between a customer (Sarah) and an agent (John) regarding a refund delay. It should be about 10-15 lines long. Do not include markdown formatting, just the text.",
   });
   return response.text || "Agent: Hello, how can I help?\nCustomer: I need a refund.\nAgent: Okay one sec.";
