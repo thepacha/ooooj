@@ -9,7 +9,7 @@ const getAI = () => {
   if (!aiInstance) {
     // Support both standard process.env and Vite's import.meta.env
     // This resolves issues where process.env is polyfilled to empty object in browser
-    const apiKey = process.env.API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
+    const apiKey = process.env.API_KEY || (import.meta as any).env?.VITE_API_KEY;
     
     if (!apiKey) {
       throw new Error('API_KEY environment variable is not set');
