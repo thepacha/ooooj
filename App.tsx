@@ -14,29 +14,8 @@ import { RevuLogo } from './components/RevuLogo';
 function App() {
   const [showLanding, setShowLanding] = useState(true);
   const [currentView, setCurrentView] = useState<ViewState>('dashboard');
-  
-  // Initialize history with lazy loading from localStorage
-  const [history, setHistory] = useState<AnalysisResult[]>(() => {
-    try {
-      const saved = localStorage.getItem('revuqa_history');
-      return saved ? JSON.parse(saved) : [];
-    } catch (error) {
-      console.error('Failed to load history:', error);
-      return [];
-    }
-  });
-
-  // Initialize criteria with lazy loading from localStorage
-  const [criteria, setCriteria] = useState<Criteria[]>(() => {
-    try {
-      const saved = localStorage.getItem('revuqa_criteria');
-      return saved ? JSON.parse(saved) : DEFAULT_CRITERIA;
-    } catch (error) {
-      console.error('Failed to load criteria:', error);
-      return DEFAULT_CRITERIA;
-    }
-  });
-
+  const [history, setHistory] = useState<AnalysisResult[]>([]);
+  const [criteria, setCriteria] = useState<Criteria[]>(DEFAULT_CRITERIA);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedEvaluation, setSelectedEvaluation] = useState<AnalysisResult | null>(null);
   
@@ -57,16 +36,6 @@ function App() {
     }
     localStorage.setItem('theme', theme);
   }, [theme]);
-
-  // Persist history changes
-  useEffect(() => {
-    localStorage.setItem('revuqa_history', JSON.stringify(history));
-  }, [history]);
-
-  // Persist criteria changes
-  useEffect(() => {
-    localStorage.setItem('revuqa_criteria', JSON.stringify(criteria));
-  }, [criteria]);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
