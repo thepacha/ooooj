@@ -7,11 +7,10 @@ let aiInstance: GoogleGenAI | null = null;
 // Helper to get or initialize the AI client
 const getAI = () => {
   if (!aiInstance) {
-    // The API key must be obtained exclusively from the environment variable process.env.API_KEY.
-    const apiKey = process.env.API_KEY;
+    const apiKey = import.meta.env.VITE_API_KEY;
 
     if (!apiKey) {
-      throw new Error('API Key is missing. Please set process.env.API_KEY.');
+      throw new Error('VITE_API_KEY environment variable is not set');
     }
 
     aiInstance = new GoogleGenAI({ apiKey });
