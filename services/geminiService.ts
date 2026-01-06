@@ -7,15 +7,8 @@ let aiInstance: GoogleGenAI | null = null;
 // Helper to get or initialize the AI client
 const getAI = () => {
   if (!aiInstance) {
-    // Support both standard process.env and Vite's import.meta.env
-    // This resolves issues where process.env is polyfilled to empty object in browser
-    const apiKey = process.env.API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
-    
-    if (!apiKey) {
-      throw new Error('API_KEY environment variable is not set');
-    }
-    
-    aiInstance = new GoogleGenAI({ apiKey });
+    // The API key must be obtained exclusively from the environment variable process.env.API_KEY
+    aiInstance = new GoogleGenAI({ apiKey: process.env.API_KEY });
   }
   return aiInstance;
 };
