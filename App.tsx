@@ -47,150 +47,143 @@ function App() {
 
   // Auth & Data Loading Effect
   useEffect(() => {
-    const handleUserSession = async (session: any) => {
+    let mounted = true;
+
+    const loadUserData = async (userId: string) => {
+        try {
+          // Fetch Criteria
+          const { data: criteriaData } = await supabase
+            .from('criteria')
+            .select('*')
+            .eq('user_id', userId);
+          
+          if (criteriaData && criteriaData.length > 0) {
+             if (mounted) setCriteria(criteriaData);
+          } else {
+            // Insert defaults if missing (background operation)
+            const defaultWithUserId = DEFAULT_CRITERIA.map(c => ({
+                id: crypto.randomUUID(), 
+                user_id: userId,
+                name: c.name,
+                description: c.description,
+                weight: c.weight
+            }));
+            
+            // Optimistic update locally
+            if (mounted) setCriteria(defaultWithUserId);
+
+            await supabase.from('criteria').insert(defaultWithUserId.map(c => ({
+                user_id: c.user_id,
+                name: c.name,
+                description: c.description,
+                weight: c.weight
+            }))); 
+          }
+    
+          // Fetch Evaluations
+          const { data: evals } = await supabase
+            .from('evaluations')
+            .select('*')
+            .eq('user_id', userId)
+            .order('timestamp', { ascending: false });
+    
+          if (evals && mounted) {
+            const mappedEvals: AnalysisResult[] = evals.map(e => ({
+              id: e.id,
+              timestamp: e.timestamp,
+              agentName: e.agent_name,
+              customerName: e.customer_name,
+              summary: e.summary,
+              overallScore: e.overall_score,
+              sentiment: e.sentiment,
+              criteriaResults: e.criteria_results,
+              rawTranscript: e.raw_transcript
+            }));
+            setHistory(mappedEvals);
+          }
+        } catch (e) {
+          console.error("Error loading user data", e);
+        }
+    };
+
+    const processSession = async (session: any) => {
         if (!session) {
-            setUser(null);
-            setAuthView('landing');
+            if (mounted) {
+                setUser(null);
+                setAuthView('landing');
+                setIsLoadingUser(false);
+            }
             return;
         }
 
         try {
-            // Fetch Profile
-            let { data: profile, error } = await supabase
+            // 1. Set minimal user immediately to unblock UI
+            const basicUser: User = {
+                id: session.user.id,
+                name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+                email: session.user.email || '',
+                company: session.user.user_metadata?.company || 'My Company'
+            };
+            
+            if (mounted) {
+                setUser(basicUser);
+                setAuthView('app');
+                setIsLoadingUser(false); // Stop loading immediately
+            }
+
+            // 2. Fetch/Update Profile details in background
+            const { data: profile } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', session.user.id)
                 .single();
             
-            // Auto-create profile if missing (Self-healing for verified email flows)
-            if (!profile) {
+            if (profile && mounted) {
+                setUser(prev => prev ? ({ ...prev, name: profile.name, company: profile.company }) : prev);
+            } else if (!profile) {
+                // Auto-create profile if missing
                 const newProfile = {
                     id: session.user.id,
-                    name: session.user.user_metadata?.name || '',
-                    email: session.user.email,
-                    company: session.user.user_metadata?.company || 'My Company'
+                    name: basicUser.name,
+                    email: basicUser.email,
+                    company: basicUser.company
                 };
-                const { error: insertError } = await supabase.from('profiles').insert(newProfile);
-                if (!insertError) {
-                    profile = newProfile;
-                }
+                await supabase.from('profiles').insert(newProfile);
             }
 
-            // Construct user object with fallbacks
-            const userData: User = {
-                id: session.user.id,
-                name: profile?.name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
-                email: session.user.email || '',
-                company: profile?.company || session.user.user_metadata?.company || 'My Company'
-            };
-
-            setUser(userData);
-            setAuthView('app');
+            // 3. Load App Data in background
             await loadUserData(session.user.id);
 
         } catch (error) {
-            console.error("Error setting up user session:", error);
-            // Even if profile fetch fails, let them in
-            setUser({
-                 id: session.user.id,
-                 name: session.user.email?.split('@')[0] || 'User',
-                 email: session.user.email || '',
-                 company: 'My Company'
-            });
-            setAuthView('app');
+            console.error("Error processing session:", error);
+            if (mounted) setIsLoadingUser(false);
         }
     };
 
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-            await handleUserSession(session);
-        } else {
-            setIsLoadingUser(false);
+    // Initial Session Check
+    supabase.auth.getSession().then(({ data: { session } }) => {
+        processSession(session);
+    });
+
+    // Auth State Listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            processSession(session);
+        } else if (event === 'SIGNED_OUT') {
+            if (mounted) {
+                setUser(null);
+                setAuthView('landing');
+                setHistory([]);
+                setIsLoadingUser(false);
+            }
         }
-      } catch (error) {
-        console.error("Session check error", error);
-        setIsLoadingUser(false);
-      } finally {
-        setIsLoadingUser(false);
-      }
-    };
-
-    checkSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        await handleUserSession(session);
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setAuthView('landing');
-        setHistory([]);
-      }
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
-
-  const loadUserData = async (userId: string) => {
-    try {
-      // Fetch Criteria
-      const { data: criteriaData } = await supabase
-        .from('criteria')
-        .select('*')
-        .eq('user_id', userId);
-      
-      if (criteriaData && criteriaData.length > 0) {
-        setCriteria(criteriaData);
-      } else {
-        // If no criteria exist (e.g. new user created via Auth but skipped Signup logic),
-        // Insert defaults to ensure the app works out of the box.
-        const defaultWithUserId = DEFAULT_CRITERIA.map(c => ({
-            id: crypto.randomUUID(), // Generate new UUIDs for DB
-            user_id: userId,
-            name: c.name,
-            description: c.description,
-            weight: c.weight
-        }));
-
-        const { error: insertError } = await supabase.from('criteria').insert(defaultWithUserId.map(c => ({
-            user_id: c.user_id,
-            name: c.name,
-            description: c.description,
-            weight: c.weight
-        }))); 
-        
-        // Simpler: Just set local state to defaults. If insert succeeded, great. 
-        setCriteria(defaultWithUserId);
-      }
-
-      // Fetch Evaluations
-      const { data: evals } = await supabase
-        .from('evaluations')
-        .select('*')
-        .eq('user_id', userId)
-        .order('timestamp', { ascending: false });
-
-      if (evals) {
-        const mappedEvals: AnalysisResult[] = evals.map(e => ({
-          id: e.id,
-          timestamp: e.timestamp,
-          agentName: e.agent_name,
-          customerName: e.customer_name,
-          summary: e.summary,
-          overallScore: e.overall_score,
-          sentiment: e.sentiment,
-          criteriaResults: e.criteria_results,
-          rawTranscript: e.raw_transcript
-        }));
-        setHistory(mappedEvals);
-      }
-    } catch (e) {
-      console.error("Error loading user data", e);
-    }
-  };
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
@@ -240,14 +233,11 @@ function App() {
     }
   };
 
-  // This function handles saving criteria to Supabase
   const handleSaveCriteria = async (newCriteria: Criteria[]) => {
       setCriteria(newCriteria); // Optimistic update
       
       if (user) {
           try {
-             // Simplest sync strategy: Delete all for user and re-insert
-             // In a real app with many users, upsert by ID is better
              await supabase.from('criteria').delete().eq('user_id', user.id);
              
              const records = newCriteria.map(c => ({
@@ -255,8 +245,6 @@ function App() {
                  name: c.name,
                  description: c.description,
                  weight: c.weight
-                 // We don't specify ID to let Supabase gen_random_uuid(), 
-                 // or we can generate one if we want to track it strictly.
              }));
              
              await supabase.from('criteria').insert(records);
@@ -328,7 +316,7 @@ function App() {
   if (authView === 'login') {
       return (
           <Login 
-            onLogin={() => {}} // Login component handles auth directly now
+            onLogin={() => {}} 
             onSwitchToSignup={() => setAuthView('signup')}
             onBackToHome={() => setAuthView('landing')}
           />
@@ -338,7 +326,7 @@ function App() {
   if (authView === 'signup') {
       return (
           <Signup 
-            onSignup={() => {}} // Signup component handles auth directly now
+            onSignup={() => {}} 
             onSwitchToLogin={() => setAuthView('login')}
             onBackToHome={() => setAuthView('landing')}
           />
