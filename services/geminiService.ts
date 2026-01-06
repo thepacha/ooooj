@@ -1,127 +1,85 @@
-import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { Criteria, AnalysisResult } from "../types";
 
-// Global instance to be initialized lazily
-let aiInstance: GoogleGenAI | null = null;
+const API_ENDPOINT = '/.netlify/functions/gemini';
 
-// Helper to get or initialize the AI client
-const getAI = () => {
-  if (!aiInstance) {
-    // Instructions say: "The API key must be obtained exclusively from the environment variable process.env.API_KEY"
-    const apiKey = process.env.API_KEY;
-    
-    if (!apiKey) {
-      throw new Error('API_KEY environment variable is not set');
+// Helper for Fetching from the Netlify Function
+const callApi = async (action: string, payload: any) => {
+    try {
+        const response = await fetch(API_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action, payload })
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({ error: response.statusText }));
+            throw new Error(err.error || 'API Request Failed');
+        }
+
+        return response.json();
+    } catch (error: any) {
+        console.error("Gemini Service Error:", error);
+        throw new Error(error.message || "Failed to communicate with AI service");
     }
-    
-    aiInstance = new GoogleGenAI({ apiKey });
-  }
-  return aiInstance;
 };
 
 export const analyzeTranscript = async (
   transcript: string,
   criteria: Criteria[]
 ): Promise<Omit<AnalysisResult, 'id' | 'timestamp' | 'rawTranscript'>> => {
-
-  const criteriaPrompt = criteria.map(c => `- ${c.name}: ${c.description} (Importance: ${c.weight}/10)`).join('\n');
-
-  const systemInstruction = `
-    You are an expert QA Quality Assurance Analyst for Customer Support.
-    Your job is to evaluate customer service transcripts based on specific criteria.
-    Be strict but fair.
-    Identify the Agent and Customer names if possible, otherwise use "Agent" and "Customer".
-    Calculate an overall score (0-100) based on the weighted average of the criteria scores.
-    Determine the overall customer sentiment.
-  `;
-
-  const prompt = `
-    Please analyze the following transcript:
-    
-    "${transcript}"
-
-    Evaluate it against these criteria:
-    ${criteriaPrompt}
-  `;
-
-  // Lazily get the AI instance
-  const ai = getAI();
-
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: prompt,
-    config: {
-      systemInstruction: systemInstruction,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          agentName: { type: Type.STRING },
-          customerName: { type: Type.STRING },
-          summary: { type: Type.STRING },
-          overallScore: { type: Type.NUMBER },
-          sentiment: { type: Type.STRING, enum: ['Positive', 'Neutral', 'Negative'] },
-          criteriaResults: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                name: { type: Type.STRING },
-                score: { type: Type.NUMBER, description: "Score from 0 to 100" },
-                reasoning: { type: Type.STRING },
-                suggestion: { type: Type.STRING }
-              },
-              required: ['name', 'score', 'reasoning', 'suggestion']
-            }
-          }
-        },
-        required: ['agentName', 'customerName', 'summary', 'overallScore', 'sentiment', 'criteriaResults']
-      }
-    }
-  });
-
-  const resultText = response.text;
-  if (!resultText) {
+  
+  const data = await callApi('analyze', { transcript, criteria });
+  
+  if (!data.text) {
     throw new Error("No response from AI");
   }
 
-  return JSON.parse(resultText) as Omit<AnalysisResult, 'id' | 'timestamp' | 'rawTranscript'>;
+  return JSON.parse(data.text) as Omit<AnalysisResult, 'id' | 'timestamp' | 'rawTranscript'>;
 };
 
 export const transcribeMedia = async (base64Data: string, mimeType: string): Promise<string> => {
-  const ai = getAI();
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: {
-      parts: [
-        { text: "Transcribe the following audio/video verbatim. Identify speakers if possible (e.g., Speaker 1, Speaker 2)." },
-        {
-          inlineData: {
-            mimeType: mimeType,
-            data: base64Data
-          }
-        }
-      ]
-    }
-  });
-  return response.text || "";
+  const data = await callApi('transcribe', { base64Data, mimeType });
+  return data.text || "";
 };
 
 export const generateMockTranscript = async (): Promise<string> => {
-   const ai = getAI();
-   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: "Generate a realistic, slightly problematic customer service chat transcript between a customer (Sarah) and an agent (John) regarding a refund delay. It should be about 10-15 lines long. Do not include markdown formatting, just the text.",
-  });
-  return response.text || "Agent: Hello, how can I help?\nCustomer: I need a refund.\nAgent: Okay one sec.";
+   const data = await callApi('mock', {});
+   return data.text || "Agent: Hello, how can I help?\nCustomer: I need a refund.\nAgent: Okay one sec.";
 };
 
-export const createChatSession = (): Chat => {
-  const ai = getAI();
-  return ai.chats.create({
-    model: 'gemini-3-pro-preview',
-    config: {
-      systemInstruction: `You are RevuBot, an intelligent assistant for the RevuQA AI platform.
+// Interface for the Chat Session used in ChatBot
+export interface ChatSession {
+    sendMessage(params: { message: string }): Promise<{ text: string }>;
+}
+
+// Remote Chat Session that manages history locally but processes via backend
+class RemoteChatSession implements ChatSession {
+    private history: { role: string, parts: { text: string }[] }[] = [];
+    private systemInstruction: string;
+
+    constructor(systemInstruction: string) {
+        this.systemInstruction = systemInstruction;
+    }
+
+    async sendMessage(params: { message: string }) {
+        // 1. Call Backend with current history + new message
+        const data = await callApi('chat', {
+            history: this.history,
+            message: params.message,
+            systemInstruction: this.systemInstruction
+        });
+
+        // 2. Update Local History
+        // We track the history client-side to persist context across stateless serverless calls
+        this.history.push({ role: 'user', parts: [{ text: params.message }] });
+        this.history.push({ role: 'model', parts: [{ text: data.text }] });
+
+        return { text: data.text };
+    }
+}
+
+export const createChatSession = (): ChatSession => {
+  const systemInstruction = `You are RevuBot, an intelligent assistant for the RevuQA AI platform.
       Your goal is to assist Customer Support QA Managers and Analysts.
       You can help with:
       - Explaining QA criteria and scoring logic.
@@ -129,7 +87,7 @@ export const createChatSession = (): Chat => {
       - Suggesting ways to improve team empathy, efficiency, and compliance.
       - Navigating the RevuQA app (Dashboard, Analysis, History, Settings).
       
-      Be professional, concise, and helpful. Use the context of being a QA expert tool.`,
-    }
-  });
+      Be professional, concise, and helpful. Use the context of being a QA expert tool.`;
+      
+  return new RemoteChatSession(systemInstruction);
 };

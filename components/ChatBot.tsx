@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Loader2, Sparkles, Minimize2, AlertTriangle } from 'lucide-react';
-import { createChatSession } from '../services/geminiService';
-import { Chat } from '@google/genai';
+import { createChatSession, ChatSession } from '../services/geminiService';
 
 interface Message {
   role: 'user' | 'model';
@@ -16,7 +15,7 @@ export const ChatBot: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const chatRef = useRef<Chat | null>(null);
+  const chatRef = useRef<ChatSession | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -27,7 +26,7 @@ export const ChatBot: React.FC = () => {
       } catch (err: any) {
         console.error("Failed to initialize ChatBot:", err);
         setError("Chat unavailable: " + (err.message || "Unknown error"));
-        setMessages(prev => [...prev, { role: 'model', text: "I'm currently unavailable due to a configuration issue (API Key missing)." }]);
+        setMessages(prev => [...prev, { role: 'model', text: "I'm currently unavailable due to a configuration issue." }]);
       }
     }
   }, []);
@@ -43,7 +42,7 @@ export const ChatBot: React.FC = () => {
     if (!chatRef.current) {
         setMessages(prev => [...prev, { role: 'user', text: input }]);
         setTimeout(() => {
-             setMessages(prev => [...prev, { role: 'model', text: "Chat is not initialized correctly. Please check API configuration." }]);
+             setMessages(prev => [...prev, { role: 'model', text: "Chat is not initialized correctly." }]);
         }, 500);
         setInput('');
         return;
@@ -175,4 +174,4 @@ export const ChatBot: React.FC = () => {
       </button>
     </div>
   );
-};
+}
