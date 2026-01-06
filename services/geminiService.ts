@@ -7,9 +7,8 @@ let aiInstance: GoogleGenAI | null = null;
 // Helper to get or initialize the AI client
 const getAI = () => {
   if (!aiInstance) {
-    // Support both standard process.env and Vite's import.meta.env
-    // This resolves issues where process.env is polyfilled to empty object in browser
-    const apiKey = process.env.API_KEY || (import.meta as any).env?.VITE_API_KEY;
+    // Instructions say: "The API key must be obtained exclusively from the environment variable process.env.API_KEY"
+    const apiKey = process.env.API_KEY;
     
     if (!apiKey) {
       throw new Error('API_KEY environment variable is not set');
@@ -49,7 +48,7 @@ export const analyzeTranscript = async (
   const ai = getAI();
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     contents: prompt,
     config: {
       systemInstruction: systemInstruction,
@@ -92,7 +91,7 @@ export const analyzeTranscript = async (
 export const transcribeMedia = async (base64Data: string, mimeType: string): Promise<string> => {
   const ai = getAI();
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     contents: {
       parts: [
         { text: "Transcribe the following audio/video verbatim. Identify speakers if possible (e.g., Speaker 1, Speaker 2)." },
@@ -111,7 +110,7 @@ export const transcribeMedia = async (base64Data: string, mimeType: string): Pro
 export const generateMockTranscript = async (): Promise<string> => {
    const ai = getAI();
    const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     contents: "Generate a realistic, slightly problematic customer service chat transcript between a customer (Sarah) and an agent (John) regarding a refund delay. It should be about 10-15 lines long. Do not include markdown formatting, just the text.",
   });
   return response.text || "Agent: Hello, how can I help?\nCustomer: I need a refund.\nAgent: Okay one sec.";
