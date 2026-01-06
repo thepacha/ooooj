@@ -7,12 +7,13 @@ let aiInstance: GoogleGenAI | null = null;
 // Helper to get or initialize the AI client
 const getAI = () => {
   if (!aiInstance) {
-    // Support GEMINI_API_KEY as requested, with fallback to API_KEY for standard environments
-    // and VITE_GEMINI_API_KEY for local development if needed.
-    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
+    // Strictly use process.env.API_KEY as per security guidelines.
+    // We removed GEMINI_API_KEY fallbacks to prevent build tools from inlining secrets.
+    // The environment (index.html polyfill or secure runtime) must provide this value.
+    const apiKey = process.env.API_KEY;
     
     if (!apiKey) {
-      throw new Error('GEMINI_API_KEY or API_KEY environment variable is not set');
+      throw new Error('API_KEY environment variable is not set. Please ensure you have configured your API key in the environment.');
     }
     
     aiInstance = new GoogleGenAI({ apiKey });
