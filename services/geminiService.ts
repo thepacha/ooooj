@@ -7,10 +7,12 @@ let aiInstance: GoogleGenAI | null = null;
 // Helper to get or initialize the AI client
 const getAI = () => {
   if (!aiInstance) {
-    const apiKey = import.meta.env.VITE_API_KEY;
+    // Try Vite environment first (Vercel), then process.env (AI Studio)
+    const apiKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_KEY) 
+      || process.env.API_KEY;
 
     if (!apiKey) {
-      throw new Error('VITE_API_KEY environment variable is not set');
+      throw new Error('API Key is missing. Set VITE_API_KEY (Vercel) or API_KEY (AI Studio)');
     }
 
     aiInstance = new GoogleGenAI({ apiKey });
