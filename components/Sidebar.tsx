@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { LayoutDashboard, FileText, History, Settings, X, Sun, Moon, LogOut } from 'lucide-react';
-import { ViewState } from '../types';
+import { ViewState, User } from '../types';
 import { RevuLogo } from './RevuLogo';
 
 interface SidebarProps {
@@ -11,15 +12,20 @@ interface SidebarProps {
   theme: 'light' | 'dark';
   toggleTheme: () => void;
   onLogout: () => void;
+  user: User | null;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, onClose, theme, toggleTheme, onLogout }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, onClose, theme, toggleTheme, onLogout, user }) => {
   const navItems: { id: ViewState; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
     { id: 'analyze', label: 'Analyze New', icon: <FileText size={20} /> },
     { id: 'history', label: 'History', icon: <History size={20} /> },
     { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
   ];
+
+  const userInitials = user?.name 
+    ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() 
+    : 'JD';
 
   return (
     <>
@@ -92,15 +98,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
 
           <div className="flex items-center justify-between px-4 py-2">
             <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#0500e2] text-white flex items-center justify-center text-sm font-bold shadow-sm">
-                    JD
+                <div className="w-8 h-8 rounded-full bg-[#0500e2] text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                    {userInitials}
                 </div>
                 <div className="overflow-hidden">
                 <p className="text-sm font-medium truncate text-slate-900 dark:text-white">
-                    Jane Doe
+                    {user?.name || 'Guest User'}
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                    jane@revuqa.com
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[100px]">
+                    {user?.email || 'guest@example.com'}
                 </p>
                 </div>
             </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Analyzer } from './components/Analyzer';
@@ -6,13 +7,27 @@ import { History } from './components/History';
 import { Settings } from './components/Settings';
 import { ChatBot } from './components/ChatBot';
 import { LandingPage } from './components/LandingPage';
+import { Login } from './components/Login';
+import { Signup } from './components/Signup';
 import { EvaluationView } from './components/EvaluationView';
-import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA } from './types';
+import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA, User } from './types';
 import { Menu } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
 
+type AuthState = 'landing' | 'login' | 'signup' | 'app';
+
 function App() {
-  const [showLanding, setShowLanding] = useState(true);
+  const [user, setUser] = useState<User | null>(() => {
+    // Check for existing session
+    const saved = localStorage.getItem('revuqa_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [authView, setAuthView] = useState<AuthState>(() => {
+    // If user exists, go straight to app
+    return localStorage.getItem('revuqa_user') ? 'app' : 'landing';
+  });
+
   const [currentView, setCurrentView] = useState<ViewState>('dashboard');
   const [history, setHistory] = useState<AnalysisResult[]>([]);
   const [criteria, setCriteria] = useState<Criteria[]>(DEFAULT_CRITERIA);
@@ -45,14 +60,18 @@ function App() {
     setHistory((prev) => [result, ...prev]);
   };
 
-  const enterApp = () => {
-      setShowLanding(false);
+  const handleLogin = (loggedInUser: User) => {
+    setUser(loggedInUser);
+    localStorage.setItem('revuqa_user', JSON.stringify(loggedInUser));
+    setAuthView('app');
   };
 
   const handleLogout = () => {
-      setShowLanding(true);
-      setCurrentView('dashboard');
-      setIsSidebarOpen(false);
+    setUser(null);
+    localStorage.removeItem('revuqa_user');
+    setAuthView('landing');
+    setCurrentView('dashboard');
+    setIsSidebarOpen(false);
   };
 
   const handleSelectEvaluation = (result: AnalysisResult) => {
@@ -60,7 +79,7 @@ function App() {
     setCurrentView('evaluation');
   };
 
-  const renderView = () => {
+  const renderAppView = () => {
     switch (currentView) {
       case 'dashboard':
         return <Dashboard history={history} />;
@@ -84,8 +103,33 @@ function App() {
     }
   };
 
-  if (showLanding) {
-      return <LandingPage onEnterApp={enterApp} />;
+  if (authView === 'landing') {
+      return (
+        <LandingPage 
+            onLoginClick={() => setAuthView('login')} 
+            onSignupClick={() => setAuthView('signup')} 
+        />
+      );
+  }
+
+  if (authView === 'login') {
+      return (
+          <Login 
+            onLogin={handleLogin} 
+            onSwitchToSignup={() => setAuthView('signup')}
+            onBackToHome={() => setAuthView('landing')}
+          />
+      );
+  }
+
+  if (authView === 'signup') {
+      return (
+          <Signup 
+            onSignup={handleLogin} 
+            onSwitchToLogin={() => setAuthView('login')}
+            onBackToHome={() => setAuthView('landing')}
+          />
+      );
   }
 
   return (
@@ -98,6 +142,7 @@ function App() {
         theme={theme}
         toggleTheme={toggleTheme}
         onLogout={handleLogout}
+        user={user}
       />
       
       {/* Mobile Header */}
@@ -122,7 +167,7 @@ function App() {
                    currentView === 'evaluation' ? 'Evaluation Details' : currentView}
                 </h1>
                 <p className="text-sm lg:text-base text-slate-500 dark:text-slate-400 mt-2">
-                  {currentView === 'dashboard' && 'Welcome back, Jane. Here is your team\'s quality overview.'}
+                  {currentView === 'dashboard' && `Welcome back, ${user?.name.split(' ')[0]}. Here is your team's quality overview.`}
                   {currentView === 'analyze' && 'Upload transcripts or paste text to generate instant QA insights.'}
                   {currentView === 'history' && 'Review past evaluations and track improvement over time.'}
                   {currentView === 'settings' && 'Customize your quality standards and scorecard weighting.'}
@@ -130,7 +175,7 @@ function App() {
                 </p>
             </header>
             
-            {renderView()}
+            {renderAppView()}
           </div>
         </div>
       </main>

@@ -25,6 +25,13 @@ export interface AnalysisResult {
   rawTranscript: string;
 }
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  company?: string;
+}
+
 export type ViewState = 'dashboard' | 'analyze' | 'history' | 'settings' | 'evaluation';
 
 export const DEFAULT_CRITERIA: Criteria[] = [

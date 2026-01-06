@@ -1,12 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Check, Zap, Menu, X, BarChart3, MessageSquare, ShieldCheck, Sparkles, PlayCircle } from 'lucide-react';
 import { RevuLogo } from './RevuLogo';
 
 interface LandingPageProps {
-  onEnterApp: () => void;
+  onLoginClick: () => void;
+  onSignupClick: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignupClick }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -39,9 +41,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
         </div>
 
         <div className="hidden lg:flex items-center gap-4">
-            <button onClick={onEnterApp} className="text-sm font-semibold hover:text-[#0500e2] transition-colors">Sign in</button>
+            <button onClick={onLoginClick} className="text-sm font-semibold hover:text-[#0500e2] transition-colors">Sign in</button>
             <button 
-                onClick={onEnterApp}
+                onClick={onSignupClick}
                 className="group relative px-6 py-2.5 bg-[#0500e2] text-white text-sm font-semibold rounded-full shadow-lg shadow-blue-500/30 hover:bg-[#0400c0] hover:shadow-blue-500/40 transition-all overflow-hidden"
             >
                 <span className="relative z-10 flex items-center gap-2">
@@ -92,13 +94,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
 
             <div className="relative z-10 mt-12 space-y-3">
                  <button 
-                    onClick={onEnterApp} 
+                    onClick={onLoginClick} 
                     className="w-full py-4 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-2xl font-bold text-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
                 >
                     Log In
                 </button>
                  <button 
-                    onClick={onEnterApp} 
+                    onClick={onSignupClick} 
                     className="w-full py-4 bg-[#0500e2] text-white rounded-2xl font-bold text-lg shadow-xl shadow-blue-600/20 hover:bg-[#0400c0] transition-colors flex items-center justify-center gap-2"
                 >
                     Get Started <ArrowRight size={18} />
@@ -129,13 +131,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
                 <button 
-                    onClick={onEnterApp}
+                    onClick={onSignupClick}
                     className="w-full sm:w-auto px-8 py-4 bg-[#0500e2] text-white rounded-full font-bold text-lg shadow-xl shadow-blue-600/20 hover:bg-[#0400c0] hover:scale-105 transition-all flex items-center justify-center gap-2"
                 >
                     Start Analysis Now
                 </button>
                 <button 
-                    onClick={onEnterApp}
+                    onClick={onLoginClick}
                     className="w-full sm:w-auto px-8 py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-full font-bold text-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
                 >
                     <PlayCircle size={20} /> Watch Demo
@@ -354,7 +356,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
                         <h3 className="text-2xl font-serif font-bold mb-2">Instant Setup</h3>
                         <p className="text-blue-100 text-sm">Define your scorecard and start grading in under 5 minutes.</p>
                     </div>
-                    <button onClick={onEnterApp} className="mt-6 px-4 py-2 bg-white text-[#0500e2] rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors w-fit relative z-10">
+                    <button onClick={onSignupClick} className="mt-6 px-4 py-2 bg-white text-[#0500e2] rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors w-fit relative z-10">
                         Try Demo
                     </button>
                     <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-colors"></div>
@@ -377,7 +379,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnterApp }) => {
             </p>
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
                  <button 
-                    onClick={onEnterApp}
+                    onClick={onSignupClick}
                     className="px-10 py-4 bg-[#0500e2] text-white rounded-full font-bold text-lg shadow-xl hover:bg-[#0400c0] hover:-translate-y-1 transition-all w-full sm:w-auto"
                 >
                     Get Started for Free
