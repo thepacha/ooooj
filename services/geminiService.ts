@@ -7,12 +7,11 @@ let aiInstance: GoogleGenAI | null = null;
 // Helper to get or initialize the AI client
 const getAI = () => {
   if (!aiInstance) {
-    // Attempt to retrieve API key from process.env (default) or import.meta.env (Vite fallback)
-    // This allows the app to work in both the AI Studio preview and deployed Vite environments.
-    const apiKey = process.env.API_KEY || (import.meta as any).env?.VITE_API_KEY;
+    // The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+    const apiKey = process.env.API_KEY;
 
     if (!apiKey) {
-      throw new Error('API Key is missing. Please set process.env.API_KEY or VITE_API_KEY environment variable.');
+      throw new Error('API Key is missing. Please set process.env.API_KEY.');
     }
 
     aiInstance = new GoogleGenAI({ apiKey });
