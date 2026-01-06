@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Analyzer } from './components/Analyzer';
@@ -11,22 +10,16 @@ import { Login } from './components/Login';
 import { Signup } from './components/Signup';
 import { EvaluationView } from './components/EvaluationView';
 import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA, User } from './types';
-import { Menu } from 'lucide-react';
+import { Menu, Loader2 } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
+import { supabase } from './lib/supabase';
 
 type AuthState = 'landing' | 'login' | 'signup' | 'app';
 
 function App() {
-  const [user, setUser] = useState<User | null>(() => {
-    // Check for existing session
-    const saved = localStorage.getItem('revuqa_user');
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  const [authView, setAuthView] = useState<AuthState>(() => {
-    // If user exists, go straight to app
-    return localStorage.getItem('revuqa_user') ? 'app' : 'landing';
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [authView, setAuthView] = useState<AuthState>('landing');
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   const [currentView, setCurrentView] = useState<ViewState>('dashboard');
   const [history, setHistory] = useState<AnalysisResult[]>([]);
@@ -52,23 +45,230 @@ function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  // Auth & Data Loading Effect
+  useEffect(() => {
+    const handleUserSession = async (session: any) => {
+        if (!session) {
+            setUser(null);
+            setAuthView('landing');
+            return;
+        }
+
+        try {
+            // Fetch Profile
+            let { data: profile, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+            
+            // Auto-create profile if missing (Self-healing for verified email flows)
+            if (!profile) {
+                const newProfile = {
+                    id: session.user.id,
+                    name: session.user.user_metadata?.name || '',
+                    email: session.user.email,
+                    company: session.user.user_metadata?.company || 'My Company'
+                };
+                const { error: insertError } = await supabase.from('profiles').insert(newProfile);
+                if (!insertError) {
+                    profile = newProfile;
+                }
+            }
+
+            // Construct user object with fallbacks
+            const userData: User = {
+                id: session.user.id,
+                name: profile?.name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+                email: session.user.email || '',
+                company: profile?.company || session.user.user_metadata?.company || 'My Company'
+            };
+
+            setUser(userData);
+            setAuthView('app');
+            await loadUserData(session.user.id);
+
+        } catch (error) {
+            console.error("Error setting up user session:", error);
+            // Even if profile fetch fails, let them in
+            setUser({
+                 id: session.user.id,
+                 name: session.user.email?.split('@')[0] || 'User',
+                 email: session.user.email || '',
+                 company: 'My Company'
+            });
+            setAuthView('app');
+        }
+    };
+
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            await handleUserSession(session);
+        } else {
+            setIsLoadingUser(false);
+        }
+      } catch (error) {
+        console.error("Session check error", error);
+        setIsLoadingUser(false);
+      } finally {
+        setIsLoadingUser(false);
+      }
+    };
+
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        await handleUserSession(session);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setAuthView('landing');
+        setHistory([]);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const loadUserData = async (userId: string) => {
+    try {
+      // Fetch Criteria
+      const { data: criteriaData } = await supabase
+        .from('criteria')
+        .select('*')
+        .eq('user_id', userId);
+      
+      if (criteriaData && criteriaData.length > 0) {
+        setCriteria(criteriaData);
+      } else {
+        // If no criteria exist (e.g. new user created via Auth but skipped Signup logic),
+        // Insert defaults to ensure the app works out of the box.
+        const defaultWithUserId = DEFAULT_CRITERIA.map(c => ({
+            id: crypto.randomUUID(), // Generate new UUIDs for DB
+            user_id: userId,
+            name: c.name,
+            description: c.description,
+            weight: c.weight
+        }));
+
+        const { error: insertError } = await supabase.from('criteria').insert(defaultWithUserId.map(c => ({
+            user_id: c.user_id,
+            name: c.name,
+            description: c.description,
+            weight: c.weight
+        }))); 
+        
+        // Simpler: Just set local state to defaults. If insert succeeded, great. 
+        setCriteria(defaultWithUserId);
+      }
+
+      // Fetch Evaluations
+      const { data: evals } = await supabase
+        .from('evaluations')
+        .select('*')
+        .eq('user_id', userId)
+        .order('timestamp', { ascending: false });
+
+      if (evals) {
+        const mappedEvals: AnalysisResult[] = evals.map(e => ({
+          id: e.id,
+          timestamp: e.timestamp,
+          agentName: e.agent_name,
+          customerName: e.customer_name,
+          summary: e.summary,
+          overallScore: e.overall_score,
+          sentiment: e.sentiment,
+          criteriaResults: e.criteria_results,
+          rawTranscript: e.raw_transcript
+        }));
+        setHistory(mappedEvals);
+      }
+    } catch (e) {
+      console.error("Error loading user data", e);
+    }
+  };
+
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
-  const handleAnalysisComplete = (result: AnalysisResult) => {
+  const handleAnalysisComplete = async (result: AnalysisResult) => {
     setHistory((prev) => [result, ...prev]);
+
+    if (user) {
+        try {
+            await supabase.from('evaluations').insert({
+                id: result.id,
+                user_id: user.id,
+                timestamp: result.timestamp,
+                agent_name: result.agentName,
+                customer_name: result.customerName,
+                summary: result.summary,
+                overall_score: result.overallScore,
+                sentiment: result.sentiment,
+                criteria_results: result.criteriaResults,
+                raw_transcript: result.rawTranscript
+            });
+        } catch (e) {
+            console.error("Failed to save evaluation", e);
+        }
+    }
   };
 
-  const handleLogin = (loggedInUser: User) => {
-    setUser(loggedInUser);
-    localStorage.setItem('revuqa_user', JSON.stringify(loggedInUser));
-    setAuthView('app');
+  const handleUpdateUser = async (updatedUser: User) => {
+    if (!user) return;
+    
+    // Optimistic update
+    setUser(updatedUser);
+
+    try {
+        const { error } = await supabase
+            .from('profiles')
+            .update({
+                name: updatedUser.name,
+                company: updatedUser.company
+            })
+            .eq('id', user.id);
+        
+        if (error) throw error;
+    } catch (e) {
+        console.error("Failed to update profile", e);
+    }
   };
 
-  const handleLogout = () => {
+  // This function handles saving criteria to Supabase
+  const handleSaveCriteria = async (newCriteria: Criteria[]) => {
+      setCriteria(newCriteria); // Optimistic update
+      
+      if (user) {
+          try {
+             // Simplest sync strategy: Delete all for user and re-insert
+             // In a real app with many users, upsert by ID is better
+             await supabase.from('criteria').delete().eq('user_id', user.id);
+             
+             const records = newCriteria.map(c => ({
+                 user_id: user.id,
+                 name: c.name,
+                 description: c.description,
+                 weight: c.weight
+                 // We don't specify ID to let Supabase gen_random_uuid(), 
+                 // or we can generate one if we want to track it strictly.
+             }));
+             
+             await supabase.from('criteria').insert(records);
+          } catch (e) {
+              console.error("Failed to save criteria", e);
+          }
+      }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('revuqa_user');
     setAuthView('landing');
     setCurrentView('dashboard');
     setIsSidebarOpen(false);
@@ -88,7 +288,12 @@ function App() {
       case 'history':
         return <History history={history} onSelectEvaluation={handleSelectEvaluation} />;
       case 'settings':
-        return <Settings criteria={criteria} setCriteria={setCriteria} />;
+        return <Settings 
+            criteria={criteria} 
+            setCriteria={handleSaveCriteria} 
+            user={user}
+            onUpdateUser={handleUpdateUser}
+        />;
       case 'evaluation':
         if (!selectedEvaluation) return <History history={history} onSelectEvaluation={handleSelectEvaluation} />;
         return (
@@ -103,6 +308,14 @@ function App() {
     }
   };
 
+  if (isLoadingUser) {
+      return (
+          <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+              <Loader2 className="animate-spin text-[#0500e2]" size={40} />
+          </div>
+      )
+  }
+
   if (authView === 'landing') {
       return (
         <LandingPage 
@@ -115,7 +328,7 @@ function App() {
   if (authView === 'login') {
       return (
           <Login 
-            onLogin={handleLogin} 
+            onLogin={() => {}} // Login component handles auth directly now
             onSwitchToSignup={() => setAuthView('signup')}
             onBackToHome={() => setAuthView('landing')}
           />
@@ -125,7 +338,7 @@ function App() {
   if (authView === 'signup') {
       return (
           <Signup 
-            onSignup={handleLogin} 
+            onSignup={() => {}} // Signup component handles auth directly now
             onSwitchToLogin={() => setAuthView('login')}
             onBackToHome={() => setAuthView('landing')}
           />
@@ -164,13 +377,14 @@ function App() {
             <header className="mb-6 lg:mb-8 no-print">
                 <h1 className="text-2xl lg:text-3xl font-bold text-[#000000] dark:text-white tracking-tight capitalize">
                   {currentView === 'analyze' ? 'Analyze Interaction' : 
-                   currentView === 'evaluation' ? 'Evaluation Details' : currentView}
+                   currentView === 'evaluation' ? 'Evaluation Details' : 
+                   currentView === 'settings' ? 'System Settings' : currentView}
                 </h1>
                 <p className="text-sm lg:text-base text-slate-500 dark:text-slate-400 mt-2">
                   {currentView === 'dashboard' && `Welcome back, ${user?.name.split(' ')[0]}. Here is your team's quality overview.`}
                   {currentView === 'analyze' && 'Upload transcripts or paste text to generate instant QA insights.'}
                   {currentView === 'history' && 'Review past evaluations and track improvement over time.'}
-                  {currentView === 'settings' && 'Customize your quality standards and scorecard weighting.'}
+                  {currentView === 'settings' && 'Manage your profile and customize quality standards.'}
                   {currentView === 'evaluation' && 'Detailed breakdown of the selected conversation analysis.'}
                 </p>
             </header>

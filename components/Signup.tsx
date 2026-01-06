@@ -1,9 +1,10 @@
-
 import React, { useState } from 'react';
 import { RevuLogo } from './RevuLogo';
 import { ArrowRight, Loader2, User as UserIcon, Mail, Lock, Building2 } from 'lucide-react';
 import { User } from '../types';
 import { BackgroundGradientAnimation } from './ui/background-gradient-animation';
+import { supabase } from '../lib/supabase';
+import { DEFAULT_CRITERIA } from '../types';
 
 interface SignupProps {
   onSignup: (user: User) => void;
@@ -18,37 +19,90 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
   const [company, setCompany] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccessMessage(null);
     setIsLoading(true);
 
-    // Simulate network delay
-    setTimeout(() => {
-      // Mock validation
-      if (name && email && password) {
-        if (password.length < 6) {
-             setError("Password must be at least 6 characters.");
-             setIsLoading(false);
-             return;
+    try {
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    name: name, // Store in metadata as backup
+                    company: company
+                }
+            }
+        });
+
+        if (authError) throw authError;
+
+        // CRITICAL FIX: Only attempt DB writes if we have a session (Email verification disabled or auto-login)
+        // If email verification is enabled, authData.session will be null, and writes would fail RLS.
+        if (authData.session && authData.user) {
+            // Create Profile
+            const { error: profileError } = await supabase.from('profiles').upsert({
+                id: authData.user.id,
+                name: name,
+                email: email,
+                company: company || 'My Company'
+            });
+
+            if (profileError) {
+                console.error("Error creating profile:", profileError);
+                // Don't block signup success
+            }
+            
+            // Insert Default Criteria
+            const criteriaRecords = DEFAULT_CRITERIA.map(c => ({
+                id: crypto.randomUUID(),
+                user_id: authData.user!.id,
+                name: c.name,
+                description: c.description,
+                weight: c.weight
+            }));
+            
+            const { error: criteriaError } = await supabase.from('criteria').insert(criteriaRecords);
+            if (criteriaError) {
+                 console.error("Error creating default criteria:", criteriaError);
+            }
+        } else if (authData.user && !authData.session) {
+            // Email confirmation flow
+            setSuccessMessage("Account created! Please check your email to confirm your registration.");
+            setIsLoading(false);
+            return; 
         }
 
-        // Create mock user
-        const newUser: User = {
-          id: 'u_' + Math.random().toString(36).substr(2, 9),
-          name: name,
-          email: email,
-          company: company || 'My Company'
-        };
-        
-        onSignup(newUser);
-      } else {
-        setError('Please fill in required fields.');
+        // App.tsx will pick up the session change via onAuthStateChange if logged in
+    } catch (err: any) {
+        setError(err.message || 'Failed to sign up.');
         setIsLoading(false);
-      }
-    }, 1500);
+    }
   };
+
+  if (successMessage) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950 font-sans p-6">
+            <div className="max-w-md w-full text-center">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Mail size={32} />
+                </div>
+                <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-4">Check your inbox</h2>
+                <p className="text-slate-600 dark:text-slate-300 mb-8">{successMessage}</p>
+                <button 
+                    onClick={onSwitchToLogin}
+                    className="px-8 py-3 bg-[#0500e2] text-white rounded-xl font-bold hover:bg-[#0400c0] transition-colors"
+                >
+                    Return to Login
+                </button>
+            </div>
+        </div>
+      );
+  }
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-slate-950 font-sans">

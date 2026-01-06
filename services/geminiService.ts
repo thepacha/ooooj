@@ -50,7 +50,7 @@ export const analyzeTranscript = async (
   const ai = getAI();
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     contents: prompt,
     config: {
       systemInstruction: systemInstruction,
@@ -87,7 +87,20 @@ export const analyzeTranscript = async (
     throw new Error("No response from AI");
   }
 
-  return JSON.parse(resultText) as Omit<AnalysisResult, 'id' | 'timestamp' | 'rawTranscript'>;
+  // Robust cleaning to handle potential Markdown code blocks in the response
+  let cleanText = resultText.trim();
+  if (cleanText.startsWith('```json')) {
+    cleanText = cleanText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+  } else if (cleanText.startsWith('```')) {
+    cleanText = cleanText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+  }
+
+  try {
+    return JSON.parse(cleanText) as Omit<AnalysisResult, 'id' | 'timestamp' | 'rawTranscript'>;
+  } catch (e) {
+    console.error("Failed to parse AI response:", cleanText);
+    throw new Error("AI response was not valid JSON.");
+  }
 };
 
 export const transcribeMedia = async (base64Data: string, mimeType: string): Promise<string> => {
@@ -112,7 +125,7 @@ export const transcribeMedia = async (base64Data: string, mimeType: string): Pro
 export const generateMockTranscript = async (): Promise<string> => {
    const ai = getAI();
    const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     contents: "Generate a realistic, slightly problematic customer service chat transcript between a customer (Sarah) and an agent (John) regarding a refund delay. It should be about 10-15 lines long. Do not include markdown formatting, just the text.",
   });
   return response.text || "Agent: Hello, how can I help?\nCustomer: I need a refund.\nAgent: Okay one sec.";

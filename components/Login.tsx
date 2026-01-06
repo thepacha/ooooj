@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import { RevuLogo } from './RevuLogo';
 import { ArrowRight, Loader2, Mail, Lock } from 'lucide-react';
 import { User } from '../types';
 import { BackgroundGradientAnimation } from './ui/background-gradient-animation';
+import { supabase } from '../lib/supabase';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -22,30 +22,19 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
     setError(null);
     setIsLoading(true);
 
-    // Simulate network delay
-    setTimeout(() => {
-      // Mock validation
-      if (email && password) {
-        if (password.length < 6) {
-             setError("Password must be at least 6 characters.");
-             setIsLoading(false);
-             return;
-        }
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
 
-        // Create mock user
-        const mockUser: User = {
-          id: 'u_' + Math.random().toString(36).substr(2, 9),
-          name: email.split('@')[0].split('.').map(n => n.charAt(0).toUpperCase() + n.slice(1)).join(' '), // Generate name from email
-          email: email,
-          company: 'Acme Corp'
-        };
+        if (error) throw error;
         
-        onLogin(mockUser);
-      } else {
-        setError('Please fill in all fields.');
+        // App.tsx auth state listener will handle redirection
+    } catch (err: any) {
+        setError(err.message || 'Failed to sign in.');
         setIsLoading(false);
-      }
-    }, 1500);
+    }
   };
 
   return (
