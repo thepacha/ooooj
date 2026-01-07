@@ -51,6 +51,13 @@ function App() {
   useEffect(() => {
     let mounted = true;
 
+    // CRITICAL: Check for recovery flow in URL hash immediately
+    // Supabase redirects with #access_token=...&type=recovery
+    if (typeof window !== 'undefined' && window.location.hash && window.location.hash.includes('type=recovery')) {
+        console.log("Detected password recovery flow from URL hash");
+        setIsRecoveryMode(true);
+    }
+
     const loadUserData = async (userId: string) => {
         try {
           // Fetch Criteria
@@ -111,6 +118,9 @@ function App() {
     const processSession = async (session: any) => {
         if (!session) {
             if (mounted) {
+                // Only reset to landing if we are NOT in recovery mode
+                // This prevents recovery screen flicker if session takes a moment
+                // However, we rely on App render logic to prioritize isRecoveryMode
                 setUser(null);
                 setAuthView('landing');
                 setIsLoadingUser(false);
@@ -186,6 +196,7 @@ function App() {
 
     // Auth State Listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        console.log("Auth Event:", event);
         // Handle Password Recovery Event explicitly
         if (event === 'PASSWORD_RECOVERY') {
             setIsRecoveryMode(true);
@@ -323,7 +334,8 @@ function App() {
   };
 
   // 1. Loading State
-  if (isLoadingUser) {
+  // Don't show generic loader if we know we are recovering
+  if (isLoadingUser && !isRecoveryMode) {
       return (
           <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
               <Loader2 className="animate-spin text-[#0500e2]" size={40} />

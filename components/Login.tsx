@@ -53,9 +53,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
       setIsResetLoading(true);
       
       try {
-          // Redirect back to the current page after clicking the email link
+          // Use origin to prevent issues with query params in the redirect URL
           const { error } = await supabase.auth.resetPasswordForEmail(email, {
-              redirectTo: window.location.href,
+              redirectTo: window.location.origin,
           });
           
           if (error) throw error;
