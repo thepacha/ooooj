@@ -5,13 +5,13 @@ import path from 'path';
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
   // The third argument '' ensures we load all env vars, not just those starting with VITE_
-  const env = loadEnv(mode, process.cwd(), '');
+  const env = loadEnv(mode, (process as any).cwd(), '');
 
   return {
     plugins: [react()],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, './'),
+        '@': path.resolve('./'),
       },
     },
     // We must define process.env.API_KEY to be available in the browser.

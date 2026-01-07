@@ -8,6 +8,7 @@ import { ChatBot } from './components/ChatBot';
 import { LandingPage } from './components/LandingPage';
 import { Login } from './components/Login';
 import { Signup } from './components/Signup';
+import { UpdatePassword } from './components/UpdatePassword';
 import { EvaluationView } from './components/EvaluationView';
 import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA, User } from './types';
 import { Menu, Loader2 } from 'lucide-react';
@@ -20,6 +21,7 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authView, setAuthView] = useState<AuthState>('landing');
   const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
 
   const [currentView, setCurrentView] = useState<ViewState>('dashboard');
   const [history, setHistory] = useState<AnalysisResult[]>([]);
@@ -184,7 +186,12 @@ function App() {
 
     // Auth State Listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        // Handle Password Recovery Event explicitly
+        if (event === 'PASSWORD_RECOVERY') {
+            setIsRecoveryMode(true);
+        }
+        
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'PASSWORD_RECOVERY') {
             processSession(session);
         } else if (event === 'SIGNED_OUT') {
             if (mounted) {
@@ -192,6 +199,7 @@ function App() {
                 setAuthView('landing');
                 setHistory([]);
                 setIsLoadingUser(false);
+                setIsRecoveryMode(false);
             }
         }
     });
@@ -314,6 +322,7 @@ function App() {
     }
   };
 
+  // 1. Loading State
   if (isLoadingUser) {
       return (
           <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -322,6 +331,12 @@ function App() {
       )
   }
 
+  // 2. Password Recovery Mode (Takes precedence over normal app view if active)
+  if (isRecoveryMode) {
+      return <UpdatePassword onComplete={() => setIsRecoveryMode(false)} />;
+  }
+
+  // 3. Landing Page
   if (authView === 'landing') {
       return (
         <LandingPage 
@@ -331,6 +346,7 @@ function App() {
       );
   }
 
+  // 4. Auth Views
   if (authView === 'login') {
       return (
           <Login 
@@ -351,6 +367,7 @@ function App() {
       );
   }
 
+  // 5. Main App
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex font-sans text-slate-900 dark:text-slate-100 print:block print:bg-white print:min-h-0 print:h-auto transition-colors duration-300">
       <Sidebar 
