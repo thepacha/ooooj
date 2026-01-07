@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Loader2, Sparkles, Minimize2, AlertTriangle } from 'lucide-react';
 import { createChatSession } from '../services/geminiService';
-import { Chat } from '@google/genai';
 
 interface Message {
   role: 'user' | 'model';
@@ -16,7 +15,9 @@ export const ChatBot: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const chatRef = useRef<Chat | null>(null);
+  
+  // Use any for the chat ref to prevent type import issues at runtime
+  const chatRef = useRef<any | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -26,8 +27,8 @@ export const ChatBot: React.FC = () => {
         chatRef.current = createChatSession();
       } catch (err: any) {
         console.error("Failed to initialize ChatBot:", err);
-        setError("Chat unavailable: " + (err.message || "Unknown error"));
-        setMessages(prev => [...prev, { role: 'model', text: "I'm currently unavailable due to a configuration issue (API Key missing)." }]);
+        setError("Chat unavailable");
+        // Don't clutter chat with error messages immediately, wait for user interaction or open
       }
     }
   }, []);
@@ -40,18 +41,20 @@ export const ChatBot: React.FC = () => {
   const handleSend = async () => {
     if (!input.trim()) return;
     
-    if (!chatRef.current) {
-        setMessages(prev => [...prev, { role: 'user', text: input }]);
-        setTimeout(() => {
-             setMessages(prev => [...prev, { role: 'model', text: "Chat is not initialized correctly. Please check API configuration." }]);
-        }, 500);
-        setInput('');
-        return;
-    }
-
     const userMessage = input.trim();
     setInput('');
     setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
+    
+    if (!chatRef.current) {
+        // Try to re-init if it failed before (e.g. key was added later?)
+        try {
+            chatRef.current = createChatSession();
+        } catch(e) {
+            setMessages(prev => [...prev, { role: 'model', text: "I'm currently unavailable. Please check your API Key configuration." }]);
+            return;
+        }
+    }
+
     setIsLoading(true);
 
     try {
@@ -73,12 +76,6 @@ export const ChatBot: React.FC = () => {
       handleSend();
     }
   };
-
-  if (error && !isOpen) {
-      // Don't render the floating button if there's a critical init error, 
-      // or maybe render it with an error state? 
-      // Let's render it but show error on open.
-  }
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4 no-print">
@@ -142,13 +139,13 @@ export const ChatBot: React.FC = () => {
                 onKeyDown={handleKeyDown}
                 placeholder={error ? "Chat unavailable" : "Ask about QA or coaching..."}
                 className="w-full pl-4 pr-12 py-3 rounded-full bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-[#0500e2] text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400"
-                disabled={isLoading || !!error}
+                disabled={isLoading}
               />
               <button
                 onClick={handleSend}
-                disabled={!input.trim() || isLoading || !!error}
+                disabled={!input.trim() || isLoading}
                 className={`absolute right-1.5 p-2 rounded-full transition-all ${
-                  !input.trim() || isLoading || !!error
+                  !input.trim() || isLoading
                     ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500' 
                     : 'bg-[#0500e2] text-white hover:bg-[#0400c0]'
                 }`}

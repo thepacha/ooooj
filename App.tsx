@@ -160,9 +160,26 @@ function App() {
         }
     };
 
+    // Safety timeout to prevent infinite loading
+    const safetyTimeout = setTimeout(() => {
+        if (mounted && isLoadingUser) {
+            console.warn("Auth check timed out, forcing landing page.");
+            setIsLoadingUser(false);
+            setAuthView('landing');
+        }
+    }, 5000);
+
     // Initial Session Check
     supabase.auth.getSession().then(({ data: { session } }) => {
+        clearTimeout(safetyTimeout);
         processSession(session);
+    }).catch(err => {
+        console.error("Supabase session check failed:", err);
+        clearTimeout(safetyTimeout);
+        if(mounted) {
+            setIsLoadingUser(false);
+            setAuthView('landing');
+        }
     });
 
     // Auth State Listener
@@ -181,6 +198,7 @@ function App() {
 
     return () => {
       mounted = false;
+      clearTimeout(safetyTimeout);
       subscription.unsubscribe();
     };
   }, []);

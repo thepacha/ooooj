@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, Chat } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { Criteria, AnalysisResult } from "../types";
 
 // Global instance to be initialized lazily
@@ -131,7 +131,8 @@ export const generateMockTranscript = async (): Promise<string> => {
   return response.text || "Agent: Hello, how can I help?\nCustomer: I need a refund.\nAgent: Okay one sec.";
 };
 
-export const createChatSession = (): Chat => {
+// Use any for return type to avoid import crashes if Chat isn't exported as value in CDN bundle
+export const createChatSession = (): any => {
   const ai = getAI();
   return ai.chats.create({
     model: 'gemini-3-pro-preview',
