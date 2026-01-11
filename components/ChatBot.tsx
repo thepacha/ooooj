@@ -22,15 +22,18 @@ export const ChatBot: React.FC = () => {
 
   useEffect(() => {
     // Initialize chat session once
-    if (!chatRef.current) {
-      try {
-        chatRef.current = createChatSession();
-      } catch (err: any) {
-        console.error("Failed to initialize ChatBot:", err);
-        setError("Chat unavailable");
-        // Don't clutter chat with error messages immediately, wait for user interaction or open
-      }
-    }
+    const initChat = async () => {
+        if (!chatRef.current) {
+            try {
+                chatRef.current = await createChatSession();
+            } catch (err: any) {
+                console.error("Failed to initialize ChatBot:", err);
+                setError("Chat unavailable");
+                // Don't clutter chat with error messages immediately, wait for user interaction or open
+            }
+        }
+    };
+    initChat();
   }, []);
 
   useEffect(() => {
@@ -46,9 +49,9 @@ export const ChatBot: React.FC = () => {
     setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
     
     if (!chatRef.current) {
-        // Try to re-init if it failed before (e.g. key was added later?)
+        // Try to re-init if it failed before
         try {
-            chatRef.current = createChatSession();
+            chatRef.current = await createChatSession();
         } catch(e) {
             setMessages(prev => [...prev, { role: 'model', text: "I'm currently unavailable. Please check your API Key configuration." }]);
             return;

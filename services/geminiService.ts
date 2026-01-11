@@ -3,22 +3,40 @@ import { Criteria, AnalysisResult } from "../types";
 
 // Global instance to be initialized lazily
 let aiInstance: GoogleGenAI | null = null;
+let initPromise: Promise<GoogleGenAI> | null = null;
 
 // Helper to get or initialize the AI client
-const getAI = () => {
-  if (!aiInstance) {
-    // Strictly use process.env.API_KEY as per security guidelines.
-    // We removed GEMINI_API_KEY fallbacks to prevent build tools from inlining secrets.
-    // The environment (index.html polyfill or secure runtime) must provide this value.
-    const apiKey = process.env.API_KEY;
-    
-    if (!apiKey) {
-      throw new Error('API_KEY environment variable is not set. Please ensure you have configured your API key in the environment.');
-    }
-    
-    aiInstance = new GoogleGenAI({ apiKey });
+const getAI = async (): Promise<GoogleGenAI> => {
+  if (aiInstance) return aiInstance;
+
+  if (!initPromise) {
+    initPromise = (async () => {
+      let apiKey = process.env.API_KEY;
+
+      // If key is missing or not injected during build, fetch from Netlify function
+      if (!apiKey || apiKey === 'undefined') {
+        try {
+          const response = await fetch('/api/get-api-key');
+          if (!response.ok) {
+             throw new Error('Failed to fetch API configuration');
+          }
+          const data = await response.json();
+          apiKey = data.apiKey;
+        } catch (error) {
+           console.warn("Could not retrieve API Key from backend:", error);
+        }
+      }
+
+      if (!apiKey) {
+        throw new Error('API_KEY environment variable is not set. Please ensure you have configured your API key in the environment.');
+      }
+
+      aiInstance = new GoogleGenAI({ apiKey });
+      return aiInstance;
+    })();
   }
-  return aiInstance;
+  
+  return initPromise;
 };
 
 export const analyzeTranscript = async (
@@ -47,7 +65,7 @@ export const analyzeTranscript = async (
   `;
 
   // Lazily get the AI instance
-  const ai = getAI();
+  const ai = await getAI();
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
@@ -104,7 +122,7 @@ export const analyzeTranscript = async (
 };
 
 export const transcribeMedia = async (base64Data: string, mimeType: string): Promise<string> => {
-  const ai = getAI();
+  const ai = await getAI();
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: {
@@ -123,7 +141,7 @@ export const transcribeMedia = async (base64Data: string, mimeType: string): Pro
 };
 
 export const generateMockTranscript = async (): Promise<string> => {
-   const ai = getAI();
+   const ai = await getAI();
    const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: "Generate a realistic, slightly problematic customer service chat transcript between a customer (Sarah) and an agent (John) regarding a refund delay. It should be about 10-15 lines long. Do not include markdown formatting, just the text.",
@@ -132,8 +150,8 @@ export const generateMockTranscript = async (): Promise<string> => {
 };
 
 // Use any for return type to avoid import crashes if Chat isn't exported as value in CDN bundle
-export const createChatSession = (): any => {
-  const ai = getAI();
+export const createChatSession = async (): Promise<any> => {
+  const ai = await getAI();
   return ai.chats.create({
     model: 'gemini-3-pro-preview',
     config: {
