@@ -6,14 +6,7 @@
     <title>RevuQA AI</title>
     <script>
       // Robust Polyfill for process.env
-      if (typeof globalThis === 'undefined') {
-        window.globalThis = window;
-      }
-      if (typeof process === 'undefined') {
-        globalThis.process = { env: {} };
-      } else if (!process.env) {
-        process.env = {};
-      }
+      window.process = window.process || { env: {} };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -23,7 +16,7 @@
           extend: {
             colors: {
               slate: {
-                850: '#1e293b', // Custom dark shade between 800 and 900
+                850: '#1e293b', 
               }
             },
             fontFamily: {
@@ -196,22 +189,21 @@
         .overflow-y-auto { overflow: visible !important; height: auto !important; }
       }
     </style>
-  <script type="importmap">
+<script type="importmap">
 {
   "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
-    "recharts": "https://aistudiocdn.com/recharts@^3.5.1",
-    "clsx": "https://aistudiocdn.com/clsx@^2.1.1",
-    "tailwind-merge": "https://aistudiocdn.com/tailwind-merge@^2.3.0",
-    "@clerk/clerk-react": "https://aistudiocdn.com/@clerk/clerk-react@^5.57.0",
-    "vite": "https://esm.sh/vite@^7.3.0",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "clsx": "https://esm.sh/clsx@^2.1.1",
+    "tailwind-merge": "https://esm.sh/tailwind-merge@^3.4.0",
+    "recharts": "https://esm.sh/recharts@^3.6.0",
     "path": "https://esm.sh/path@^0.12.7",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.3"
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.90.1",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
