@@ -137,6 +137,21 @@
         }
       }
 
+      /* Loader for initial load */
+      .initial-loader {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        width: 100vw;
+        background-color: #f8fafc;
+        color: #0500e2;
+      }
+      .dark .initial-loader {
+        background-color: #020617;
+        color: #4b53fa;
+      }
+
       @media print {
         @page { margin: 1cm; size: auto; }
         
@@ -189,27 +204,38 @@
         .overflow-y-auto { overflow: visible !important; height: auto !important; }
       }
     </style>
+    <!-- Note: Import map removed to allow Vite to bundle dependencies correctly for production -->
 <script type="importmap">
 {
   "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
     "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "vite": "https://esm.sh/vite@^7.3.1",
     "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "path": "https://esm.sh/path@^0.12.7",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.90.1",
+    "recharts": "https://esm.sh/recharts@^3.6.0",
+    "clsx": "https://esm.sh/clsx@^2.1.1",
     "tailwind-merge": "https://esm.sh/tailwind-merge@^3.4.0",
-    "clsx": "https://esm.sh/clsx@^2.1.1"
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "path": "https://esm.sh/path@^0.12.7",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.90.1"
   }
 }
 </script>
 </head>
   <body class="bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100 transition-colors duration-300">
-    <div id="root"></div>
+    <div id="root">
+        <div class="initial-loader">
+            <div class="animate-pulse flex flex-col items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="5 130 355 120" height="40" fill="currentColor">
+                    <path d="M 24.49 152.02 L 94.55 152.02 L 94.55 193.06 L 24.49 193.06 Z" opacity="0.5" />
+                    <text x="110" y="180" font-family="sans-serif" font-size="32" font-weight="bold">RevuQA</text>
+                </svg>
+                <div style="margin-top: 1rem; font-size: 0.875rem; opacity: 0.7;">Loading Application...</div>
+            </div>
+        </div>
+    </div>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
