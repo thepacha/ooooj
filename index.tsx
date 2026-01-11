@@ -54,6 +54,10 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
+// Clear the loading spinner before mounting
+// This handles the transition from HTML loader to React App cleanly
+rootElement.innerHTML = '';
+
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
