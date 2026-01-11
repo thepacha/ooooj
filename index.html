@@ -6,14 +6,8 @@
     <title>RevuQA AI</title>
     <script>
       // Robust Polyfill for process.env
-      if (typeof globalThis === 'undefined') {
-        window.globalThis = window;
-      }
-      if (typeof process === 'undefined') {
-        globalThis.process = { env: {} };
-      } else if (!process.env) {
-        process.env = {};
-      }
+      window.global = window;
+      window.process = window.process || { env: {} };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
