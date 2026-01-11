@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
     // We must define process.env.API_KEY to be available in the browser.
     // This replaces `process.env.API_KEY` in your code with the actual string value during build.
     define: {
-      'process.env.API_KEY': JSON.stringify(env.API_KEY || env.VITE_API_KEY || env.GEMINI_API_KEY),
+      'process.env.API_KEY': JSON.stringify(env.API_KEY || env.VITE_API_KEY || env.GEMINI_API_KEY || ""),
       'process.env.NODE_ENV': JSON.stringify(mode),
     }
   };
