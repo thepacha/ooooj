@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { Analyzer } from './components/Analyzer';
 import { Dashboard } from './components/Dashboard';
@@ -23,11 +24,26 @@ function App() {
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
 
-  const [currentView, setCurrentView] = useState<ViewState>('dashboard');
   const [history, setHistory] = useState<AnalysisResult[]>([]);
   const [criteria, setCriteria] = useState<Criteria[]>(DEFAULT_CRITERIA);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedEvaluation, setSelectedEvaluation] = useState<AnalysisResult | null>(null);
+  
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Determine current view from URL for sidebar highlighting
+  const getCurrentView = (): ViewState => {
+    const path = location.pathname.substring(1);
+    if (path === '' || path === 'dashboard') return 'dashboard';
+    if (path === 'analyze') return 'analyze';
+    if (path === 'history') return 'history';
+    if (path === 'settings') return 'settings';
+    if (path === 'evaluation') return 'history'; // Highlight history parent
+    return 'dashboard';
+  };
+
+  const currentView = getCurrentView();
   
   // Theme state
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -211,6 +227,7 @@ function App() {
                 setHistory([]);
                 setIsLoadingUser(false);
                 setIsRecoveryMode(false);
+                navigate('/');
             }
         }
     });
@@ -220,7 +237,7 @@ function App() {
       clearTimeout(safetyTimeout);
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
@@ -295,42 +312,13 @@ function App() {
     await supabase.auth.signOut();
     setUser(null);
     setAuthView('landing');
-    setCurrentView('dashboard');
     setIsSidebarOpen(false);
+    navigate('/');
   };
 
   const handleSelectEvaluation = (result: AnalysisResult) => {
     setSelectedEvaluation(result);
-    setCurrentView('evaluation');
-  };
-
-  const renderAppView = () => {
-    switch (currentView) {
-      case 'dashboard':
-        return <Dashboard history={history} />;
-      case 'analyze':
-        return <Analyzer criteria={criteria} onAnalysisComplete={handleAnalysisComplete} />;
-      case 'history':
-        return <History history={history} onSelectEvaluation={handleSelectEvaluation} />;
-      case 'settings':
-        return <Settings 
-            criteria={criteria} 
-            setCriteria={handleSaveCriteria} 
-            user={user}
-            onUpdateUser={handleUpdateUser}
-        />;
-      case 'evaluation':
-        if (!selectedEvaluation) return <History history={history} onSelectEvaluation={handleSelectEvaluation} />;
-        return (
-          <EvaluationView 
-            result={selectedEvaluation} 
-            onBack={() => setCurrentView('history')} 
-            backLabel="Back to History"
-          />
-        );
-      default:
-        return <Dashboard history={history} />;
-    }
+    navigate('/evaluation');
   };
 
   // 1. Loading State
@@ -379,12 +367,29 @@ function App() {
       );
   }
 
+  const getPageTitle = (view: ViewState) => {
+     if (view === 'analyze') return 'Analyze Interaction';
+     if (view === 'evaluation') return 'Evaluation Details';
+     if (view === 'settings') return 'System Settings';
+     if (view === 'history') return 'History';
+     return 'Dashboard';
+  };
+
+  const getPageDescription = (view: ViewState) => {
+    if (view === 'dashboard') return `Welcome back, ${user?.name.split(' ')[0]}. Here is your team's quality overview.`;
+    if (view === 'analyze') return 'Upload transcripts or paste text to generate instant QA insights.';
+    if (view === 'history') return 'Review past evaluations and track improvement over time.';
+    if (view === 'settings') return 'Manage your profile and customize quality standards.';
+    if (view === 'evaluation') return 'Detailed breakdown of the selected conversation analysis.';
+    return '';
+  };
+
   // 5. Main App
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex font-sans text-slate-900 dark:text-slate-100 print:block print:bg-white print:min-h-0 print:h-auto transition-colors duration-300">
       <Sidebar 
-        currentView={currentView === 'evaluation' ? 'history' : currentView} 
-        setView={setCurrentView} 
+        currentView={currentView} 
+        setView={(view) => navigate(view === 'dashboard' ? '/' : '/' + view)} 
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         theme={theme}
@@ -411,20 +416,31 @@ function App() {
           <div className="max-w-6xl mx-auto print:max-w-none">
             <header className="mb-6 lg:mb-8 no-print">
                 <h1 className="text-2xl lg:text-3xl font-bold text-[#000000] dark:text-white tracking-tight capitalize">
-                  {currentView === 'analyze' ? 'Analyze Interaction' : 
-                   currentView === 'evaluation' ? 'Evaluation Details' : 
-                   currentView === 'settings' ? 'System Settings' : currentView}
+                  {getPageTitle(location.pathname.substring(1) as ViewState || 'dashboard')}
                 </h1>
                 <p className="text-sm lg:text-base text-slate-500 dark:text-slate-400 mt-2">
-                  {currentView === 'dashboard' && `Welcome back, ${user?.name.split(' ')[0]}. Here is your team's quality overview.`}
-                  {currentView === 'analyze' && 'Upload transcripts or paste text to generate instant QA insights.'}
-                  {currentView === 'history' && 'Review past evaluations and track improvement over time.'}
-                  {currentView === 'settings' && 'Manage your profile and customize quality standards.'}
-                  {currentView === 'evaluation' && 'Detailed breakdown of the selected conversation analysis.'}
+                  {getPageDescription(location.pathname.substring(1) as ViewState || 'dashboard')}
                 </p>
             </header>
             
-            {renderAppView()}
+            <Routes>
+              <Route path="/" element={<Dashboard history={history} />} />
+              <Route path="/dashboard" element={<Navigate to="/" replace />} />
+              <Route path="/analyze" element={<Analyzer criteria={criteria} onAnalysisComplete={handleAnalysisComplete} />} />
+              <Route path="/history" element={<History history={history} onSelectEvaluation={handleSelectEvaluation} />} />
+              <Route path="/settings" element={<Settings criteria={criteria} setCriteria={handleSaveCriteria} user={user} onUpdateUser={handleUpdateUser} />} />
+              <Route path="/evaluation" element={
+                selectedEvaluation ? (
+                  <EvaluationView 
+                    result={selectedEvaluation} 
+                    onBack={() => navigate('/history')} 
+                    backLabel="Back to History"
+                  />
+                ) : (
+                  <Navigate to="/history" replace />
+                )
+              } />
+            </Routes>
           </div>
         </div>
       </main>
