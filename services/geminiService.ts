@@ -31,10 +31,18 @@ export const analyzeTranscript = async (
   const systemInstruction = `
     You are an expert QA Quality Assurance Analyst for Customer Support.
     Your job is to evaluate customer service transcripts based on specific criteria.
-    Be strict but fair.
-    Identify the Agent and Customer names if possible, otherwise use "Agent" and "Customer".
-    Calculate an overall score (0-100) based on the weighted average of the criteria scores.
-    Determine the overall customer sentiment.
+    
+    CONTEXT ON SPEAKER IDENTIFICATION:
+    The transcript provided follows the format "[Time] Speaker: Text".
+    - Often, the "Speaker" will be a specific name (e.g., "John", "Sarah").
+    - Sometimes, it might be "Speaker 1" or "Speaker 2".
+    - Your job is to infer who is the AGENT and who is the CUSTOMER based on the content of what they say (e.g., who is asking for help vs. who is offering help).
+    
+    OUTPUT REQUIREMENTS:
+    1. Identify the 'agentName' and 'customerName' clearly.
+    2. Calculate an overall score (0-100).
+    3. Analyze the conversation against the provided criteria.
+    4. Be strict but fair in scoring.
   `;
 
   const prompt = `
@@ -106,10 +114,24 @@ export const analyzeTranscript = async (
 export const transcribeMedia = async (base64Data: string, mimeType: string): Promise<string> => {
   const ai = getAI();
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     contents: {
       parts: [
-        { text: "Transcribe the following audio/video verbatim. Identify speakers if possible (e.g., Speaker 1, Speaker 2)." },
+        { text: `You are a professional audio transcriber. Your task is to provide a VERBATIM transcript of the audio.
+        
+        CRITICAL INSTRUCTIONS:
+        1. Capture every word spoken. Do NOT summarize. Do NOT skip sections.
+        2. SPEAKER IDENTIFICATION:
+           - Listen carefully for names. If a speaker introduces themselves (e.g., "This is John"), label them as "John" for the entire transcript.
+           - If names are not mentioned, use "Speaker 1" and "Speaker 2".
+           - Do NOT use generic labels like "Agent" or "Customer" unless they explicitly call themselves that.
+        3. TIMESTAMPS: Start every new turn with a timestamp in [MM:SS] format.
+        
+        FORMAT:
+        [00:00] Name: Text...
+        [00:05] Name: Text...
+        
+        Return ONLY the raw transcript text. No markdown, no preambles.` },
         {
           inlineData: {
             mimeType: mimeType,
@@ -126,16 +148,23 @@ export const generateMockTranscript = async (): Promise<string> => {
    const ai = getAI();
    const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: "Generate a realistic, slightly problematic customer service chat transcript between a customer (Sarah) and an agent (John) regarding a refund delay. It should be about 10-15 lines long. Do not include markdown formatting, just the text.",
+    contents: `Generate a realistic, slightly problematic customer service chat transcript between a customer (Sarah) and an agent (John) regarding a refund delay. It should be about 10-15 lines long.
+
+Strict Formatting Rules:
+1. Speaker Identification: Use the actual names 'John' and 'Sarah' as the speaker labels. Do NOT use 'Agent' or 'Customer'.
+2. Timestamps: Provide a timestamp at the start of every new turn in [MM:SS] format.
+3. Format: Each line must look exactly like this: [Time] Speaker: The spoken text.
+
+Do not include markdown formatting, just the text.`,
   });
-  return response.text || "Agent: Hello, how can I help?\nCustomer: I need a refund.\nAgent: Okay one sec.";
+  return response.text || "[00:00] John: Hello, how can I help?\n[00:05] Sarah: I need a refund.\n[00:10] John: Okay one sec.";
 };
 
 // Use any for return type to avoid import crashes if Chat isn't exported as value in CDN bundle
 export const createChatSession = (): any => {
   const ai = getAI();
   return ai.chats.create({
-    model: 'gemini-3-pro-preview',
+    model: 'gemini-3-flash-preview',
     config: {
       systemInstruction: `You are RevuBot, an intelligent assistant for the RevuQA AI platform.
       Your goal is to assist Customer Support QA Managers and Analysts.
