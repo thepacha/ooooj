@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { AnalysisResult } from '../types';
+import { AnalysisResult, ViewState } from '../types';
 import { 
   AreaChart, 
   Area, 
@@ -22,9 +23,10 @@ import {
 
 interface DashboardProps {
   history: AnalysisResult[];
+  setView: (view: ViewState) => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ history }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ history, setView }) => {
   // --- Logic (Untouched) ---
   const totalEvaluations = history.length;
   const averageScore = totalEvaluations > 0 
@@ -257,7 +259,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ history }) => {
             )}
           </div>
           
-          <button className="mt-8 w-full py-3 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2">
+          <button 
+            onClick={() => setView('roster')}
+            className="mt-8 w-full py-3 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+          >
             View Full Roster <ArrowUpRight size={16} />
           </button>
         </div>

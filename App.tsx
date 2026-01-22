@@ -1,15 +1,18 @@
+
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Analyzer } from './components/Analyzer';
 import { Dashboard } from './components/Dashboard';
 import { History } from './components/History';
 import { Settings } from './components/Settings';
+import { Usage } from './components/Usage';
 import { ChatBot } from './components/ChatBot';
 import { LandingPage } from './components/LandingPage';
 import { Login } from './components/Login';
 import { Signup } from './components/Signup';
 import { UpdatePassword } from './components/UpdatePassword';
 import { EvaluationView } from './components/EvaluationView';
+import { Roster } from './components/Roster';
 import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA, User } from './types';
 import { Menu, Loader2 } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
@@ -182,12 +185,25 @@ function App() {
     }, 5000);
 
     // Initial Session Check
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data, error }) => {
         clearTimeout(safetyTimeout);
-        processSession(session);
+        if (error) {
+            console.warn("Session check error (likely invalid refresh token):", error.message);
+            // Explicitly sign out to clear invalid tokens from storage
+            supabase.auth.signOut().then(() => {
+                if(mounted) {
+                    setIsLoadingUser(false);
+                    setAuthView('landing');
+                }
+            });
+            return;
+        }
+        processSession(data.session);
     }).catch(err => {
-        console.error("Supabase session check failed:", err);
+        console.error("Supabase session check exception:", err);
         clearTimeout(safetyTimeout);
+        // Force cleanup
+        supabase.auth.signOut();
         if(mounted) {
             setIsLoadingUser(false);
             setAuthView('landing');
@@ -307,11 +323,15 @@ function App() {
   const renderAppView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard history={history} />;
+        return <Dashboard history={history} setView={setCurrentView} />;
       case 'analyze':
-        return <Analyzer criteria={criteria} onAnalysisComplete={handleAnalysisComplete} />;
+        return <Analyzer criteria={criteria} onAnalysisComplete={handleAnalysisComplete} user={user} />;
       case 'history':
         return <History history={history} onSelectEvaluation={handleSelectEvaluation} />;
+      case 'roster':
+        return <Roster history={history} setView={setCurrentView} />;
+      case 'usage':
+        return <Usage user={user} />;
       case 'settings':
         return <Settings 
             criteria={criteria} 
@@ -329,7 +349,7 @@ function App() {
           />
         );
       default:
-        return <Dashboard history={history} />;
+        return <Dashboard history={history} setView={setCurrentView} />;
     }
   };
 
@@ -413,12 +433,16 @@ function App() {
                 <h1 className="text-2xl lg:text-3xl font-bold text-[#000000] dark:text-white tracking-tight capitalize">
                   {currentView === 'analyze' ? 'Analyze Interaction' : 
                    currentView === 'evaluation' ? 'Evaluation Details' : 
+                   currentView === 'usage' ? 'Usage & Limits' :
+                   currentView === 'roster' ? 'Team Performance Roster' :
                    currentView === 'settings' ? 'System Settings' : currentView}
                 </h1>
                 <p className="text-sm lg:text-base text-slate-500 dark:text-slate-400 mt-2">
                   {currentView === 'dashboard' && `Welcome back, ${user?.name.split(' ')[0]}. Here is your team's quality overview.`}
                   {currentView === 'analyze' && 'Upload transcripts or paste text to generate instant QA insights.'}
                   {currentView === 'history' && 'Review past evaluations and track improvement over time.'}
+                  {currentView === 'usage' && 'Monitor your credit consumption and manage plan limits.'}
+                  {currentView === 'roster' && 'Deep dive into individual agent metrics and trends.'}
                   {currentView === 'settings' && 'Manage your profile and customize quality standards.'}
                   {currentView === 'evaluation' && 'Detailed breakdown of the selected conversation analysis.'}
                 </p>
@@ -429,8 +453,8 @@ function App() {
         </div>
       </main>
 
-      {/* Global Chat Bot Widget */}
-      <ChatBot />
+      {/* Global Chat Bot Widget - Pass User for Usage Tracking */}
+      <ChatBot user={user} />
     </div>
   );
 }

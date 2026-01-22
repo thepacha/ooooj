@@ -1,4 +1,5 @@
 
+
 export interface Criteria {
   id: string;
   name: string;
@@ -32,7 +33,17 @@ export interface User {
   company?: string;
 }
 
-export type ViewState = 'dashboard' | 'analyze' | 'history' | 'settings' | 'evaluation';
+export interface UsageMetrics {
+  user_id: string;
+  credits_used: number;
+  monthly_limit: number;
+  analyses_count: number;
+  transcriptions_count: number;
+  chat_messages_count: number;
+  reset_date: string;
+}
+
+export type ViewState = 'dashboard' | 'analyze' | 'history' | 'settings' | 'evaluation' | 'usage' | 'roster';
 
 export const DEFAULT_CRITERIA: Criteria[] = [
   { id: '1', name: 'Empathy & Tone', description: 'Did the agent demonstrate empathy and maintain a professional tone?', weight: 9 },

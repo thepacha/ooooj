@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LayoutDashboard, FileText, History, Settings, X, Sun, Moon, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, History, Settings, X, Sun, Moon, LogOut, PieChart, Users } from 'lucide-react';
 import { ViewState, User } from '../types';
 import { RevuLogo } from './RevuLogo';
 
@@ -20,6 +20,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
     { id: 'analyze', label: 'Analyze New', icon: <FileText size={20} /> },
     { id: 'history', label: 'History', icon: <History size={20} /> },
+    { id: 'roster', label: 'Team Roster', icon: <Users size={20} /> },
+    { id: 'usage', label: 'Usage & Limits', icon: <PieChart size={20} /> },
     { id: 'settings', label: 'Settings', icon: <Settings size={20} /> },
   ];
 

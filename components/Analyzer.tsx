@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Mic, FileText, Loader2, AlertCircle, Square, Sparkles, Check, X, ArrowRight, Zap } from 'lucide-react';
 import { analyzeTranscript, generateMockTranscript, transcribeMedia } from '../services/geminiService';
-import { AnalysisResult, Criteria } from '../types';
+import { AnalysisResult, Criteria, User } from '../types';
 import { EvaluationView } from './EvaluationView';
 import { generateId } from '../lib/utils';
 
 interface AnalyzerProps {
   criteria: Criteria[];
   onAnalysisComplete: (result: AnalysisResult) => void;
+  user: User | null;
 }
 
 type InputMode = 'text' | 'upload' | 'mic';
@@ -77,7 +78,7 @@ const optimizeAudio = async (file: File): Promise<Blob> => {
 };
 
 
-export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete }) => {
+export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete, user }) => {
   const [transcript, setTranscript] = useState('');
   const [processingStatus, setProcessingStatus] = useState<ProcessingStep>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -117,12 +118,12 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
     setResult(null);
 
     try {
-      const analysis = await analyzeTranscript(textToProcess, criteria);
+      // Pass user ID for usage tracking
+      const analysis = await analyzeTranscript(textToProcess, criteria, user?.id);
       
       setProcessingStatus('finalizing');
       
-      // Artificial delay for "Finalizing" to let the user see the step change
-      await new Promise(r => setTimeout(r, 800));
+      // Removed artificial delay to speed up response
 
       const fullResult: AnalysisResult = {
         ...analysis,
@@ -252,7 +253,8 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
             // Handle both data URL formats (with and without prefix)
             const content = base64data.includes(',') ? base64data.split(',')[1] : base64data;
             
-            const transcribedText = await transcribeMedia(content, mimeType);
+            // Pass User ID for usage tracking
+            const transcribedText = await transcribeMedia(content, mimeType, user?.id);
             setTranscript(transcribedText);
             
             // Auto-Analyze after transcription

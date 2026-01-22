@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Criteria, AnalysisResult } from "../types";
+import { checkLimit, incrementUsage, COSTS } from "../lib/usageService";
 
 // Global instance to be initialized lazily
 let aiInstance: GoogleGenAI | null = null;
@@ -7,9 +8,6 @@ let aiInstance: GoogleGenAI | null = null;
 // Helper to get or initialize the AI client
 const getAI = () => {
   if (!aiInstance) {
-    // Strictly use process.env.API_KEY as per security guidelines.
-    // We removed GEMINI_API_KEY fallbacks to prevent build tools from inlining secrets.
-    // The environment (index.html polyfill or secure runtime) must provide this value.
     const apiKey = process.env.API_KEY;
     
     if (!apiKey) {
@@ -23,8 +21,17 @@ const getAI = () => {
 
 export const analyzeTranscript = async (
   transcript: string,
-  criteria: Criteria[]
+  criteria: Criteria[],
+  userId?: string
 ): Promise<Omit<AnalysisResult, 'id' | 'timestamp' | 'rawTranscript'>> => {
+
+  // 1. Check Usage Limits
+  if (userId) {
+    const canProceed = await checkLimit(userId, COSTS.ANALYSIS);
+    if (!canProceed) {
+        throw new Error("Usage limit exceeded. Please upgrade your plan to continue.");
+    }
+  }
 
   const criteriaPrompt = criteria.map(c => `- ${c.name}: ${c.description} (Importance: ${c.weight}/10)`).join('\n');
 
@@ -62,6 +69,7 @@ export const analyzeTranscript = async (
     contents: prompt,
     config: {
       systemInstruction: systemInstruction,
+      thinkingConfig: { thinkingBudget: 0 }, // Disable thinking for faster response
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
@@ -103,6 +111,11 @@ export const analyzeTranscript = async (
     cleanText = cleanText.replace(/^```\s*/, '').replace(/\s*```$/, '');
   }
 
+  // 2. Increment Usage on Success
+  if (userId) {
+     await incrementUsage(userId, COSTS.ANALYSIS, 'analysis');
+  }
+
   try {
     return JSON.parse(cleanText) as Omit<AnalysisResult, 'id' | 'timestamp' | 'rawTranscript'>;
   } catch (e) {
@@ -111,7 +124,15 @@ export const analyzeTranscript = async (
   }
 };
 
-export const transcribeMedia = async (base64Data: string, mimeType: string): Promise<string> => {
+export const transcribeMedia = async (base64Data: string, mimeType: string, userId?: string): Promise<string> => {
+  // 1. Check Usage
+  if (userId) {
+    const canProceed = await checkLimit(userId, COSTS.TRANSCRIPTION);
+    if (!canProceed) {
+        throw new Error("Usage limit exceeded. Please upgrade your plan to continue.");
+    }
+  }
+  
   const ai = getAI();
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
@@ -139,8 +160,17 @@ export const transcribeMedia = async (base64Data: string, mimeType: string): Pro
           }
         }
       ]
+    },
+    config: {
+      thinkingConfig: { thinkingBudget: 0 } // Disable thinking for faster transcription
     }
   });
+
+  // 2. Increment Usage
+  if (userId) {
+    await incrementUsage(userId, COSTS.TRANSCRIPTION, 'transcription');
+  }
+
   return response.text || "";
 };
 
@@ -156,6 +186,9 @@ Strict Formatting Rules:
 3. Format: Each line must look exactly like this: [Time] Speaker: The spoken text.
 
 Do not include markdown formatting, just the text.`,
+    config: {
+      thinkingConfig: { thinkingBudget: 0 } // Disable thinking for speed
+    }
   });
   return response.text || "[00:00] John: Hello, how can I help?\n[00:05] Sarah: I need a refund.\n[00:10] John: Okay one sec.";
 };
@@ -175,6 +208,7 @@ export const createChatSession = (): any => {
       - Navigating the RevuQA app (Dashboard, Analysis, History, Settings).
       
       Be professional, concise, and helpful. Use the context of being a QA expert tool.`,
+      thinkingConfig: { thinkingBudget: 0 } // Disable thinking for faster chat responses
     }
   });
 };

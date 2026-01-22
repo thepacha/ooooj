@@ -1,13 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Loader2, Sparkles, Minimize2, AlertTriangle } from 'lucide-react';
 import { createChatSession } from '../services/geminiService';
+import { User } from '../types';
+import { incrementUsage, checkLimit, COSTS } from '../lib/usageService';
 
 interface Message {
   role: 'user' | 'model';
   text: string;
 }
 
-export const ChatBot: React.FC = () => {
+interface ChatBotProps {
+    user: User | null;
+}
+
+export const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { role: 'model', text: 'Hello! I am RevuBot. How can I assist you with your QA tasks today?' }
@@ -28,7 +34,6 @@ export const ChatBot: React.FC = () => {
       } catch (err: any) {
         console.error("Failed to initialize ChatBot:", err);
         setError("Chat unavailable");
-        // Don't clutter chat with error messages immediately, wait for user interaction or open
       }
     }
   }, []);
@@ -41,12 +46,20 @@ export const ChatBot: React.FC = () => {
   const handleSend = async () => {
     if (!input.trim()) return;
     
+    // Check usage if logged in
+    if (user) {
+        const canProceed = await checkLimit(user.id, COSTS.CHAT);
+        if (!canProceed) {
+            setMessages(prev => [...prev, { role: 'model', text: "Usage limit exceeded. Please upgrade your plan to continue chatting." }]);
+            return;
+        }
+    }
+
     const userMessage = input.trim();
     setInput('');
     setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
     
     if (!chatRef.current) {
-        // Try to re-init if it failed before (e.g. key was added later?)
         try {
             chatRef.current = createChatSession();
         } catch(e) {
@@ -62,6 +75,12 @@ export const ChatBot: React.FC = () => {
       const responseText = response.text;
       
       setMessages(prev => [...prev, { role: 'model', text: responseText }]);
+      
+      // Track Usage
+      if (user) {
+          await incrementUsage(user.id, COSTS.CHAT, 'chat');
+      }
+
     } catch (error) {
       console.error("Chat error:", error);
       setMessages(prev => [...prev, { role: 'model', text: "I'm sorry, I encountered an error. Please try again." }]);
