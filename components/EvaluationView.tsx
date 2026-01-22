@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AnalysisResult } from '../types';
-import { Sparkles, FileText, Download, Printer, ChevronDown, ChevronUp, CheckCircle, ArrowRight, Check, Shield } from 'lucide-react';
+import { Sparkles, FileText, Download, Printer, ChevronDown, ChevronUp, CheckCircle, ArrowRight, Check, Shield, Copy } from 'lucide-react';
 
 interface EvaluationViewProps {
   result: AnalysisResult;
@@ -15,6 +15,7 @@ export const EvaluationView: React.FC<EvaluationViewProps> = ({ result, onBack, 
       .map((c, i) => c.score < 75 ? i : -1)
       .filter(i => i !== -1)
   );
+  const [isCopied, setIsCopied] = useState(false);
 
   const toggleCriterion = (index: number) => {
     setExpandedCriteria(prev => 
@@ -65,6 +66,16 @@ ${result.rawTranscript}
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleCopyTranscript = async () => {
+    try {
+        await navigator.clipboard.writeText(result.rawTranscript);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+        console.error("Failed to copy transcript", err);
+    }
   };
 
   const getBadgeClass = (score: number) => {
@@ -269,9 +280,18 @@ ${result.rawTranscript}
 
             {/* Transcript Archive */}
             <div className="bg-white dark:bg-slate-900 rounded-[1.5rem] md:rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden mt-6 md:mt-8">
-                <div className="p-4 md:p-6 border-b border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center gap-2 md:gap-3">
-                    <FileText size={16} className="text-slate-400 dark:text-slate-500"/>
-                    <h3 className="font-bold text-slate-700 dark:text-slate-300 text-[10px] md:text-sm uppercase tracking-widest">Transcript Archive</h3>
+                <div className="p-4 md:p-6 border-b border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
+                    <div className="flex items-center gap-2 md:gap-3">
+                        <FileText size={16} className="text-slate-400 dark:text-slate-500"/>
+                        <h3 className="font-bold text-slate-700 dark:text-slate-300 text-[10px] md:text-sm uppercase tracking-widest">Transcript Archive</h3>
+                    </div>
+                    <button 
+                        onClick={handleCopyTranscript}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-[#0500e2] dark:hover:text-[#4b53fa] hover:border-[#0500e2] dark:hover:border-[#4b53fa] transition-all"
+                    >
+                        {isCopied ? <Check size={14} /> : <Copy size={14} />}
+                        {isCopied ? 'Copied' : 'Copy Text'}
+                    </button>
                 </div>
                 <pre className="whitespace-pre-wrap text-xs md:text-sm text-slate-500 dark:text-slate-400 font-mono p-6 md:p-10 max-h-[400px] md:max-h-[500px] overflow-y-auto leading-relaxed md:leading-loose bg-white dark:bg-slate-900">
                     {result.rawTranscript}

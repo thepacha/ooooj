@@ -329,7 +329,7 @@ function App() {
       case 'history':
         return <History history={history} onSelectEvaluation={handleSelectEvaluation} />;
       case 'roster':
-        return <Roster history={history} setView={setCurrentView} />;
+        return <Roster history={history} setView={setCurrentView} onSelectEvaluation={handleSelectEvaluation} />;
       case 'usage':
         return <Usage user={user} />;
       case 'settings':

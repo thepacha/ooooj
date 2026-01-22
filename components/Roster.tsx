@@ -1,11 +1,13 @@
 
 import React, { useState, useMemo } from 'react';
 import { AnalysisResult, ViewState } from '../types';
-import { Search, ArrowUpDown, Award, TrendingUp, Users, BarChart2, Calendar, X, ChevronDown } from 'lucide-react';
+import { Search, ArrowUpDown, Award, TrendingUp, Users, BarChart2, Calendar, X, ChevronDown, ChevronRight } from 'lucide-react';
+import { AgentProfile } from './AgentProfile';
 
 interface RosterProps {
   history: AnalysisResult[];
   setView: (view: ViewState) => void;
+  onSelectEvaluation: (result: AnalysisResult) => void;
 }
 
 interface AgentStats {
@@ -22,13 +24,16 @@ interface AgentStats {
   lowestScore: number;
 }
 
-export const Roster: React.FC<RosterProps> = ({ history, setView }) => {
+export const Roster: React.FC<RosterProps> = ({ history, setView, onSelectEvaluation }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<keyof AgentStats | 'score'>('score');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [selectedAgent, setSelectedAgent] = useState('');
+  const [selectedAgentFilter, setSelectedAgentFilter] = useState('');
+  
+  // State for Agent Drill-down
+  const [viewingAgent, setViewingAgent] = useState<string | null>(null);
 
   // Extract unique agent names for the filter dropdown
   const allAgentNames = useMemo(() => {
@@ -90,7 +95,7 @@ export const Roster: React.FC<RosterProps> = ({ history, setView }) => {
   const filteredAgents = agents
     .filter(a => {
         const matchesSearch = a.name.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesDropdown = selectedAgent ? a.name === selectedAgent : true;
+        const matchesDropdown = selectedAgentFilter ? a.name === selectedAgentFilter : true;
         return matchesSearch && matchesDropdown;
     })
     .sort((a, b) => {
@@ -144,6 +149,20 @@ export const Roster: React.FC<RosterProps> = ({ history, setView }) => {
     ? [...agents].sort((a, b) => b.avgScore - a.avgScore)[0] 
     : null;
 
+
+  // --- Render Agent Profile View ---
+  if (viewingAgent) {
+    return (
+        <AgentProfile 
+            agentName={viewingAgent}
+            history={history}
+            onBack={() => setViewingAgent(null)}
+            onSelectEvaluation={onSelectEvaluation}
+        />
+    );
+  }
+
+  // --- Render Roster Table View ---
   return (
     <div className="space-y-8 animate-fade-in pb-12">
       
@@ -225,8 +244,8 @@ export const Roster: React.FC<RosterProps> = ({ history, setView }) => {
                 {/* Agent Filter */}
                 <div className="relative w-full sm:w-auto">
                     <select
-                        value={selectedAgent}
-                        onChange={(e) => setSelectedAgent(e.target.value)}
+                        value={selectedAgentFilter}
+                        onChange={(e) => setSelectedAgentFilter(e.target.value)}
                         className="w-full sm:w-48 appearance-none pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-[#0500e2] outline-none cursor-pointer"
                     >
                         <option value="">All Agents</option>
@@ -280,12 +299,13 @@ export const Roster: React.FC<RosterProps> = ({ history, setView }) => {
                         <th className="p-5 font-semibold text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">
                             Last Active
                         </th>
+                        <th className="p-5"></th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {filteredAgents.length === 0 ? (
                          <tr>
-                            <td colSpan={5} className="p-10 text-center text-slate-400 dark:text-slate-500">
+                            <td colSpan={6} className="p-10 text-center text-slate-400 dark:text-slate-500">
                                 {history.length === 0 
                                     ? "No evaluations recorded yet." 
                                     : "No agents found matching current filters."}
@@ -299,14 +319,18 @@ export const Roster: React.FC<RosterProps> = ({ history, setView }) => {
                             const negPct = (agent.sentiments.Negative / totalSentiment) * 100;
 
                             return (
-                                <tr key={idx} className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                <tr 
+                                    key={idx} 
+                                    className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                                    onClick={() => setViewingAgent(agent.name)}
+                                >
                                     <td className="p-5">
                                         <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold text-sm shadow-sm border border-slate-300 dark:border-slate-600">
                                                 {agent.name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase()}
                                             </div>
                                             <div>
-                                                <div className="font-bold text-slate-900 dark:text-white">{agent.name}</div>
+                                                <div className="font-bold text-slate-900 dark:text-white group-hover:text-[#0500e2] transition-colors">{agent.name}</div>
                                                 <div className="text-xs text-slate-400 dark:text-slate-500">Rank #{idx + 1}</div>
                                             </div>
                                         </div>
@@ -349,6 +373,9 @@ export const Roster: React.FC<RosterProps> = ({ history, setView }) => {
                                         <div className="text-xs text-slate-400 dark:text-slate-500">
                                             {new Date(agent.lastActive).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </div>
+                                    </td>
+                                    <td className="p-5">
+                                        <ChevronRight size={18} className="text-slate-300 group-hover:text-[#0500e2] dark:group-hover:text-[#4b53fa]" />
                                     </td>
                                 </tr>
                             );
