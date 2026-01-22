@@ -14,11 +14,11 @@ const getAI = () => {
       throw new Error('API_KEY environment variable is not set. Please ensure you have configured your API key in the environment.');
     }
     
-    // Initialize with a longer timeout (10 minutes) to accommodate large context analysis
+    // Initialize with a longer timeout (10 minutes)
     aiInstance = new GoogleGenAI({ 
       apiKey,
       requestOptions: {
-        timeout: 600000 // 600 seconds = 10 minutes
+        timeout: 600000 // 10 minutes
       }
     } as any);
   }
@@ -30,8 +30,8 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function retryWithBackoff<T>(
   fn: () => Promise<T>, 
-  retries = 2, // Reduced retries to avoid extremely long wait times for user
-  baseDelay = 2000 
+  retries = 1, // Reduced to 1 retry to fail fast if persistent error
+  baseDelay = 1000 
 ): Promise<T> {
   let lastError: any;
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -40,27 +40,44 @@ async function retryWithBackoff<T>(
     } catch (error: any) {
       lastError = error;
       
-      // Check for overload (503) or rate limit (429) errors
-      // 499 is Client Closed Request (Timeout) - usually better to fail than retry if it took 10 mins
       const isOverloaded = error.status === 503 || error.code === 503 || error.message?.includes('overloaded');
       const isRateLimit = error.status === 429 || error.code === 429 || error.message?.includes('429');
-      const isTimeout = error.code === 499 || error.status === 499 || error.message?.includes('CANCELLED');
+      // 400 Bad Request usually means context length exceeded or invalid format - do not retry
+      const isBadRequest = error.status === 400 || error.code === 400; 
       
-      if (attempt < retries && (isOverloaded || isRateLimit)) {
+      if (attempt < retries && (isOverloaded || isRateLimit) && !isBadRequest) {
         const delay = baseDelay * Math.pow(2, attempt);
         console.warn(`Gemini API busy (attempt ${attempt + 1}/${retries + 1}). Retrying in ${delay}ms...`);
         await wait(delay);
-      } else if (isTimeout) {
-        // If it's a timeout (499), throw a more specific error immediately without retry
-        // because retrying a massive request that timed out is unlikely to succeed quickly
-        console.error("Operation cancelled/timed out:", error);
-        throw new Error("The analysis timed out. The transcript may be too long for a single pass. Please try trimming the text or splitting it.");
       } else {
         throw error;
       }
     }
   }
   throw lastError;
+};
+
+// Robust JSON extraction
+const extractJSON = (text: string): any => {
+  try {
+    // 1. Remove markdown code blocks
+    let clean = text.replace(/```json\s*/g, '').replace(/```\s*$/g, '').replace(/```/g, '').trim();
+    return JSON.parse(clean);
+  } catch (e) {
+    // 2. Fallback: Find first '{' and last '}'
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start !== -1 && end !== -1) {
+      try {
+        const jsonStr = text.substring(start, end + 1);
+        return JSON.parse(jsonStr);
+      } catch (e2) {
+        // Failed fallback
+      }
+    }
+    console.error("Failed to parse JSON:", text);
+    throw new Error("The AI response was not in a valid format. Please try again.");
+  }
 };
 
 export const analyzeTranscript = async (
@@ -77,31 +94,32 @@ export const analyzeTranscript = async (
     }
   }
 
+  // 2. Truncate Input if too large (approx 100k characters ~ 25k tokens) to prevent 400 errors
+  let processedTranscript = transcript;
+  const CHAR_LIMIT = 100000;
+  if (processedTranscript.length > CHAR_LIMIT) {
+    console.warn("Transcript too long, truncating...");
+    processedTranscript = processedTranscript.substring(0, CHAR_LIMIT) + "\n...[TRUNCATED DUE TO LENGTH]...";
+  }
+
   const criteriaPrompt = criteria.map(c => `- ${c.name}: ${c.description} (Importance: ${c.weight}/10)`).join('\n');
 
   const systemInstruction = `
     You are an expert QA Quality Assurance Analyst for Customer Support.
     Your job is to evaluate customer service transcripts based on specific criteria.
     
-    CONTEXT ON SPEAKER IDENTIFICATION:
-    The transcript provided follows the format "[Time] Speaker: Text".
-    - Often, the "Speaker" will be a specific name (e.g., "John", "Sarah").
-    - Sometimes, it might be "Speaker 1" or "Speaker 2".
-    - Your job is to infer who is the AGENT and who is the CUSTOMER based on the content of what they say (e.g., who is asking for help vs. who is offering help).
-    
     OUTPUT REQUIREMENTS:
-    1. Identify the 'agentName' and 'customerName' clearly.
-    2. Calculate an overall score (0-100).
-    3. Analyze the conversation against the provided criteria.
-    4. Be strict but fair in scoring.
+    1. Identify 'agentName' and 'customerName'. Use "Unknown" if not clear.
+    2. Calculate 'overallScore' (0-100).
+    3. Analyze criteria.
+    4. RETURN ONLY JSON.
   `;
 
   const prompt = `
-    Please analyze the following transcript:
-    
-    "${transcript}"
+    Analyze this transcript:
+    "${processedTranscript}"
 
-    Evaluate it against these criteria:
+    Criteria:
     ${criteriaPrompt}
   `;
 
@@ -109,11 +127,13 @@ export const analyzeTranscript = async (
 
   const response = await retryWithBackoff(async () => {
     return await ai.models.generateContent({
-      model: 'gemini-3-flash-preview', // Keep high quality model for analysis
+      model: 'gemini-3-flash-preview', 
       contents: prompt,
       config: {
         systemInstruction: systemInstruction,
         responseMimeType: "application/json",
+        // Do NOT use responseSchema with gemini-3-flash-preview sometimes if it causes strict mode issues with large text.
+        // However, it is recommended. We will simplify it.
         responseSchema: {
           type: Type.OBJECT,
           properties: {
@@ -128,7 +148,7 @@ export const analyzeTranscript = async (
                 type: Type.OBJECT,
                 properties: {
                   name: { type: Type.STRING },
-                  score: { type: Type.NUMBER, description: "Score from 0 to 100" },
+                  score: { type: Type.NUMBER },
                   reasoning: { type: Type.STRING },
                   suggestion: { type: Type.STRING }
                 },
@@ -144,26 +164,14 @@ export const analyzeTranscript = async (
 
   const resultText = response.text;
   if (!resultText) {
-    throw new Error("No response from AI");
-  }
-
-  let cleanText = resultText.trim();
-  if (cleanText.startsWith('```json')) {
-    cleanText = cleanText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-  } else if (cleanText.startsWith('```')) {
-    cleanText = cleanText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    throw new Error("No response received from AI service.");
   }
 
   if (userId) {
      await incrementUsage(userId, COSTS.ANALYSIS, 'analysis');
   }
 
-  try {
-    return JSON.parse(cleanText) as Omit<AnalysisResult, 'id' | 'timestamp' | 'rawTranscript'>;
-  } catch (e) {
-    console.error("Failed to parse AI response:", cleanText);
-    throw new Error("AI response was not valid JSON.");
-  }
+  return extractJSON(resultText);
 };
 
 export const transcribeMedia = async (base64Data: string, mimeType: string, userId?: string): Promise<string> => {
@@ -176,26 +184,13 @@ export const transcribeMedia = async (base64Data: string, mimeType: string, user
   
   const ai = getAI();
   
+  // Use Flash Lite for transcription speed
   const response = await retryWithBackoff(async () => {
     return await ai.models.generateContent({
-      model: 'gemini-flash-lite-latest', // Use Flash Lite for faster transcription throughput
+      model: 'gemini-flash-lite-latest', 
       contents: {
         parts: [
-          { text: `You are a professional audio transcriber. Your task is to provide a VERBATIM transcript of the audio.
-          
-          CRITICAL INSTRUCTIONS:
-          1. Capture every word spoken. Do NOT summarize. Do NOT skip sections.
-          2. SPEAKER IDENTIFICATION:
-             - Listen carefully for names. If a speaker introduces themselves (e.g., "This is John"), label them as "John" for the entire transcript.
-             - If names are not mentioned, use "Speaker 1" and "Speaker 2".
-             - Do NOT use generic labels like "Agent" or "Customer" unless they explicitly call themselves that.
-          3. TIMESTAMPS: Start every new turn with a timestamp in [MM:SS] format.
-          
-          FORMAT:
-          [00:00] Name: Text...
-          [00:05] Name: Text...
-          
-          Return ONLY the raw transcript text. No markdown, no preambles.` },
+          { text: "Transcribe this audio verbatim. Format: [MM:SS] Speaker: Text." },
           {
             inlineData: {
               mimeType: mimeType,
@@ -204,7 +199,6 @@ export const transcribeMedia = async (base64Data: string, mimeType: string, user
           }
         ]
       },
-      // Config cleared of experimental features for maximum stability
       config: {} 
     });
   });
@@ -218,23 +212,15 @@ export const transcribeMedia = async (base64Data: string, mimeType: string, user
 
 export const generateMockTranscript = async (): Promise<string> => {
    const ai = getAI();
-   
    const response = await retryWithBackoff(async () => {
      return await ai.models.generateContent({
-      model: 'gemini-flash-lite-latest', // Faster model for generation
-      contents: `Generate a realistic, slightly problematic customer service chat transcript between a customer (Sarah) and an agent (John) regarding a refund delay. It should be about 10-15 lines long.
-
-  Strict Formatting Rules:
-  1. Speaker Identification: Use the actual names 'John' and 'Sarah' as the speaker labels. Do NOT use 'Agent' or 'Customer'.
-  2. Timestamps: Provide a timestamp at the start of every new turn in [MM:SS] format.
-  3. Format: Each line must look exactly like this: [Time] Speaker: The spoken text.
-
-  Do not include markdown formatting, just the text.`,
-      config: {} // Removed thinking config
+      model: 'gemini-flash-lite-latest', 
+      contents: "Generate a 10 line customer service chat (John vs Sarah) about a refund. Format: [00:00] Speaker: Text. Plain text only.",
+      config: {} 
     });
    });
    
-  return response.text || "[00:00] John: Hello, how can I help?\n[00:05] Sarah: I need a refund.\n[00:10] John: Okay one sec.";
+  return response.text || "[00:00] John: Hello\n[00:05] Sarah: Hi";
 };
 
 export const createChatSession = (): any => {
@@ -242,16 +228,7 @@ export const createChatSession = (): any => {
   return ai.chats.create({
     model: 'gemini-3-flash-preview',
     config: {
-      systemInstruction: `You are RevuBot, an intelligent assistant for the RevuQA AI platform.
-      Your goal is to assist Customer Support QA Managers and Analysts.
-      You can help with:
-      - Explaining QA criteria and scoring logic.
-      - Drafting coaching feedback for agents based on descriptions.
-      - Suggesting ways to improve team empathy, efficiency, and compliance.
-      - Navigating the RevuQA app (Dashboard, Analysis, History, Settings).
-      
-      Be professional, concise, and helpful. Use the context of being a QA expert tool.`,
-      // Removed thinking config
+      systemInstruction: "You are RevuBot, a QA assistant. Help users understand their quality scores.",
     }
   });
 };
