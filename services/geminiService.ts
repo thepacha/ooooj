@@ -14,7 +14,13 @@ const getAI = () => {
       throw new Error('API_KEY environment variable is not set. Please ensure you have configured your API key in the environment.');
     }
     
-    aiInstance = new GoogleGenAI({ apiKey });
+    // Initialize with a longer timeout (10 minutes) to accommodate large context analysis
+    aiInstance = new GoogleGenAI({ 
+      apiKey,
+      requestOptions: {
+        timeout: 600000 // 600 seconds = 10 minutes
+      }
+    } as any);
   }
   return aiInstance;
 };
@@ -24,8 +30,8 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function retryWithBackoff<T>(
   fn: () => Promise<T>, 
-  retries = 3, 
-  baseDelay = 1000 // Reduced from 2000ms to 1000ms for snappier feedback
+  retries = 2, // Reduced retries to avoid extremely long wait times for user
+  baseDelay = 2000 
 ): Promise<T> {
   let lastError: any;
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -35,14 +41,20 @@ async function retryWithBackoff<T>(
       lastError = error;
       
       // Check for overload (503) or rate limit (429) errors
+      // 499 is Client Closed Request (Timeout) - usually better to fail than retry if it took 10 mins
       const isOverloaded = error.status === 503 || error.code === 503 || error.message?.includes('overloaded');
       const isRateLimit = error.status === 429 || error.code === 429 || error.message?.includes('429');
+      const isTimeout = error.code === 499 || error.status === 499 || error.message?.includes('CANCELLED');
       
       if (attempt < retries && (isOverloaded || isRateLimit)) {
-        // Exponential backoff: 1s, 2s, 4s (Faster recovery)
         const delay = baseDelay * Math.pow(2, attempt);
         console.warn(`Gemini API busy (attempt ${attempt + 1}/${retries + 1}). Retrying in ${delay}ms...`);
         await wait(delay);
+      } else if (isTimeout) {
+        // If it's a timeout (499), throw a more specific error immediately without retry
+        // because retrying a massive request that timed out is unlikely to succeed quickly
+        console.error("Operation cancelled/timed out:", error);
+        throw new Error("The analysis timed out. The transcript may be too long for a single pass. Please try trimming the text or splitting it.");
       } else {
         throw error;
       }
@@ -101,7 +113,6 @@ export const analyzeTranscript = async (
       contents: prompt,
       config: {
         systemInstruction: systemInstruction,
-        // Removed thinkingConfig to reduce latency and overhead
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
