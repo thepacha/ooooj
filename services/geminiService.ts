@@ -25,7 +25,7 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 async function retryWithBackoff<T>(
   fn: () => Promise<T>, 
   retries = 3, 
-  baseDelay = 2000 
+  baseDelay = 1000 // Reduced from 2000ms to 1000ms for snappier feedback
 ): Promise<T> {
   let lastError: any;
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -35,12 +35,11 @@ async function retryWithBackoff<T>(
       lastError = error;
       
       // Check for overload (503) or rate limit (429) errors
-      // Error structure can vary, checking standard status/code properties and message content
       const isOverloaded = error.status === 503 || error.code === 503 || error.message?.includes('overloaded');
       const isRateLimit = error.status === 429 || error.code === 429 || error.message?.includes('429');
       
       if (attempt < retries && (isOverloaded || isRateLimit)) {
-        // Exponential backoff: 2s, 4s, 8s
+        // Exponential backoff: 1s, 2s, 4s (Faster recovery)
         const delay = baseDelay * Math.pow(2, attempt);
         console.warn(`Gemini API busy (attempt ${attempt + 1}/${retries + 1}). Retrying in ${delay}ms...`);
         await wait(delay);
@@ -50,7 +49,7 @@ async function retryWithBackoff<T>(
     }
   }
   throw lastError;
-}
+};
 
 export const analyzeTranscript = async (
   transcript: string,
@@ -94,17 +93,15 @@ export const analyzeTranscript = async (
     ${criteriaPrompt}
   `;
 
-  // Lazily get the AI instance
   const ai = getAI();
 
-  // Wrap the API call with retry logic
   const response = await retryWithBackoff(async () => {
     return await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-flash-preview', // Keep high quality model for analysis
       contents: prompt,
       config: {
         systemInstruction: systemInstruction,
-        thinkingConfig: { thinkingBudget: 0 }, // Disable thinking for faster response
+        // Removed thinkingConfig to reduce latency and overhead
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -139,7 +136,6 @@ export const analyzeTranscript = async (
     throw new Error("No response from AI");
   }
 
-  // Robust cleaning to handle potential Markdown code blocks in the response
   let cleanText = resultText.trim();
   if (cleanText.startsWith('```json')) {
     cleanText = cleanText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
@@ -147,7 +143,6 @@ export const analyzeTranscript = async (
     cleanText = cleanText.replace(/^```\s*/, '').replace(/\s*```$/, '');
   }
 
-  // 2. Increment Usage on Success
   if (userId) {
      await incrementUsage(userId, COSTS.ANALYSIS, 'analysis');
   }
@@ -161,7 +156,6 @@ export const analyzeTranscript = async (
 };
 
 export const transcribeMedia = async (base64Data: string, mimeType: string, userId?: string): Promise<string> => {
-  // 1. Check Usage
   if (userId) {
     const canProceed = await checkLimit(userId, COSTS.TRANSCRIPTION);
     if (!canProceed) {
@@ -173,7 +167,7 @@ export const transcribeMedia = async (base64Data: string, mimeType: string, user
   
   const response = await retryWithBackoff(async () => {
     return await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-flash-lite-latest', // Use Flash Lite for faster transcription throughput
       contents: {
         parts: [
           { text: `You are a professional audio transcriber. Your task is to provide a VERBATIM transcript of the audio.
@@ -199,13 +193,11 @@ export const transcribeMedia = async (base64Data: string, mimeType: string, user
           }
         ]
       },
-      config: {
-        thinkingConfig: { thinkingBudget: 0 } // Disable thinking for faster transcription
-      }
+      // Config cleared of experimental features for maximum stability
+      config: {} 
     });
   });
 
-  // 2. Increment Usage
   if (userId) {
     await incrementUsage(userId, COSTS.TRANSCRIPTION, 'transcription');
   }
@@ -218,7 +210,7 @@ export const generateMockTranscript = async (): Promise<string> => {
    
    const response = await retryWithBackoff(async () => {
      return await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-flash-lite-latest', // Faster model for generation
       contents: `Generate a realistic, slightly problematic customer service chat transcript between a customer (Sarah) and an agent (John) regarding a refund delay. It should be about 10-15 lines long.
 
   Strict Formatting Rules:
@@ -227,16 +219,13 @@ export const generateMockTranscript = async (): Promise<string> => {
   3. Format: Each line must look exactly like this: [Time] Speaker: The spoken text.
 
   Do not include markdown formatting, just the text.`,
-      config: {
-        thinkingConfig: { thinkingBudget: 0 } // Disable thinking for speed
-      }
+      config: {} // Removed thinking config
     });
    });
    
   return response.text || "[00:00] John: Hello, how can I help?\n[00:05] Sarah: I need a refund.\n[00:10] John: Okay one sec.";
 };
 
-// Use any for return type to avoid import crashes if Chat isn't exported as value in CDN bundle
 export const createChatSession = (): any => {
   const ai = getAI();
   return ai.chats.create({
@@ -251,7 +240,7 @@ export const createChatSession = (): any => {
       - Navigating the RevuQA app (Dashboard, Analysis, History, Settings).
       
       Be professional, concise, and helpful. Use the context of being a QA expert tool.`,
-      thinkingConfig: { thinkingBudget: 0 } // Disable thinking for faster chat responses
+      // Removed thinking config
     }
   });
 };
