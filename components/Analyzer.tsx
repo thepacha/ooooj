@@ -1,21 +1,84 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Mic, FileText, Loader2, AlertCircle, Square, Sparkles, Check, X, ArrowRight, Zap } from 'lucide-react';
 import { analyzeTranscript, generateMockTranscript, transcribeMedia } from '../services/geminiService';
-import { AnalysisResult, Criteria } from '../types';
+import { AnalysisResult, Criteria, User } from '../types';
 import { EvaluationView } from './EvaluationView';
 import { generateId } from '../lib/utils';
 
 interface AnalyzerProps {
   criteria: Criteria[];
   onAnalysisComplete: (result: AnalysisResult) => void;
+  user: User | null;
 }
 
 type InputMode = 'text' | 'upload' | 'mic';
-type ProcessingStep = 'idle' | 'uploading' | 'transcribing' | 'analyzing' | 'finalizing';
+type ProcessingStep = 'idle' | 'optimizing' | 'transcribing' | 'analyzing' | 'finalizing';
 
-const MAX_SIZE_MB = 1000; // Increased limit to 1GB for upload strategy
+const MAX_SIZE_MB = 100;
+const API_PAYLOAD_LIMIT_MB = 18; // Safe limit slightly below 20MB
 
-export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete }) => {
+// --- Audio Helpers ---
+
+const writeString = (view: DataView, offset: number, string: string) => {
+  for (let i = 0; i < string.length; i++) {
+    view.setUint8(offset + i, string.charCodeAt(i));
+  }
+};
+
+const encodeWAV = (samples: Float32Array, sampleRate: number) => {
+  const buffer = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buffer);
+
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, 36 + samples.length * 2, true);
+  writeString(view, 8, 'WAVE');
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeString(view, 36, 'data');
+  view.setUint32(40, samples.length * 2, true);
+
+  const length = samples.length;
+  let offset = 44;
+  for (let i = 0; i < length; i++) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    offset += 2;
+  }
+  return new Blob([view], { type: 'audio/wav' });
+};
+
+const optimizeAudio = async (file: File): Promise<Blob> => {
+  const arrayBuffer = await file.arrayBuffer();
+  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  
+  // 1. Decode audio data (this handles mp3, wav, m4a, etc.)
+  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+  
+  // 2. Prepare for downsampling to 16kHz Mono (Optimal for Speech-to-Text)
+  const targetSampleRate = 16000;
+  const targetDuration = audioBuffer.duration;
+  const offlineCtx = new OfflineAudioContext(1, targetDuration * targetSampleRate, targetSampleRate);
+  
+  // 3. Render
+  const source = offlineCtx.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(offlineCtx.destination);
+  source.start();
+  
+  const renderedBuffer = await offlineCtx.startRendering();
+  
+  // 4. Encode to simple WAV
+  return encodeWAV(renderedBuffer.getChannelData(0), targetSampleRate);
+};
+
+
+export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete, user }) => {
   const [transcript, setTranscript] = useState('');
   const [processingStatus, setProcessingStatus] = useState<ProcessingStep>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -55,12 +118,12 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
     setResult(null);
 
     try {
-      const analysis = await analyzeTranscript(textToProcess, criteria);
+      // Pass user ID for usage tracking
+      const analysis = await analyzeTranscript(textToProcess, criteria, user?.id);
       
       setProcessingStatus('finalizing');
       
-      // Artificial delay for "Finalizing" to let the user see the step change
-      await new Promise(r => setTimeout(r, 800));
+      // Removed artificial delay to speed up response
 
       const fullResult: AnalysisResult = {
         ...analysis,
@@ -137,27 +200,78 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
   };
 
   const handleAudioFileUpload = async (file: File) => {
-      // 1. Check Max Size (1GB)
+      // Limit file size to 100MB
       if (file.size > MAX_SIZE_MB * 1024 * 1024) {
           setError(`File is too large. Please upload files smaller than ${MAX_SIZE_MB}MB.`);
           return;
       }
 
-      setProcessingStatus('transcribing');
-      setError(null);
+      let fileToProcess = file as Blob;
 
-      try {
-          // 2. Pass the RAW file directly to our new service (Upload First Strategy)
-          const transcribedText = await transcribeMedia(file);
-          
-          setTranscript(transcribedText);
-          handleAnalyze(transcribedText);
-          
-      } catch (err: any) {
-          console.error(err);
-          setError("Transcription failed: " + (err.message || "Unknown error"));
-          setProcessingStatus('idle');
+      // Smart Optimization: If file is > API Payload limit, try to compress it
+      if (file.size > API_PAYLOAD_LIMIT_MB * 1024 * 1024) {
+         setProcessingStatus('optimizing');
+         try {
+             // Convert to 16kHz Mono WAV
+             const compressedBlob = await optimizeAudio(file);
+             
+             if (compressedBlob.size > API_PAYLOAD_LIMIT_MB * 1024 * 1024) {
+                 setError("Optimized audio is still too large (over 18MB). Please trim the file.");
+                 setProcessingStatus('idle');
+                 return;
+             }
+             fileToProcess = compressedBlob;
+         } catch (e) {
+             console.error("Audio optimization failed", e);
+             setError("Failed to optimize large audio file. Please try a smaller file.");
+             setProcessingStatus('idle');
+             return;
+         }
       }
+
+      // Determine proper mime type if missing (common with m4a uploads)
+      let mimeType = fileToProcess.type;
+      if (!mimeType && file instanceof File) {
+         const ext = file.name.split('.').pop()?.toLowerCase();
+         if (ext === 'm4a') mimeType = 'audio/mp4';
+         else if (ext === 'mp3') mimeType = 'audio/mp3';
+         else if (ext === 'wav') mimeType = 'audio/wav';
+      }
+
+      processAudioBlob(fileToProcess, mimeType || 'audio/wav');
+  };
+
+  const processAudioBlob = (blob: Blob, mimeType: string) => {
+    setProcessingStatus('transcribing');
+    setError(null);
+
+    const reader = new FileReader();
+    
+    reader.onloadend = async () => {
+        try {
+            const base64data = reader.result as string;
+            // Handle both data URL formats (with and without prefix)
+            const content = base64data.includes(',') ? base64data.split(',')[1] : base64data;
+            
+            // Pass User ID for usage tracking
+            const transcribedText = await transcribeMedia(content, mimeType, user?.id);
+            setTranscript(transcribedText);
+            
+            // Auto-Analyze after transcription
+            handleAnalyze(transcribedText);
+        } catch (err: any) {
+            console.error(err);
+            setError("Transcription failed: " + (err.message || "Unknown error"));
+            setProcessingStatus('idle');
+        }
+    };
+
+    reader.onerror = () => {
+        setError("Failed to read audio file.");
+        setProcessingStatus('idle');
+    };
+
+    reader.readAsDataURL(blob);
   };
 
   // --- Recording Logic with Visualizer ---
@@ -215,11 +329,7 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
 
         mediaRecorder.onstop = () => {
             const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-            
-            // Convert Blob to File for the new Upload Strategy
-            const audioFile = new File([audioBlob], "recording.webm", { type: mimeType });
-            
-            handleAudioFileUpload(audioFile);
+            processAudioBlob(audioBlob, mimeType);
             
             // Cleanup Audio Context
             if (sourceRef.current) sourceRef.current.disconnect();
@@ -295,13 +405,13 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
                 
                 <div className="space-y-3">
                     <ProcessingStep 
-                        label="Uploading & Processing Audio"
-                        active={processingStatus === 'transcribing'}
-                        complete={processingStatus === 'analyzing' || processingStatus === 'finalizing'}
+                        label="Optimizing audio"
+                        active={processingStatus === 'optimizing'}
+                        complete={processingStatus !== 'optimizing'}
                         icon={Zap}
                     />
                     <ProcessingStep 
-                        label="Transcribing & Diarization"
+                        label="Transcribing audio"
                         active={processingStatus === 'transcribing'}
                         complete={processingStatus === 'analyzing' || processingStatus === 'finalizing'}
                     />
@@ -316,10 +426,6 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
                         complete={false}
                     />
                 </div>
-                
-                {processingStatus === 'transcribing' && (
-                    <p className="text-xs text-center text-slate-400">Large files may take a minute to process on Google's servers.</p>
-                )}
             </div>
         </div>
       );
@@ -461,7 +567,7 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
                             {dragActive ? "Drop files here" : "Drop file or tap to upload"}
                         </h3>
                         <p className="text-slate-500 dark:text-slate-400 mb-6 text-center max-w-sm px-4">
-                            Support for MP3, WAV, M4A, MP4, and TXT files.<br className="hidden sm:block"/> Max file size 1GB.
+                            Support for MP3, WAV, M4A, MP4, and TXT files.<br className="hidden sm:block"/> Max file size {MAX_SIZE_MB}MB.
                         </p>
                     </div>
                 </div>
