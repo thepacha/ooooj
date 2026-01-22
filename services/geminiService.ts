@@ -19,6 +19,39 @@ const getAI = () => {
   return aiInstance;
 };
 
+// Retry utility for API calls
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>, 
+  retries = 3, 
+  baseDelay = 2000 
+): Promise<T> {
+  let lastError: any;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      
+      // Check for overload (503) or rate limit (429) errors
+      // Error structure can vary, checking standard status/code properties and message content
+      const isOverloaded = error.status === 503 || error.code === 503 || error.message?.includes('overloaded');
+      const isRateLimit = error.status === 429 || error.code === 429 || error.message?.includes('429');
+      
+      if (attempt < retries && (isOverloaded || isRateLimit)) {
+        // Exponential backoff: 2s, 4s, 8s
+        const delay = baseDelay * Math.pow(2, attempt);
+        console.warn(`Gemini API busy (attempt ${attempt + 1}/${retries + 1}). Retrying in ${delay}ms...`);
+        await wait(delay);
+      } else {
+        throw error;
+      }
+    }
+  }
+  throw lastError;
+}
+
 export const analyzeTranscript = async (
   transcript: string,
   criteria: Criteria[],
@@ -64,38 +97,41 @@ export const analyzeTranscript = async (
   // Lazily get the AI instance
   const ai = getAI();
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: prompt,
-    config: {
-      systemInstruction: systemInstruction,
-      thinkingConfig: { thinkingBudget: 0 }, // Disable thinking for faster response
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          agentName: { type: Type.STRING },
-          customerName: { type: Type.STRING },
-          summary: { type: Type.STRING },
-          overallScore: { type: Type.NUMBER },
-          sentiment: { type: Type.STRING, enum: ['Positive', 'Neutral', 'Negative'] },
-          criteriaResults: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                name: { type: Type.STRING },
-                score: { type: Type.NUMBER, description: "Score from 0 to 100" },
-                reasoning: { type: Type.STRING },
-                suggestion: { type: Type.STRING }
-              },
-              required: ['name', 'score', 'reasoning', 'suggestion']
+  // Wrap the API call with retry logic
+  const response = await retryWithBackoff(async () => {
+    return await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        systemInstruction: systemInstruction,
+        thinkingConfig: { thinkingBudget: 0 }, // Disable thinking for faster response
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            agentName: { type: Type.STRING },
+            customerName: { type: Type.STRING },
+            summary: { type: Type.STRING },
+            overallScore: { type: Type.NUMBER },
+            sentiment: { type: Type.STRING, enum: ['Positive', 'Neutral', 'Negative'] },
+            criteriaResults: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  name: { type: Type.STRING },
+                  score: { type: Type.NUMBER, description: "Score from 0 to 100" },
+                  reasoning: { type: Type.STRING },
+                  suggestion: { type: Type.STRING }
+                },
+                required: ['name', 'score', 'reasoning', 'suggestion']
+              }
             }
-          }
-        },
-        required: ['agentName', 'customerName', 'summary', 'overallScore', 'sentiment', 'criteriaResults']
+          },
+          required: ['agentName', 'customerName', 'summary', 'overallScore', 'sentiment', 'criteriaResults']
+        }
       }
-    }
+    });
   });
 
   const resultText = response.text;
@@ -134,36 +170,39 @@ export const transcribeMedia = async (base64Data: string, mimeType: string, user
   }
   
   const ai = getAI();
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: {
-      parts: [
-        { text: `You are a professional audio transcriber. Your task is to provide a VERBATIM transcript of the audio.
-        
-        CRITICAL INSTRUCTIONS:
-        1. Capture every word spoken. Do NOT summarize. Do NOT skip sections.
-        2. SPEAKER IDENTIFICATION:
-           - Listen carefully for names. If a speaker introduces themselves (e.g., "This is John"), label them as "John" for the entire transcript.
-           - If names are not mentioned, use "Speaker 1" and "Speaker 2".
-           - Do NOT use generic labels like "Agent" or "Customer" unless they explicitly call themselves that.
-        3. TIMESTAMPS: Start every new turn with a timestamp in [MM:SS] format.
-        
-        FORMAT:
-        [00:00] Name: Text...
-        [00:05] Name: Text...
-        
-        Return ONLY the raw transcript text. No markdown, no preambles.` },
-        {
-          inlineData: {
-            mimeType: mimeType,
-            data: base64Data
+  
+  const response = await retryWithBackoff(async () => {
+    return await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: {
+        parts: [
+          { text: `You are a professional audio transcriber. Your task is to provide a VERBATIM transcript of the audio.
+          
+          CRITICAL INSTRUCTIONS:
+          1. Capture every word spoken. Do NOT summarize. Do NOT skip sections.
+          2. SPEAKER IDENTIFICATION:
+             - Listen carefully for names. If a speaker introduces themselves (e.g., "This is John"), label them as "John" for the entire transcript.
+             - If names are not mentioned, use "Speaker 1" and "Speaker 2".
+             - Do NOT use generic labels like "Agent" or "Customer" unless they explicitly call themselves that.
+          3. TIMESTAMPS: Start every new turn with a timestamp in [MM:SS] format.
+          
+          FORMAT:
+          [00:00] Name: Text...
+          [00:05] Name: Text...
+          
+          Return ONLY the raw transcript text. No markdown, no preambles.` },
+          {
+            inlineData: {
+              mimeType: mimeType,
+              data: base64Data
+            }
           }
-        }
-      ]
-    },
-    config: {
-      thinkingConfig: { thinkingBudget: 0 } // Disable thinking for faster transcription
-    }
+        ]
+      },
+      config: {
+        thinkingConfig: { thinkingBudget: 0 } // Disable thinking for faster transcription
+      }
+    });
   });
 
   // 2. Increment Usage
@@ -176,20 +215,24 @@ export const transcribeMedia = async (base64Data: string, mimeType: string, user
 
 export const generateMockTranscript = async (): Promise<string> => {
    const ai = getAI();
-   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: `Generate a realistic, slightly problematic customer service chat transcript between a customer (Sarah) and an agent (John) regarding a refund delay. It should be about 10-15 lines long.
+   
+   const response = await retryWithBackoff(async () => {
+     return await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Generate a realistic, slightly problematic customer service chat transcript between a customer (Sarah) and an agent (John) regarding a refund delay. It should be about 10-15 lines long.
 
-Strict Formatting Rules:
-1. Speaker Identification: Use the actual names 'John' and 'Sarah' as the speaker labels. Do NOT use 'Agent' or 'Customer'.
-2. Timestamps: Provide a timestamp at the start of every new turn in [MM:SS] format.
-3. Format: Each line must look exactly like this: [Time] Speaker: The spoken text.
+  Strict Formatting Rules:
+  1. Speaker Identification: Use the actual names 'John' and 'Sarah' as the speaker labels. Do NOT use 'Agent' or 'Customer'.
+  2. Timestamps: Provide a timestamp at the start of every new turn in [MM:SS] format.
+  3. Format: Each line must look exactly like this: [Time] Speaker: The spoken text.
 
-Do not include markdown formatting, just the text.`,
-    config: {
-      thinkingConfig: { thinkingBudget: 0 } // Disable thinking for speed
-    }
-  });
+  Do not include markdown formatting, just the text.`,
+      config: {
+        thinkingConfig: { thinkingBudget: 0 } // Disable thinking for speed
+      }
+    });
+   });
+   
   return response.text || "[00:00] John: Hello, how can I help?\n[00:05] Sarah: I need a refund.\n[00:10] John: Okay one sec.";
 };
 
