@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { TrainingScenario, TrainingResult, User, AnalysisResult, CriteriaResult } from '../types';
 import { createTrainingSession, evaluateTrainingSession, connectLiveTraining, generateAIScenario } from '../services/geminiService';
-import { Shield, TrendingUp, Wrench, Play, ArrowRight, MessageCircle, RefreshCw, CheckCircle, Loader2, Send, StopCircle, Award, Mic, Phone, PhoneOff, BarChart2, MessageSquare, FileText, Copy, Check, Plus, Sparkles, X, ChevronRight, Calendar } from 'lucide-react';
+import { Shield, TrendingUp, Wrench, Play, ArrowRight, MessageCircle, RefreshCw, CheckCircle, Loader2, Send, StopCircle, Award, Mic, Phone, PhoneOff, BarChart2, MessageSquare, FileText, Copy, Check, Plus, Sparkles, X, ChevronRight, Calendar, Trash2 } from 'lucide-react';
 import { incrementUsage, COSTS, checkLimit } from '../lib/usageService';
 import { Blob } from "@google/genai";
 import { generateId } from '../lib/utils';
+import { supabase } from '../lib/supabase';
 
 interface TrainingProps {
     user: User | null;
@@ -107,6 +108,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     const [mode, setMode] = useState<'text' | 'voice'>('text');
     const [isCopied, setIsCopied] = useState(false);
     const [customScenarios, setCustomScenarios] = useState<TrainingScenario[]>([]);
+    const [isLoadingScenarios, setIsLoadingScenarios] = useState(false);
 
     // Creation State
     const [creationType, setCreationType] = useState<'manual' | 'ai'>('ai');
@@ -129,6 +131,44 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     const currentInputTranscription = useRef('');
     const currentOutputTranscription = useRef('');
 
+    // Fetch custom scenarios from Supabase
+    useEffect(() => {
+        if (!user) return;
+
+        const fetchScenarios = async () => {
+            setIsLoadingScenarios(true);
+            try {
+                const { data, error } = await supabase
+                    .from('scenarios')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (data) {
+                    const mapped: TrainingScenario[] = data.map(s => ({
+                        id: s.id,
+                        title: s.title,
+                        description: s.description || '',
+                        difficulty: s.difficulty as any,
+                        category: s.category as any,
+                        icon: s.icon as any,
+                        initialMessage: s.initial_message,
+                        systemInstruction: s.system_instruction
+                    }));
+                    setCustomScenarios(mapped);
+                }
+            } catch (e) {
+                console.error("Error loading scenarios:", e);
+            } finally {
+                setIsLoadingScenarios(false);
+            }
+        };
+
+        fetchScenarios();
+    }, [user]);
+
     // Scroll to bottom of chat
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -141,7 +181,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         }
     }, []);
 
-    const allScenarios = [...STATIC_SCENARIOS, ...customScenarios];
+    const allScenarios = [...customScenarios, ...STATIC_SCENARIOS]; // Put custom first
     const trainingHistory = history.filter(h => h.customerName.startsWith('Roleplay:') || h.summary.startsWith('Training Session'));
 
     const startSession = async (scenario: TrainingScenario, sessionMode: 'text' | 'voice') => {
@@ -380,7 +420,24 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                 id: generateId(),
                 icon: 'Shield', // Default icon for generated ones
             };
-            setCustomScenarios(prev => [...prev, newScenario]);
+
+            // Save to DB if user is logged in
+            if (user) {
+                const { error } = await supabase.from('scenarios').insert({
+                    id: newScenario.id,
+                    user_id: user.id,
+                    title: newScenario.title,
+                    description: newScenario.description,
+                    difficulty: newScenario.difficulty,
+                    category: newScenario.category,
+                    icon: newScenario.icon,
+                    initial_message: newScenario.initialMessage,
+                    system_instruction: newScenario.systemInstruction
+                });
+                if (error) console.error("Error saving scenario", error);
+            }
+
+            setCustomScenarios(prev => [newScenario, ...prev]); // Add to top
             setView('list');
         } catch (e) {
             console.error(e);
@@ -390,7 +447,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         }
     };
 
-    const handleCreateManual = () => {
+    const handleCreateManual = async () => {
         if (!manualParams.title || !manualParams.initialMessage || !manualParams.systemInstruction) {
             alert("Please fill in all required fields.");
             return;
@@ -405,9 +462,41 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
             initialMessage: manualParams.initialMessage!,
             systemInstruction: manualParams.systemInstruction!
         };
-        setCustomScenarios(prev => [...prev, newScenario]);
+
+        // Save to DB if user is logged in
+        if (user) {
+            const { error } = await supabase.from('scenarios').insert({
+                id: newScenario.id,
+                user_id: user.id,
+                title: newScenario.title,
+                description: newScenario.description,
+                difficulty: newScenario.difficulty,
+                category: newScenario.category,
+                icon: newScenario.icon,
+                initial_message: newScenario.initialMessage,
+                system_instruction: newScenario.systemInstruction
+            });
+            if (error) console.error("Error saving scenario", error);
+        }
+
+        setCustomScenarios(prev => [newScenario, ...prev]);
         setView('list');
     }
+
+    const handleDeleteScenario = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!user) return;
+        if (!window.confirm("Delete this scenario?")) return;
+
+        // Optimistic update
+        setCustomScenarios(prev => prev.filter(s => s.id !== id));
+
+        const { error } = await supabase.from('scenarios').delete().eq('id', id);
+        if (error) {
+            console.error("Error deleting scenario", error);
+            // Could revert state here if strict consistency needed
+        }
+    };
 
     const handleCopyTranscript = async () => {
         const transcript = messages.map(m => `${m.role === 'user' ? 'Agent' : 'Customer'}: ${m.text}`).join('\n');
@@ -469,10 +558,30 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
 
                  {activeTab === 'scenarios' ? (
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-2">
-                        {allScenarios.map((scenario) => {
+                        {/* Loading State */}
+                        {isLoadingScenarios && (
+                            <div className="col-span-full py-12 flex justify-center text-slate-400">
+                                <Loader2 className="animate-spin" size={24} />
+                            </div>
+                        )}
+
+                        {!isLoadingScenarios && allScenarios.map((scenario) => {
                             const Icon = scenario.icon === 'TrendingUp' ? TrendingUp : scenario.icon === 'Wrench' ? Wrench : Shield;
+                            const isCustom = customScenarios.some(s => s.id === scenario.id);
+
                             return (
-                                <div key={scenario.id} className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 p-8 shadow-sm hover:shadow-md transition-all flex flex-col h-full group">
+                                <div key={scenario.id} className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 p-8 shadow-sm hover:shadow-md transition-all flex flex-col h-full group relative">
+                                    {/* Delete Button for Custom Scenarios */}
+                                    {isCustom && (
+                                        <button 
+                                            onClick={(e) => handleDeleteScenario(scenario.id, e)}
+                                            className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                            title="Delete Scenario"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    )}
+
                                     <div className="flex justify-between items-start mb-6">
                                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg ${
                                             scenario.category === 'Sales' ? 'bg-green-500 shadow-green-500/20' : 
@@ -499,8 +608,8 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                         </div>
                                     </div>
                                     
-                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-[#0500e2] transition-colors">{scenario.title}</h3>
-                                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-8 flex-1">
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-[#0500e2] transition-colors line-clamp-1">{scenario.title}</h3>
+                                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-8 flex-1 line-clamp-3">
                                         {scenario.description}
                                     </p>
                                     
