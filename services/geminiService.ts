@@ -1,257 +1,279 @@
-import { GoogleGenAI, Type } from "@google/genai";
-import { Criteria, AnalysisResult } from "../types";
-import { checkLimit, incrementUsage, COSTS } from "../lib/usageService";
+import { GoogleGenAI, Type, Chat, LiveServerMessage, Modality } from "@google/genai";
+import { AnalysisResult, Criteria, TrainingResult, TrainingScenario } from "../types";
+import { incrementUsage, COSTS } from "../lib/usageService";
 
-// Global instance to be initialized lazily
-let aiInstance: GoogleGenAI | null = null;
-
-// Helper to get or initialize the AI client
+// Helper to initialize AI with environment API key
 const getAI = () => {
-  if (!aiInstance) {
-    const apiKey = process.env.API_KEY;
-    
-    if (!apiKey) {
-      throw new Error('API_KEY environment variable is not set. Please ensure you have configured your API key in the environment.');
-    }
-    
-    // Initialize with a longer timeout (10 minutes) to accommodate large context analysis
-    aiInstance = new GoogleGenAI({ 
-      apiKey,
-      requestOptions: {
-        timeout: 600000 // 600 seconds = 10 minutes
-      }
-    } as any);
-  }
-  return aiInstance;
+  return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
-// Retry utility for API calls
-const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-async function retryWithBackoff<T>(
-  fn: () => Promise<T>, 
-  retries = 2, // Reduced retries to avoid extremely long wait times for user
-  baseDelay = 2000 
-): Promise<T> {
-  let lastError: any;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      return await fn();
-    } catch (error: any) {
-      lastError = error;
-      
-      // Check for overload (503) or rate limit (429) errors
-      // 499 is Client Closed Request (Timeout) - usually better to fail than retry if it took 10 mins
-      const isOverloaded = error.status === 503 || error.code === 503 || error.message?.includes('overloaded');
-      const isRateLimit = error.status === 429 || error.code === 429 || error.message?.includes('429');
-      const isTimeout = error.code === 499 || error.status === 499 || error.message?.includes('CANCELLED');
-      
-      if (attempt < retries && (isOverloaded || isRateLimit)) {
-        const delay = baseDelay * Math.pow(2, attempt);
-        console.warn(`Gemini API busy (attempt ${attempt + 1}/${retries + 1}). Retrying in ${delay}ms...`);
-        await wait(delay);
-      } else if (isTimeout) {
-        // If it's a timeout (499), throw a more specific error immediately without retry
-        // because retrying a massive request that timed out is unlikely to succeed quickly
-        console.error("Operation cancelled/timed out:", error);
-        throw new Error("The analysis timed out. The transcript may be too long for a single pass. Please try trimming the text or splitting it.");
-      } else {
-        throw error;
-      }
-    }
-  }
-  throw lastError;
-};
-
-export const analyzeTranscript = async (
-  transcript: string,
-  criteria: Criteria[],
-  userId?: string
-): Promise<Omit<AnalysisResult, 'id' | 'timestamp' | 'rawTranscript'>> => {
-
-  // 1. Check Usage Limits
-  if (userId) {
-    const canProceed = await checkLimit(userId, COSTS.ANALYSIS);
-    if (!canProceed) {
-        throw new Error("Usage limit exceeded. Please upgrade your plan to continue.");
-    }
-  }
-
-  const criteriaPrompt = criteria.map(c => `- ${c.name}: ${c.description} (Importance: ${c.weight}/10)`).join('\n');
-
-  const systemInstruction = `
-    You are an expert QA Quality Assurance Analyst for Customer Support.
-    Your job is to evaluate customer service transcripts based on specific criteria.
-    
-    CONTEXT ON SPEAKER IDENTIFICATION:
-    The transcript provided follows the format "[Time] Speaker: Text".
-    - Often, the "Speaker" will be a specific name (e.g., "John", "Sarah").
-    - Sometimes, it might be "Speaker 1" or "Speaker 2".
-    - Your job is to infer who is the AGENT and who is the CUSTOMER based on the content of what they say (e.g., who is asking for help vs. who is offering help).
-    
-    OUTPUT REQUIREMENTS:
-    1. Identify the 'agentName' and 'customerName' clearly.
-    2. Calculate an overall score (0-100).
-    3. Analyze the conversation against the provided criteria.
-    4. Be strict but fair in scoring.
-  `;
-
-  const prompt = `
-    Please analyze the following transcript:
-    
-    "${transcript}"
-
-    Evaluate it against these criteria:
-    ${criteriaPrompt}
-  `;
-
-  const ai = getAI();
-
-  const response = await retryWithBackoff(async () => {
-    return await ai.models.generateContent({
-      model: 'gemini-3-flash-preview', // Keep high quality model for analysis
-      contents: prompt,
-      config: {
-        systemInstruction: systemInstruction,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            agentName: { type: Type.STRING },
-            customerName: { type: Type.STRING },
-            summary: { type: Type.STRING },
-            overallScore: { type: Type.NUMBER },
-            sentiment: { type: Type.STRING, enum: ['Positive', 'Neutral', 'Negative'] },
-            criteriaResults: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  name: { type: Type.STRING },
-                  score: { type: Type.NUMBER, description: "Score from 0 to 100" },
-                  reasoning: { type: Type.STRING },
-                  suggestion: { type: Type.STRING }
-                },
-                required: ['name', 'score', 'reasoning', 'suggestion']
-              }
-            }
-          },
-          required: ['agentName', 'customerName', 'summary', 'overallScore', 'sentiment', 'criteriaResults']
-        }
-      }
-    });
-  });
-
-  const resultText = response.text;
-  if (!resultText) {
-    throw new Error("No response from AI");
-  }
-
-  let cleanText = resultText.trim();
-  if (cleanText.startsWith('```json')) {
-    cleanText = cleanText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-  } else if (cleanText.startsWith('```')) {
-    cleanText = cleanText.replace(/^```\s*/, '').replace(/\s*```$/, '');
-  }
-
-  if (userId) {
-     await incrementUsage(userId, COSTS.ANALYSIS, 'analysis');
-  }
-
+// Retry mechanism for robustness
+const retryWithBackoff = async <T>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> => {
   try {
-    return JSON.parse(cleanText) as Omit<AnalysisResult, 'id' | 'timestamp' | 'rawTranscript'>;
-  } catch (e) {
-    console.error("Failed to parse AI response:", cleanText);
-    throw new Error("AI response was not valid JSON.");
+    return await fn();
+  } catch (error: any) {
+    if (retries === 0 || (error.status >= 400 && error.status < 500)) throw error; 
+    await new Promise(res => setTimeout(res, delay));
+    return retryWithBackoff(fn, retries - 1, delay * 2);
   }
 };
 
-export const transcribeMedia = async (base64Data: string, mimeType: string, userId?: string): Promise<string> => {
-  if (userId) {
-    const canProceed = await checkLimit(userId, COSTS.TRANSCRIPTION);
-    if (!canProceed) {
-        throw new Error("Usage limit exceeded. Please upgrade your plan to continue.");
-    }
-  }
-  
-  const ai = getAI();
-  
-  const response = await retryWithBackoff(async () => {
-    return await ai.models.generateContent({
-      model: 'gemini-flash-lite-latest', // Use Flash Lite for faster transcription throughput
-      contents: {
-        parts: [
-          { text: `You are a professional audio transcriber. Your task is to provide a VERBATIM transcript of the audio.
-          
-          CRITICAL INSTRUCTIONS:
-          1. Capture every word spoken. Do NOT summarize. Do NOT skip sections.
-          2. SPEAKER IDENTIFICATION:
-             - Listen carefully for names. If a speaker introduces themselves (e.g., "This is John"), label them as "John" for the entire transcript.
-             - If names are not mentioned, use "Speaker 1" and "Speaker 2".
-             - Do NOT use generic labels like "Agent" or "Customer" unless they explicitly call themselves that.
-          3. TIMESTAMPS: Start every new turn with a timestamp in [MM:SS] format.
-          
-          FORMAT:
-          [00:00] Name: Text...
-          [00:05] Name: Text...
-          
-          Return ONLY the raw transcript text. No markdown, no preambles.` },
-          {
-            inlineData: {
-              mimeType: mimeType,
-              data: base64Data
+export const analyzeTranscript = async (transcript: string, criteria: Criteria[], userId?: string): Promise<Omit<AnalysisResult, 'id' | 'timestamp' | 'rawTranscript'>> => {
+    const ai = getAI();
+    const criteriaList = criteria.map(c => `- ${c.name} (Weight: ${c.weight}): ${c.description}`).join('\n');
+
+    const prompt = `
+        Analyze the following customer service transcript.
+        
+        TRANSCRIPT:
+        ${transcript}
+        
+        CRITERIA TO EVALUATE:
+        ${criteriaList}
+        
+        Extract the Agent Name and Customer Name if available (otherwise use "Agent" and "Customer").
+        Provide a summary.
+        Determine the overall sentiment.
+        Score each criterion from 0-100 based on the description and weight.
+        Provide reasoning and a suggestion for improvement for each criterion.
+        Calculate an overall weighted score.
+
+        Return the result in JSON format.
+    `;
+
+    const response = await retryWithBackoff(async () => {
+        return await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        agentName: { type: Type.STRING },
+                        customerName: { type: Type.STRING },
+                        summary: { type: Type.STRING },
+                        sentiment: { type: Type.STRING, enum: ['Positive', 'Neutral', 'Negative'] },
+                        overallScore: { type: Type.NUMBER },
+                        criteriaResults: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    name: { type: Type.STRING },
+                                    score: { type: Type.NUMBER },
+                                    reasoning: { type: Type.STRING },
+                                    suggestion: { type: Type.STRING }
+                                },
+                                required: ['name', 'score', 'reasoning', 'suggestion']
+                            }
+                        }
+                    },
+                    required: ['agentName', 'customerName', 'summary', 'sentiment', 'overallScore', 'criteriaResults']
+                }
             }
-          }
-        ]
-      },
-      // Config cleared of experimental features for maximum stability
-      config: {} 
+        });
     });
-  });
 
-  if (userId) {
-    await incrementUsage(userId, COSTS.TRANSCRIPTION, 'transcription');
-  }
+    if (userId) {
+        await incrementUsage(userId, COSTS.ANALYSIS, 'analysis');
+    }
 
-  return response.text || "";
+    const resultText = response.text || "{}";
+    return JSON.parse(resultText) as Omit<AnalysisResult, 'id' | 'timestamp' | 'rawTranscript'>;
 };
 
 export const generateMockTranscript = async (): Promise<string> => {
-   const ai = getAI();
-   
-   const response = await retryWithBackoff(async () => {
-     return await ai.models.generateContent({
-      model: 'gemini-flash-lite-latest', // Faster model for generation
-      contents: `Generate a realistic, slightly problematic customer service chat transcript between a customer (Sarah) and an agent (John) regarding a refund delay. It should be about 10-15 lines long.
-
-  Strict Formatting Rules:
-  1. Speaker Identification: Use the actual names 'John' and 'Sarah' as the speaker labels. Do NOT use 'Agent' or 'Customer'.
-  2. Timestamps: Provide a timestamp at the start of every new turn in [MM:SS] format.
-  3. Format: Each line must look exactly like this: [Time] Speaker: The spoken text.
-
-  Do not include markdown formatting, just the text.`,
-      config: {} // Removed thinking config
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: "Generate a realistic 10-turn customer support transcript between an Agent and a Customer regarding a billing dispute. The customer should be slightly annoyed but the agent resolves it. Format it as plain text.",
     });
-   });
-   
-  return response.text || "[00:00] John: Hello, how can I help?\n[00:05] Sarah: I need a refund.\n[00:10] John: Okay one sec.";
+    return response.text || "";
 };
 
-export const createChatSession = (): any => {
-  const ai = getAI();
-  return ai.chats.create({
-    model: 'gemini-3-flash-preview',
-    config: {
-      systemInstruction: `You are RevuBot, an intelligent assistant for the RevuQA AI platform.
-      Your goal is to assist Customer Support QA Managers and Analysts.
-      You can help with:
-      - Explaining QA criteria and scoring logic.
-      - Drafting coaching feedback for agents based on descriptions.
-      - Suggesting ways to improve team empathy, efficiency, and compliance.
-      - Navigating the RevuQA app (Dashboard, Analysis, History, Settings).
-      
-      Be professional, concise, and helpful. Use the context of being a QA expert tool.`,
-      // Removed thinking config
+export const transcribeMedia = async (base64Data: string, mimeType: string, userId?: string): Promise<string> => {
+    const ai = getAI();
+    
+    // Using 2.5 flash for multimodal input capability
+    const response = await retryWithBackoff(async () => {
+        return await ai.models.generateContent({
+            model: 'gemini-2.5-flash-preview',
+            contents: {
+                parts: [
+                    { inlineData: { mimeType, data: base64Data } },
+                    { text: "Transcribe this audio. Return only the transcript text with speaker labels (Agent/Customer)." }
+                ]
+            }
+        });
+    });
+
+    if (userId) {
+        await incrementUsage(userId, COSTS.TRANSCRIPTION, 'transcription');
     }
-  });
+
+    return response.text || "";
+};
+
+export const createChatSession = (): Chat => {
+    const ai = getAI();
+    return ai.chats.create({
+        model: 'gemini-3-flash-preview',
+        config: {
+            systemInstruction: "You are RevuBot, a helpful QA assistant for customer support teams. You help analyze performance, suggest coaching tips, and explain metrics. Be professional and encouraging."
+        }
+    });
+};
+
+export const createTrainingSession = (scenario: TrainingScenario): Chat => {
+    const ai = getAI();
+    // Inject the initial message into the history so the model knows context
+    return ai.chats.create({
+        model: 'gemini-3-flash-preview',
+        history: [
+            {
+                role: 'model',
+                parts: [{ text: scenario.initialMessage }],
+            },
+        ],
+        config: {
+            systemInstruction: scenario.systemInstruction
+        }
+    });
+};
+
+export const generateAIScenario = async (topic: string, category: 'Sales' | 'Support' | 'Technical', difficulty: string): Promise<Omit<TrainingScenario, 'id' | 'icon'>> => {
+    const ai = getAI();
+    
+    const prompt = `
+        Create a detailed, highly intelligent, and realistic training roleplay scenario for a ${category} agent.
+        
+        TOPIC/CONTEXT: ${topic}
+        DIFFICULTY LEVEL: ${difficulty}
+        
+        The scenario should be rich and challenging.
+        - Create a catchy Title.
+        - Write a Description of the situation.
+        - Write the Initial Message the customer sends.
+        - Write a detailed System Instruction for the AI playing the customer. This should include:
+          - The customer's name and persona (e.g., impatient, confused, skeptical).
+          - Hidden motivations or constraints.
+          - Triggers that make them happier or angrier.
+          - Specific objection handling instructions.
+          - IMPORTANT: The AI must be reactive and keep responses concise (1-3 sentences) to keep the conversation flowing fast.
+
+        Return JSON.
+    `;
+
+    const response = await retryWithBackoff(async () => {
+        return await ai.models.generateContent({
+            model: 'gemini-3-pro-preview', // Upgraded to Pro for smarter scenario generation
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        title: { type: Type.STRING },
+                        description: { type: Type.STRING },
+                        difficulty: { type: Type.STRING, enum: ['Beginner', 'Intermediate', 'Advanced'] },
+                        category: { type: Type.STRING, enum: ['Sales', 'Support', 'Technical'] },
+                        initialMessage: { type: Type.STRING },
+                        systemInstruction: { type: Type.STRING }
+                    },
+                    required: ['title', 'description', 'difficulty', 'category', 'initialMessage', 'systemInstruction']
+                }
+            }
+        });
+    });
+
+    const resultText = response.text || "{}";
+    return JSON.parse(resultText) as Omit<TrainingScenario, 'id' | 'icon'>;
+};
+
+export const evaluateTrainingSession = async (transcript: string, scenario: TrainingScenario): Promise<TrainingResult> => {
+    const ai = getAI();
+    
+    const prompt = `
+        Analyze the following training roleplay transcript between an Agent (User) and a Customer (AI).
+        
+        SCENARIO: ${scenario.title}
+        DIFFICULTY: ${scenario.difficulty}
+        DESCRIPTION: ${scenario.description}
+        
+        TRANSCRIPT:
+        ${transcript}
+        
+        Evaluate the Agent's performance based on:
+        1. Adherence to the goal of the scenario.
+        2. Empathy and tone appropriate for the difficulty level.
+        3. Problem-solving efficiency.
+        
+        Provide the result in JSON format.
+    `;
+
+    const response = await retryWithBackoff(async () => {
+        return await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        score: { type: Type.NUMBER, description: "Score from 0-100" },
+                        feedback: { type: Type.STRING, description: "A 2-3 sentence summary of how they did." },
+                        strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+                        improvements: { type: Type.ARRAY, items: { type: Type.STRING } },
+                        sentiment: { type: Type.STRING, enum: ['Positive', 'Neutral', 'Negative'], description: "The overall sentiment of the interaction." }
+                    },
+                    required: ['score', 'feedback', 'strengths', 'improvements', 'sentiment']
+                }
+            }
+        });
+    });
+
+    const resultText = response.text || "{}";
+    try {
+        return JSON.parse(resultText) as TrainingResult;
+    } catch (e) {
+        console.error("Failed to parse training result", e);
+        return {
+            score: 0,
+            feedback: "Error analyzing session.",
+            strengths: [],
+            improvements: [],
+            sentiment: 'Neutral'
+        };
+    }
+};
+
+export const connectLiveTraining = (scenario: TrainingScenario, callbacks: {
+    onOpen: () => void,
+    onMessage: (msg: LiveServerMessage) => void,
+    onError: (e: any) => void,
+    onClose: () => void
+}): Promise<any> => {
+    const ai = getAI();
+    // Add context about the start of the conversation so the model knows it 'said' the initial message
+    const enhancedSystemInstruction = `${scenario.systemInstruction}\n\nIMPORTANT CONTEXT: The conversation just started. You (the Customer) have just said: "${scenario.initialMessage}". Wait for the Agent to respond to this.`;
+    
+    return ai.live.connect({
+        model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+        config: {
+            responseModalities: [Modality.AUDIO],
+            systemInstruction: enhancedSystemInstruction,
+            speechConfig: {
+                voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } } 
+            },
+            inputAudioTranscription: {},
+            outputAudioTranscription: {},
+        },
+        callbacks: {
+            onopen: callbacks.onOpen,
+            onmessage: callbacks.onMessage,
+            onerror: callbacks.onError,
+            onclose: callbacks.onClose,
+        }
+    });
 };

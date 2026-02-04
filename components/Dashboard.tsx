@@ -24,9 +24,10 @@ import {
 interface DashboardProps {
   history: AnalysisResult[];
   setView: (view: ViewState) => void;
+  onFilterSelect?: (filter: 'all' | 'high' | 'low') => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ history, setView }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilterSelect }) => {
   // --- Logic (Untouched) ---
   const totalEvaluations = history.length;
   const averageScore = totalEvaluations > 0 
@@ -64,18 +65,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView }) => {
     return 'text-red-500';
   };
 
-  const getScoreBadgeColor = (score: number) => {
-    if (score >= 90) return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20';
-    if (score >= 75) return 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border-blue-200 dark:border-blue-500/20';
-    if (score >= 60) return 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-amber-200 dark:border-amber-500/20';
-    return 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400 border-red-200 dark:border-red-500/20';
-  };
-
   const getScoreGradient = (score: number) => {
     if (score >= 90) return 'from-emerald-500/20 to-emerald-500/5 border-emerald-200/50 dark:border-emerald-500/20';
     if (score >= 75) return 'from-blue-500/20 to-blue-500/5 border-blue-200/50 dark:border-blue-500/20';
     if (score >= 60) return 'from-amber-500/20 to-amber-500/5 border-amber-200/50 dark:border-amber-500/20';
     return 'from-red-500/20 to-red-500/5 border-red-200/50 dark:border-red-500/20';
+  };
+
+  const handleCardClick = (filter: 'all' | 'high' | 'low') => {
+      if (onFilterSelect) {
+          onFilterSelect(filter);
+      }
   };
 
   return (
@@ -85,7 +85,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         
         {/* Main Score Card */}
-        <div className={`relative overflow-hidden p-6 rounded-3xl bg-gradient-to-br ${getScoreGradient(averageScore)} border bg-white dark:bg-slate-900 shadow-sm group hover:shadow-md transition-all`}>
+        <div 
+            onClick={() => handleCardClick('all')}
+            className={`relative overflow-hidden p-6 rounded-3xl bg-gradient-to-br ${getScoreGradient(averageScore)} border bg-white dark:bg-slate-900 shadow-sm group hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] active:scale-95`}
+        >
           <div className="relative z-10 flex flex-col justify-between h-full">
             <div className="flex justify-between items-start mb-4">
               <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
@@ -107,9 +110,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView }) => {
         </div>
 
         {/* Total Evaluations */}
-        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+        <div 
+            onClick={() => handleCardClick('all')}
+            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-95 group"
+        >
            <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl text-[#0500e2] dark:text-[#4b53fa]">
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl text-[#0500e2] dark:text-[#4b53fa] group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 transition-colors">
                 <BarChart2 size={24} />
               </div>
            </div>
@@ -120,9 +126,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView }) => {
         </div>
 
         {/* Top Performers */}
-        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+        <div 
+            onClick={() => handleCardClick('high')}
+            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-95 group"
+        >
            <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl text-emerald-600 dark:text-emerald-400">
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/40 transition-colors">
                 <Award size={24} />
               </div>
            </div>
@@ -134,9 +143,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView }) => {
         </div>
 
         {/* Needs Attention */}
-        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+        <div 
+            onClick={() => handleCardClick('low')}
+            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-95 group"
+        >
            <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-2xl text-red-600 dark:text-red-400">
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-2xl text-red-600 dark:text-red-400 group-hover:bg-red-100 dark:group-hover:bg-red-900/40 transition-colors">
                 <AlertTriangle size={24} />
               </div>
            </div>

@@ -1,5 +1,4 @@
 
-
 export interface Criteria {
   id: string;
   name: string;
@@ -26,6 +25,25 @@ export interface AnalysisResult {
   rawTranscript: string;
 }
 
+export interface TrainingScenario {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  category: 'Sales' | 'Support' | 'Technical';
+  icon: 'Shield' | 'TrendingUp' | 'Wrench';
+  initialMessage: string;
+  systemInstruction: string;
+}
+
+export interface TrainingResult {
+  score: number;
+  feedback: string;
+  strengths: string[];
+  improvements: string[];
+  sentiment: 'Positive' | 'Neutral' | 'Negative';
+}
+
 export interface User {
   id: string;
   name: string;
@@ -43,7 +61,7 @@ export interface UsageMetrics {
   reset_date: string;
 }
 
-export type ViewState = 'dashboard' | 'analyze' | 'history' | 'settings' | 'evaluation' | 'usage' | 'roster';
+export type ViewState = 'dashboard' | 'analyze' | 'history' | 'settings' | 'evaluation' | 'usage' | 'roster' | 'pricing' | 'training';
 
 export const DEFAULT_CRITERIA: Criteria[] = [
   { id: '1', name: 'Empathy & Tone', description: 'Did the agent demonstrate empathy and maintain a professional tone?', weight: 9 },

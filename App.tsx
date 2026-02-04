@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Analyzer } from './components/Analyzer';
@@ -13,12 +12,14 @@ import { Signup } from './components/Signup';
 import { UpdatePassword } from './components/UpdatePassword';
 import { EvaluationView } from './components/EvaluationView';
 import { Roster } from './components/Roster';
+import { Pricing } from './components/Pricing';
+import { Training } from './components/Training';
 import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA, User } from './types';
 import { Menu, Loader2 } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
 import { supabase } from './lib/supabase';
 
-type AuthState = 'landing' | 'login' | 'signup' | 'app';
+type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -31,6 +32,9 @@ function App() {
   const [criteria, setCriteria] = useState<Criteria[]>(DEFAULT_CRITERIA);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedEvaluation, setSelectedEvaluation] = useState<AnalysisResult | null>(null);
+  
+  // Filter state for History view
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'high' | 'low'>('all');
   
   // Theme state
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -122,10 +126,11 @@ function App() {
         if (!session) {
             if (mounted) {
                 // Only reset to landing if we are NOT in recovery mode
-                // This prevents recovery screen flicker if session takes a moment
-                // However, we rely on App render logic to prioritize isRecoveryMode
+                // and NOT explicitly viewing public pricing
+                if (authView !== 'pricing') {
+                    setAuthView('landing');
+                }
                 setUser(null);
-                setAuthView('landing');
                 setIsLoadingUser(false);
             }
             return;
@@ -180,7 +185,9 @@ function App() {
         if (mounted && isLoadingUser) {
             console.warn("Auth check timed out, forcing landing page.");
             setIsLoadingUser(false);
-            setAuthView('landing');
+            if (authView !== 'pricing') {
+               setAuthView('landing');
+            }
         }
     }, 5000);
 
@@ -319,15 +326,47 @@ function App() {
     setSelectedEvaluation(result);
     setCurrentView('evaluation');
   };
+  
+  const handleNavWithFilter = (view: ViewState) => {
+      // Reset filter when navigating via sidebar to keep it clean, 
+      // unless we are specifically going to history, where we default to 'all'
+      setHistoryFilter('all');
+      setCurrentView(view);
+  };
+
+  const handlePlanSelect = (plan: string) => {
+     if (user) {
+         alert(`You selected the ${plan} plan. Payment integration coming soon!`);
+     } else {
+         setAuthView('signup');
+     }
+  }
 
   const renderAppView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard history={history} setView={setCurrentView} />;
+        return (
+          <Dashboard 
+            history={history} 
+            setView={setCurrentView} 
+            onFilterSelect={(filter) => {
+                setHistoryFilter(filter);
+                setCurrentView('history');
+            }}
+          />
+        );
       case 'analyze':
         return <Analyzer criteria={criteria} onAnalysisComplete={handleAnalysisComplete} user={user} />;
+      case 'training':
+        return <Training user={user} history={history} onAnalysisComplete={handleAnalysisComplete} />;
       case 'history':
-        return <History history={history} onSelectEvaluation={handleSelectEvaluation} />;
+        return (
+          <History 
+            history={history} 
+            onSelectEvaluation={handleSelectEvaluation} 
+            filter={historyFilter}
+          />
+        );
       case 'roster':
         return <Roster history={history} setView={setCurrentView} onSelectEvaluation={handleSelectEvaluation} />;
       case 'usage':
@@ -339,8 +378,10 @@ function App() {
             user={user}
             onUpdateUser={handleUpdateUser}
         />;
+      case 'pricing':
+        return <Pricing onPlanSelect={handlePlanSelect} isLoggedIn={true} />;
       case 'evaluation':
-        if (!selectedEvaluation) return <History history={history} onSelectEvaluation={handleSelectEvaluation} />;
+        if (!selectedEvaluation) return <History history={history} onSelectEvaluation={handleSelectEvaluation} filter='all' />;
         return (
           <EvaluationView 
             result={selectedEvaluation} 
@@ -357,7 +398,7 @@ function App() {
   // Don't show generic loader if we know we are recovering
   if (isLoadingUser && !isRecoveryMode) {
       return (
-          <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+          <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 animate-fade-in">
               <Loader2 className="animate-spin text-[#0500e2]" size={40} />
           </div>
       )
@@ -365,37 +406,60 @@ function App() {
 
   // 2. Password Recovery Mode (Takes precedence over normal app view if active)
   if (isRecoveryMode) {
-      return <UpdatePassword onComplete={() => setIsRecoveryMode(false)} />;
+      return (
+        <div className="animate-fade-in w-full min-h-screen">
+          <UpdatePassword onComplete={() => setIsRecoveryMode(false)} />
+        </div>
+      );
   }
 
-  // 3. Landing Page
+  // 3. Public Pages
   if (authView === 'landing') {
       return (
-        <LandingPage 
-            onLoginClick={() => setAuthView('login')} 
-            onSignupClick={() => setAuthView('signup')} 
-        />
+        <div className="animate-fade-in w-full min-h-screen">
+            <LandingPage 
+                onLoginClick={() => setAuthView('login')} 
+                onSignupClick={() => setAuthView('signup')} 
+                onPricingClick={() => setAuthView('pricing')}
+            />
+        </div>
+      );
+  }
+
+  if (authView === 'pricing') {
+      return (
+        <div className="animate-fade-in w-full min-h-screen">
+            <Pricing 
+                onPlanSelect={() => setAuthView('signup')} 
+                isLoggedIn={false} 
+                onBack={() => setAuthView('landing')}
+            />
+        </div>
       );
   }
 
   // 4. Auth Views
   if (authView === 'login') {
       return (
-          <Login 
-            onLogin={() => {}} 
-            onSwitchToSignup={() => setAuthView('signup')}
-            onBackToHome={() => setAuthView('landing')}
-          />
+        <div className="animate-fade-in w-full min-h-screen">
+            <Login 
+                onLogin={() => {}} 
+                onSwitchToSignup={() => setAuthView('signup')}
+                onBackToHome={() => setAuthView('landing')}
+            />
+        </div>
       );
   }
 
   if (authView === 'signup') {
       return (
-          <Signup 
-            onSignup={() => {}} 
-            onSwitchToLogin={() => setAuthView('login')}
-            onBackToHome={() => setAuthView('landing')}
-          />
+        <div className="animate-fade-in w-full min-h-screen">
+            <Signup 
+                onSignup={() => {}} 
+                onSwitchToLogin={() => setAuthView('login')}
+                onBackToHome={() => setAuthView('landing')}
+            />
+        </div>
       );
   }
 
@@ -404,7 +468,7 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 flex font-sans text-slate-900 dark:text-slate-100 print:block print:bg-white print:min-h-0 print:h-auto transition-colors duration-300">
       <Sidebar 
         currentView={currentView === 'evaluation' ? 'history' : currentView} 
-        setView={setCurrentView} 
+        setView={handleNavWithFilter} 
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         theme={theme}
@@ -429,26 +493,33 @@ function App() {
       <main className="flex-1 w-full lg:ml-64 transition-all duration-300 print:ml-0 print:w-full print:block">
         <div className="h-full p-4 pt-24 lg:p-8 lg:pt-8 overflow-y-auto print:h-auto print:overflow-visible print:p-0 content-wrapper">
           <div className="max-w-6xl mx-auto print:max-w-none">
-            <header className="mb-6 lg:mb-8 no-print">
-                <h1 className="text-2xl lg:text-3xl font-bold text-[#000000] dark:text-white tracking-tight capitalize">
-                  {currentView === 'analyze' ? 'Analyze Interaction' : 
-                   currentView === 'evaluation' ? 'Evaluation Details' : 
-                   currentView === 'usage' ? 'Usage & Limits' :
-                   currentView === 'roster' ? 'Team Performance Roster' :
-                   currentView === 'settings' ? 'System Settings' : currentView}
-                </h1>
-                <p className="text-sm lg:text-base text-slate-500 dark:text-slate-400 mt-2">
-                  {currentView === 'dashboard' && `Welcome back, ${user?.name.split(' ')[0]}. Here is your team's quality overview.`}
-                  {currentView === 'analyze' && 'Upload transcripts or paste text to generate instant QA insights.'}
-                  {currentView === 'history' && 'Review past evaluations and track improvement over time.'}
-                  {currentView === 'usage' && 'Monitor your credit consumption and manage plan limits.'}
-                  {currentView === 'roster' && 'Deep dive into individual agent metrics and trends.'}
-                  {currentView === 'settings' && 'Manage your profile and customize quality standards.'}
-                  {currentView === 'evaluation' && 'Detailed breakdown of the selected conversation analysis.'}
-                </p>
-            </header>
-            
-            {renderAppView()}
+            {/* Wrap the content key to trigger page transitions */}
+            <div key={currentView} className="animate-fade-in-up">
+                <header className="mb-6 lg:mb-8 no-print">
+                    <h1 className="text-2xl lg:text-3xl font-bold text-[#000000] dark:text-white tracking-tight capitalize">
+                    {currentView === 'analyze' ? 'Analyze Interaction' : 
+                    currentView === 'evaluation' ? 'Evaluation Details' : 
+                    currentView === 'training' ? 'AI Training Center' :
+                    currentView === 'usage' ? 'Usage & Limits' :
+                    currentView === 'roster' ? 'Team Performance Roster' :
+                    currentView === 'settings' ? 'System Settings' : 
+                    currentView === 'pricing' ? 'Subscription Plans' : currentView}
+                    </h1>
+                    <p className="text-sm lg:text-base text-slate-500 dark:text-slate-400 mt-2">
+                    {currentView === 'dashboard' && `Welcome back, ${user?.name.split(' ')[0]}. Here is your team's quality overview.`}
+                    {currentView === 'analyze' && 'Upload transcripts or paste text to generate instant QA insights.'}
+                    {currentView === 'training' && 'Practice tough conversations with AI roleplay scenarios.'}
+                    {currentView === 'history' && 'Review past evaluations and track improvement over time.'}
+                    {currentView === 'usage' && 'Monitor your credit consumption and manage plan limits.'}
+                    {currentView === 'roster' && 'Deep dive into individual agent metrics and trends.'}
+                    {currentView === 'settings' && 'Manage your profile and customize quality standards.'}
+                    {currentView === 'evaluation' && 'Detailed breakdown of the selected conversation analysis.'}
+                    {currentView === 'pricing' && 'Upgrade your plan to unlock more credits and features.'}
+                    </p>
+                </header>
+                
+                {renderAppView()}
+            </div>
           </div>
         </div>
       </main>
