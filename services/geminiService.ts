@@ -127,15 +127,8 @@ export const createChatSession = (): Chat => {
 
 export const createTrainingSession = (scenario: TrainingScenario): Chat => {
     const ai = getAI();
-    // Inject the initial message into the history so the model knows context
     return ai.chats.create({
         model: 'gemini-3-flash-preview',
-        history: [
-            {
-                role: 'model',
-                parts: [{ text: scenario.initialMessage }],
-            },
-        ],
         config: {
             systemInstruction: scenario.systemInstruction
         }
@@ -146,7 +139,7 @@ export const generateAIScenario = async (topic: string, category: 'Sales' | 'Sup
     const ai = getAI();
     
     const prompt = `
-        Create a detailed, highly intelligent, and realistic training roleplay scenario for a ${category} agent.
+        Create a detailed and realistic training roleplay scenario for a ${category} agent.
         
         TOPIC/CONTEXT: ${topic}
         DIFFICULTY LEVEL: ${difficulty}
@@ -160,14 +153,13 @@ export const generateAIScenario = async (topic: string, category: 'Sales' | 'Sup
           - Hidden motivations or constraints.
           - Triggers that make them happier or angrier.
           - Specific objection handling instructions.
-          - IMPORTANT: The AI must be reactive and keep responses concise (1-3 sentences) to keep the conversation flowing fast.
 
         Return JSON.
     `;
 
     const response = await retryWithBackoff(async () => {
         return await ai.models.generateContent({
-            model: 'gemini-3-pro-preview', // Upgraded to Pro for smarter scenario generation
+            model: 'gemini-3-flash-preview',
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
@@ -255,14 +247,11 @@ export const connectLiveTraining = (scenario: TrainingScenario, callbacks: {
     onClose: () => void
 }): Promise<any> => {
     const ai = getAI();
-    // Add context about the start of the conversation so the model knows it 'said' the initial message
-    const enhancedSystemInstruction = `${scenario.systemInstruction}\n\nIMPORTANT CONTEXT: The conversation just started. You (the Customer) have just said: "${scenario.initialMessage}". Wait for the Agent to respond to this.`;
-    
     return ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-12-2025',
         config: {
             responseModalities: [Modality.AUDIO],
-            systemInstruction: enhancedSystemInstruction,
+            systemInstruction: scenario.systemInstruction,
             speechConfig: {
                 voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } } 
             },
