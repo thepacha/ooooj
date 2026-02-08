@@ -108,13 +108,13 @@ function App() {
             const mappedEvals: AnalysisResult[] = evals.map(e => ({
               id: e.id,
               timestamp: e.timestamp,
-              agent_name: e.agent_name,
-              customer_name: e.customer_name,
-              summary: e.summary,
-              overall_score: e.overall_score,
-              sentiment: e.sentiment,
-              criteria_results: e.criteria_results,
-              raw_transcript: e.raw_transcript
+              agentName: e.agent_name || 'Unknown Agent',
+              customerName: e.customer_name || 'Unknown Customer',
+              summary: e.summary || '',
+              overallScore: e.overall_score || 0,
+              sentiment: e.sentiment || 'Neutral',
+              criteriaResults: e.criteria_results || [],
+              rawTranscript: e.raw_transcript || ''
             }));
             setHistory(mappedEvals);
           }

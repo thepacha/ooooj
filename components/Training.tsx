@@ -182,7 +182,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     }, []);
 
     const allScenarios = [...customScenarios, ...STATIC_SCENARIOS]; // Put custom first
-    const trainingHistory = history.filter(h => h.customerName.startsWith('Roleplay:') || h.summary.startsWith('Training Session'));
+    const trainingHistory = history.filter(h => h.customerName?.startsWith('Roleplay:') || h.summary?.startsWith('Training Session'));
 
     const startSession = async (scenario: TrainingScenario, sessionMode: 'text' | 'voice') => {
         if (user) {
@@ -680,7 +680,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                                     </div>
                                                 </td>
                                                 <td className="p-4 text-sm font-bold text-slate-900 dark:text-white">
-                                                    {item.customerName.replace('Roleplay: ', '')}
+                                                    {item.customerName?.replace('Roleplay: ', '')}
                                                 </td>
                                                 <td className="p-4">
                                                     <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-1 max-w-md">{item.summary}</p>

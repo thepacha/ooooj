@@ -180,7 +180,7 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
     const ext = file.name.split('.').pop()?.toLowerCase();
     
     // Check type or extension
-    const isAudioVideo = file.type.startsWith('audio/') || file.type.startsWith('video/');
+    const isAudioVideo = file.type?.startsWith('audio/') || file.type?.startsWith('video/');
     const isSupportedExtension = ['m4a', 'mp3', 'wav', 'ogg', 'aac', 'mp4', 'webm', 'mov'].includes(ext || '');
 
     if (isAudioVideo || isSupportedExtension) {
