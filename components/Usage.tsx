@@ -233,7 +233,8 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
                   <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
                       <tr>
                           <th className="p-5">Period Ending</th>
-                          <th className="p-5">Credits Used</th>
+                          <th className="p-5">Total Credits</th>
+                          <th className="p-5">Audio Credits</th>
                           <th className="p-5">Analyses</th>
                           <th className="p-5">Transcripts</th>
                           <th className="p-5">Chat Messages</th>
@@ -242,7 +243,7 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {(history || []).length === 0 ? (
                           <tr>
-                              <td colSpan={5} className="p-12 text-center text-slate-400">
+                              <td colSpan={6} className="p-12 text-center text-slate-400">
                                   <div className="flex flex-col items-center gap-2">
                                       <Calendar size={24} className="opacity-50" />
                                       <p>No billing history available yet.</p>
@@ -257,6 +258,9 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
                                   </td>
                                   <td className="p-5 font-mono text-slate-700 dark:text-slate-300">
                                       {row.credits_used.toLocaleString()}
+                                  </td>
+                                  <td className="p-5 font-mono text-slate-600 dark:text-slate-400">
+                                      {(row.transcriptions_count * COSTS.TRANSCRIPTION).toLocaleString()}
                                   </td>
                                   <td className="p-5 text-slate-600 dark:text-slate-400">
                                       {row.analyses_count}

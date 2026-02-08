@@ -138,6 +138,10 @@ create policy "Users can read own usage history" on usage_history for select usi
 drop policy if exists "Users can insert own usage history" on usage_history;
 create policy "Users can insert own usage history" on usage_history for insert with check (auth.uid() = user_id);
 
+-- ALLOW ADMINS TO READ ALL HISTORY (Required for Lifetime Usage Calculation)
+drop policy if exists "Admins can read all usage history" on usage_history;
+create policy "Admins can read all usage history" on usage_history for select using (is_admin());
+
 -- 4. SCENARIOS POLICIES
 drop policy if exists "Users can view their own scenarios" on scenarios;
 create policy "Users can view their own scenarios" on scenarios for select using (auth.uid() = user_id);

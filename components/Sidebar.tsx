@@ -81,8 +81,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
             </button>
           ))}
 
-          {/* Admin Link - Showing to all logged-in users temporarily for setup */}
-          {user && (
+          {/* Admin Link - Restricted to Admin Role */}
+          {user?.role === 'admin' && (
             <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
                <button
                 onClick={() => {

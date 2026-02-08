@@ -161,8 +161,17 @@ export const Admin: React.FC<AdminProps> = ({ user: currentUser }) => {
       if (!confirm(`Reset billing period usage for ${user.name}? This sets current credits and counts to 0.`)) return;
       
       try {
-          // Reset all counters, not just credits_used
-          const updates = { 
+          // Prepare payload: use existing usage data (or defaults) and zero out counters
+          // We use UPSERT to handle cases where the user has no usage record yet
+          const currentUsage = user.usage || {
+              monthly_limit: 1000,
+              reset_date: new Date().toISOString()
+          };
+
+          const payload = {
+              user_id: user.id,
+              monthly_limit: currentUsage.monthly_limit,
+              reset_date: currentUsage.reset_date,
               credits_used: 0,
               analyses_count: 0,
               transcriptions_count: 0,
@@ -171,14 +180,13 @@ export const Admin: React.FC<AdminProps> = ({ user: currentUser }) => {
 
           const { error } = await supabase
             .from('user_usage')
-            .update(updates)
-            .eq('user_id', user.id);
+            .upsert(payload, { onConflict: 'user_id' });
 
           if (error) throw error;
 
           setUsers(prev => prev.map(u => 
               u.id === user.id 
-              ? { ...u, usage: { ...u.usage!, ...updates } } 
+              ? { ...u, usage: { ...u.usage!, ...payload } } 
               : u
           ));
       } catch (e: any) {
@@ -399,7 +407,7 @@ export const Admin: React.FC<AdminProps> = ({ user: currentUser }) => {
                                 <div className="flex items-center gap-2">Usage (Mo) <ArrowUpDown size={12}/></div>
                             </th>
                             <th className="p-5 cursor-pointer hover:text-[#0500e2] transition-colors" onClick={() => toggleSort('lifetime')}>
-                                <div className="flex items-center gap-2">Lifetime <ArrowUpDown size={12}/></div>
+                                <div className="flex items-center gap-2">Total Consumed (All Time) <ArrowUpDown size={12}/></div>
                             </th>
                             <th className="p-5 cursor-pointer hover:text-[#0500e2] transition-colors" onClick={() => toggleSort('limit')}>
                                 <div className="flex items-center gap-2">Limit <ArrowUpDown size={12}/></div>
@@ -466,7 +474,7 @@ export const Admin: React.FC<AdminProps> = ({ user: currentUser }) => {
                                         <div className="text-sm font-bold text-slate-700 dark:text-slate-200">
                                             {user.lifetime_usage.toLocaleString()}
                                         </div>
-                                        <div className="text-[10px] text-slate-400 uppercase tracking-wide">Total</div>
+                                        <div className="text-[10px] text-slate-400 uppercase tracking-wide">Credits</div>
                                     </td>
                                     <td className="p-5">
                                         {isEditing ? (

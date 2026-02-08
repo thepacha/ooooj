@@ -388,6 +388,19 @@ function App() {
             onUpdateUser={handleUpdateUser}
         />;
       case 'admin':
+        // Protect route - only allow admin users
+        if (user?.role !== 'admin') {
+            return (
+                <Dashboard 
+                    history={history} 
+                    setView={setCurrentView} 
+                    onFilterSelect={(filter) => {
+                        setHistoryFilter(filter);
+                        setCurrentView('history');
+                    }}
+                />
+            );
+        }
         return <Admin user={user} />;
       case 'pricing':
         return <Pricing onPlanSelect={handlePlanSelect} isLoggedIn={true} />;
