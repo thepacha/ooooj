@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { TrainingScenario, TrainingResult, User, AnalysisResult, CriteriaResult } from '../types';
 import { createTrainingSession, evaluateTrainingSession, connectLiveTraining, generateAIScenario } from '../services/geminiService';
@@ -185,6 +186,11 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     const trainingHistory = history.filter(h => h.customerName?.startsWith('Roleplay:') || h.summary?.startsWith('Training Session'));
 
     const startSession = async (scenario: TrainingScenario, sessionMode: 'text' | 'voice') => {
+        if (!process.env.API_KEY) {
+            alert("API Key is missing. Please check your configuration.");
+            return;
+        }
+
         if (user) {
              const canProceed = await checkLimit(user.id, COSTS.CHAT * 5); // Est cost
              if (!canProceed) {
@@ -246,7 +252,13 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                     scriptProcessor.onaudioprocess = (e) => {
                         const inputData = e.inputBuffer.getChannelData(0);
                         const pcmBlob = createBlob(inputData);
-                        sessionPromise.then(session => session.sendRealtimeInput({ media: pcmBlob }));
+                        sessionPromise.then(session => {
+                            try {
+                                session.sendRealtimeInput({ media: pcmBlob });
+                            } catch(err) {
+                                console.warn("Failed to send audio", err);
+                            }
+                        });
                     };
                     
                     source.connect(scriptProcessor);
@@ -303,8 +315,9 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                 },
                 onError: (e) => {
                     console.error("Voice Error", e);
-                    setMessages(prev => [...prev, {role: 'model', text: "[Voice Error] Connection interrupted."}]);
+                    setMessages(prev => [...prev, {role: 'model', text: "[System] Connection failed. Please check your API key and network."}]);
                     setIsVoiceActive(false);
+                    stopVoiceSession();
                 },
                 onClose: () => {
                     console.log("Voice Session Closed");
@@ -312,24 +325,32 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                 }
             });
             
-            chatSession.current = sessionPromise; // Store promise to close later if needed
+            chatSession.current = sessionPromise; 
 
         } catch (e) {
             console.error("Voice setup failed", e);
-            alert("Could not start voice session. Check microphone permissions.");
+            alert("Could not start voice session. Check microphone permissions or API key.");
             setIsVoiceActive(false);
         }
     };
 
     const stopVoiceSession = () => {
         setIsVoiceActive(false);
-        if (inputAudioContext.current) inputAudioContext.current.close();
-        if (outputAudioContext.current) outputAudioContext.current.close();
-        // We can't explicitly "close" the session promise object easily without the session object itself stored differently, 
-        // but closing audio contexts stops the flow.
-        // If we stored the session object:
+        if (inputAudioContext.current) {
+            inputAudioContext.current.close().catch(console.error);
+            inputAudioContext.current = null;
+        }
+        if (outputAudioContext.current) {
+            outputAudioContext.current.close().catch(console.error);
+            outputAudioContext.current = null;
+        }
+        
         if (chatSession.current && typeof chatSession.current.then === 'function') {
-             chatSession.current.then((session: any) => session.close());
+             chatSession.current.then((session: any) => {
+                 try {
+                    session.close();
+                 } catch(e) { console.warn("Session already closed"); }
+             }).catch(() => {});
         }
     };
 

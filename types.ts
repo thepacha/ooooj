@@ -50,6 +50,7 @@ export interface User {
   email: string;
   company?: string;
   website?: string;
+  role?: 'user' | 'admin';
 }
 
 export interface UsageMetrics {
@@ -62,7 +63,17 @@ export interface UsageMetrics {
   reset_date: string;
 }
 
-export type ViewState = 'dashboard' | 'analyze' | 'history' | 'settings' | 'evaluation' | 'usage' | 'roster' | 'pricing' | 'training';
+export interface UsageHistory {
+  id: string;
+  user_id: string;
+  period_end: string;
+  credits_used: number;
+  analyses_count: number;
+  transcriptions_count: number;
+  chat_messages_count: number;
+}
+
+export type ViewState = 'dashboard' | 'analyze' | 'history' | 'settings' | 'evaluation' | 'usage' | 'roster' | 'pricing' | 'training' | 'admin';
 
 export const DEFAULT_CRITERIA: Criteria[] = [
   { id: '1', name: 'Empathy & Tone', description: 'Did the agent demonstrate empathy and maintain a professional tone?', weight: 9 },

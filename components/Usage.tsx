@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
-import { User, UsageMetrics } from '../types';
-import { getUsage, COSTS } from '../lib/usageService';
-import { Loader2, Zap, AlertTriangle, FileText, Mic, MessageSquare } from 'lucide-react';
+import { User, UsageMetrics, UsageHistory } from '../types';
+import { getUsage, getUsageHistory, purchaseCredits, COSTS } from '../lib/usageService';
+import { Loader2, Zap, AlertTriangle, FileText, Mic, MessageSquare, CreditCard, Plus, History, Calendar } from 'lucide-react';
 
 interface UsageProps {
   user: User | null;
@@ -10,33 +10,47 @@ interface UsageProps {
 
 export const Usage: React.FC<UsageProps> = ({ user }) => {
   const [metrics, setMetrics] = useState<UsageMetrics | null>(null);
+  const [history, setHistory] = useState<UsageHistory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [purchasing, setPurchasing] = useState(false);
 
   useEffect(() => {
     if (user) {
-      getUsage(user.id).then(data => {
-        setMetrics(data);
-        setLoading(false);
-      });
+      loadData();
     }
   }, [user]);
 
-  // Helper to trigger view change via custom event since we don't have direct access to setView prop here
-  // Ideally Usage should accept setView, but for minimal changes we use a trick or assume the parent passes it.
-  // Actually, standard react way: The user can navigate via sidebar usually, but here we want a button click.
-  // Let's assume for this specific component update we don't change the prop signature heavily to break other things,
-  // but we can dispatch a custom event or just use a simple href if using router (which we aren't).
-  
-  // To properly fix this, I will add an event listener in App.tsx or pass setView. 
-  // Given constraints, I'll use a dispatch event which App.tsx doesn't listen to yet.
-  // BETTER APPROACH: Just change the text to guide them or leave it as a mock button since `App.tsx` handles the `pricing` view now.
-  // Actually, I can't easily pass setView without changing App.tsx signature for this component.
-  // I will make the button just a visual indicator for now or link to the pricing page if I had a router.
-  // Since I updated App.tsx to handle 'pricing' view, I should really pass setView to Usage.
-  // But wait, the previous file didn't have setView. 
-  // I'll leave the button as "Contact Support" or similar for now to avoid breaking the prop chain, 
-  // OR I will simply accept that the user uses the sidebar/landing page.
-  // A better UX is to let the user know they can upgrade.
+  const loadData = async () => {
+    if (user) {
+        setLoading(true);
+        try {
+            const [currentUsage, historyData] = await Promise.all([
+                getUsage(user.id),
+                getUsageHistory(user.id)
+            ]);
+            setMetrics(currentUsage);
+            setHistory(historyData || []);
+        } catch (e) {
+            console.error("Failed to load usage data", e);
+        } finally {
+            setLoading(false);
+        }
+    }
+  };
+
+  const handlePurchase = async (amount: number) => {
+      if (!user) return;
+      setPurchasing(true);
+      try {
+          await purchaseCredits(user.id, amount);
+          await loadData(); // Refresh UI
+          // Optional: You could show a toast here
+      } catch (e) {
+          alert("Failed to purchase credits. Please try again.");
+      } finally {
+          setPurchasing(false);
+      }
+  };
 
   if (loading || !metrics) {
     return (
@@ -104,7 +118,7 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
                     {metrics.credits_used.toLocaleString()} <span className="text-slate-400">/ {metrics.monthly_limit.toLocaleString()} Credits</span>
                 </h2>
                 <p className="text-slate-500 dark:text-slate-400 mb-6">
-                    Resets on {new Date(metrics.reset_date).toLocaleDateString()}. usage is calculated based on analysis complexity and audio duration.
+                    Resets on {new Date(metrics.reset_date).toLocaleDateString()}. Usage is calculated based on analysis complexity and audio duration.
                 </p>
                 
                 <div className="flex flex-wrap gap-4 justify-center md:justify-start">
@@ -125,34 +139,55 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
           </div>
         </div>
 
-        {/* Plan Upgrade Card */}
-        <div className="bg-[#0500e2] text-white p-8 rounded-[2rem] shadow-xl shadow-blue-600/20 relative overflow-hidden flex flex-col justify-between">
+        {/* Top Up Card */}
+        <div className="bg-[#0500e2] text-white p-8 rounded-[2rem] shadow-xl shadow-blue-600/20 relative overflow-hidden flex flex-col">
             <div className="relative z-10">
-                <h3 className="text-2xl font-serif font-bold mb-2">Pro Plan</h3>
-                <p className="text-blue-100 text-sm mb-6">Unlock higher limits and advanced team features.</p>
-                <ul className="space-y-3 mb-8">
-                    <li className="flex items-center gap-2 text-sm">
-                        <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-white text-[10px]">✓</div>
-                        50,000 Credits / mo
-                    </li>
-                    <li className="flex items-center gap-2 text-sm">
-                        <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-white text-[10px]">✓</div>
-                        Priority Processing
-                    </li>
-                    <li className="flex items-center gap-2 text-sm">
-                        <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-white text-[10px]">✓</div>
-                        Team Management
-                    </li>
-                </ul>
-            </div>
-            {/* Note: In a real implementation, this would trigger setView('pricing') */}
-            <div className="relative z-10 w-full py-3 bg-white text-[#0500e2] rounded-xl font-bold text-center cursor-default opacity-90">
-                Contact Sales to Upgrade
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white backdrop-blur-sm">
+                        <CreditCard size={20} />
+                    </div>
+                    <h3 className="text-xl font-serif font-bold">Top Up Credits</h3>
+                </div>
+                <p className="text-blue-100 text-sm mb-6">Running low? Add more credits instantly to continue analyzing.</p>
+                
+                <div className="space-y-3">
+                    <button 
+                        onClick={() => handlePurchase(1000)}
+                        disabled={purchasing}
+                        className="w-full flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all border border-white/10 text-sm group"
+                    >
+                        <span className="font-bold flex items-center gap-2"><Plus size={14} className="text-blue-200" /> 1,000 Credits</span>
+                        <span className="font-mono bg-white/20 px-2 py-1 rounded text-xs group-hover:bg-white group-hover:text-[#0500e2] transition-colors">$5</span>
+                    </button>
+                    <button 
+                        onClick={() => handlePurchase(5000)}
+                        disabled={purchasing}
+                        className="w-full flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all border border-white/10 text-sm group"
+                    >
+                        <span className="font-bold flex items-center gap-2"><Plus size={14} className="text-blue-200" /> 5,000 Credits</span>
+                        <span className="font-mono bg-white/20 px-2 py-1 rounded text-xs group-hover:bg-white group-hover:text-[#0500e2] transition-colors">$20</span>
+                    </button>
+                    <button 
+                        onClick={() => handlePurchase(10000)}
+                        disabled={purchasing}
+                        className="w-full flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all border border-white/10 text-sm group"
+                    >
+                        <span className="font-bold flex items-center gap-2"><Plus size={14} className="text-blue-200" /> 10,000 Credits</span>
+                        <span className="font-mono bg-white/20 px-2 py-1 rounded text-xs group-hover:bg-white group-hover:text-[#0500e2] transition-colors">$35</span>
+                    </button>
+                </div>
             </div>
             
             {/* Background Decor */}
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-black/20 to-transparent"></div>
+            <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
+            
+            {purchasing && (
+                <div className="absolute inset-0 bg-[#0500e2]/80 backdrop-blur-sm z-20 flex items-center justify-center flex-col gap-2 animate-fade-in">
+                    <Loader2 className="animate-spin text-white" size={32} />
+                    <span className="text-xs font-bold text-white uppercase tracking-wider">Processing...</span>
+                </div>
+            )}
         </div>
       </div>
 
@@ -182,6 +217,62 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
                 <p className="text-xs text-slate-500">Per message sent to RevuBot.</p>
              </div>
          </div>
+      </div>
+
+      {/* History Table */}
+      <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
+              <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300">
+                  <History size={20} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Billing History</h3>
+          </div>
+          
+          <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                  <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
+                      <tr>
+                          <th className="p-5">Period Ending</th>
+                          <th className="p-5">Credits Used</th>
+                          <th className="p-5">Analyses</th>
+                          <th className="p-5">Transcripts</th>
+                          <th className="p-5">Chat Messages</th>
+                      </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {(history || []).length === 0 ? (
+                          <tr>
+                              <td colSpan={5} className="p-12 text-center text-slate-400">
+                                  <div className="flex flex-col items-center gap-2">
+                                      <Calendar size={24} className="opacity-50" />
+                                      <p>No billing history available yet.</p>
+                                  </div>
+                              </td>
+                          </tr>
+                      ) : (
+                          (history || []).map((row) => (
+                              <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                  <td className="p-5 text-slate-900 dark:text-white font-medium">
+                                      {new Date(row.period_end).toLocaleDateString()}
+                                  </td>
+                                  <td className="p-5 font-mono text-slate-700 dark:text-slate-300">
+                                      {row.credits_used.toLocaleString()}
+                                  </td>
+                                  <td className="p-5 text-slate-600 dark:text-slate-400">
+                                      {row.analyses_count}
+                                  </td>
+                                  <td className="p-5 text-slate-600 dark:text-slate-400">
+                                      {row.transcriptions_count}
+                                  </td>
+                                  <td className="p-5 text-slate-600 dark:text-slate-400">
+                                      {row.chat_messages_count}
+                                  </td>
+                              </tr>
+                          ))
+                      )}
+                  </tbody>
+              </table>
+          </div>
       </div>
 
     </div>

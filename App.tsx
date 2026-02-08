@@ -15,6 +15,7 @@ import { EvaluationView } from './components/EvaluationView';
 import { Roster } from './components/Roster';
 import { Pricing } from './components/Pricing';
 import { Training } from './components/Training';
+import { Admin } from './components/Admin';
 import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA, User } from './types';
 import { Menu, Loader2 } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
@@ -105,15 +106,16 @@ function App() {
             .order('timestamp', { ascending: false });
     
           if (evals && mounted) {
+            // FIX: Map database snake_case columns to AnalysisResult camelCase properties
             const mappedEvals: AnalysisResult[] = evals.map(e => ({
               id: e.id,
               timestamp: e.timestamp,
-              agentName: e.agent_name || 'Unknown Agent',
-              customerName: e.customer_name || 'Unknown Customer',
+              agentName: e.agent_name || 'Unknown Agent', // Correctly map agent_name to agentName
+              customerName: e.customer_name || 'Unknown Customer', // Correctly map customer_name to customerName
               summary: e.summary || '',
               overallScore: e.overall_score || 0,
               sentiment: e.sentiment || 'Neutral',
-              criteriaResults: e.criteria_results || [],
+              criteriaResults: e.criteria_results || [], // Correctly map criteria_results to criteriaResults
               rawTranscript: e.raw_transcript || ''
             }));
             setHistory(mappedEvals);
@@ -160,14 +162,20 @@ function App() {
                 .single();
             
             if (profile && mounted) {
-                setUser(prev => prev ? ({ ...prev, name: profile.name, company: profile.company }) : prev);
+                setUser(prev => prev ? ({ 
+                    ...prev, 
+                    name: profile.name, 
+                    company: profile.company,
+                    role: profile.role // Load role
+                }) : prev);
             } else if (!profile) {
                 // Auto-create profile if missing
                 const newProfile = {
                     id: session.user.id,
                     name: basicUser.name,
                     email: basicUser.email,
-                    company: basicUser.company
+                    company: basicUser.company,
+                    role: 'user'
                 };
                 await supabase.from('profiles').insert(newProfile);
             }
@@ -379,6 +387,8 @@ function App() {
             user={user}
             onUpdateUser={handleUpdateUser}
         />;
+      case 'admin':
+        return <Admin user={user} />;
       case 'pricing':
         return <Pricing onPlanSelect={handlePlanSelect} isLoggedIn={true} />;
       case 'evaluation':
@@ -508,10 +518,11 @@ function App() {
                     currentView === 'usage' ? 'Usage & Limits' :
                     currentView === 'roster' ? 'Team Performance Roster' :
                     currentView === 'settings' ? 'System Settings' : 
+                    currentView === 'admin' ? 'Admin Console' :
                     currentView === 'pricing' ? 'Subscription Plans' : currentView}
                     </h1>
                     <p className="text-sm lg:text-base text-slate-500 dark:text-slate-400 mt-2">
-                    {currentView === 'dashboard' && `Welcome back, ${user?.name.split(' ')[0]}. Here is your team's quality overview.`}
+                    {currentView === 'dashboard' && `Welcome back, ${(user?.name || 'User').split(' ')[0]}. Here is your team's quality overview.`}
                     {currentView === 'analyze' && 'Upload transcripts or paste text to generate instant QA insights.'}
                     {currentView === 'training' && 'Practice tough conversations with AI roleplay scenarios.'}
                     {currentView === 'history' && 'Review past evaluations and track improvement over time.'}
@@ -519,6 +530,7 @@ function App() {
                     {currentView === 'roster' && 'Deep dive into individual agent metrics and trends.'}
                     {currentView === 'settings' && 'Manage your profile and customize quality standards.'}
                     {currentView === 'evaluation' && 'Detailed breakdown of the selected conversation analysis.'}
+                    {currentView === 'admin' && 'Manage user accounts, monitor usage, and adjust credit limits.'}
                     {currentView === 'pricing' && 'Upgrade your plan to unlock more credits and features.'}
                     </p>
                 </header>

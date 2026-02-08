@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LayoutDashboard, FileText, History, Settings, X, Sun, Moon, LogOut, PieChart, Users, GraduationCap } from 'lucide-react';
+import { LayoutDashboard, FileText, History, Settings, X, Sun, Moon, LogOut, PieChart, Users, GraduationCap, ShieldAlert } from 'lucide-react';
 import { ViewState, User } from '../types';
 import { RevuLogo } from './RevuLogo';
 
@@ -80,6 +80,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
               <span className="font-medium">{item.label}</span>
             </button>
           ))}
+
+          {/* Admin Link - Showing to all logged-in users temporarily for setup */}
+          {user && (
+            <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
+               <button
+                onClick={() => {
+                  setView('admin');
+                  onClose();
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
+                  currentView === 'admin'
+                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <span className={`${currentView === 'admin' ? '' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600'}`}>
+                  <ShieldAlert size={20} />
+                </span>
+                <span className="font-medium">Admin Console</span>
+              </button>
+            </div>
+          )}
         </nav>
 
         <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 shrink-0">

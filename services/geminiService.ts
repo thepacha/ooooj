@@ -1,10 +1,15 @@
+
 import { GoogleGenAI, Type, Chat, LiveServerMessage, Modality } from "@google/genai";
 import { AnalysisResult, Criteria, TrainingResult, TrainingScenario } from "../types";
-import { incrementUsage, COSTS } from "../lib/usageService";
+import { incrementUsage, checkLimit, COSTS } from "../lib/usageService";
 
 // Helper to initialize AI with environment API key
 const getAI = () => {
-  return new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+      throw new Error("API Key is missing. Please configure your environment.");
+  }
+  return new GoogleGenAI({ apiKey });
 };
 
 // Retry mechanism for robustness
@@ -19,6 +24,14 @@ const retryWithBackoff = async <T>(fn: () => Promise<T>, retries = 3, delay = 10
 };
 
 export const analyzeTranscript = async (transcript: string, criteria: Criteria[], userId?: string): Promise<Omit<AnalysisResult, 'id' | 'timestamp' | 'rawTranscript'>> => {
+    // STRICT LIMIT CHECK
+    if (userId) {
+        const canProceed = await checkLimit(userId, COSTS.ANALYSIS);
+        if (!canProceed) {
+            throw new Error(`Usage limit reached. Analysis requires ${COSTS.ANALYSIS} credits.`);
+        }
+    }
+
     const ai = getAI();
     const criteriaList = criteria.map(c => `- ${c.name} (Weight: ${c.weight}): ${c.description}`).join('\n');
 
@@ -80,7 +93,12 @@ export const analyzeTranscript = async (transcript: string, criteria: Criteria[]
     }
 
     const resultText = response.text || "{}";
-    return JSON.parse(resultText) as Omit<AnalysisResult, 'id' | 'timestamp' | 'rawTranscript'>;
+    const res = JSON.parse(resultText);
+    
+    // Ensure criteriaResults is always an array
+    if (!res.criteriaResults) res.criteriaResults = [];
+    
+    return res as Omit<AnalysisResult, 'id' | 'timestamp' | 'rawTranscript'>;
 };
 
 export const generateMockTranscript = async (): Promise<string> => {
@@ -93,6 +111,14 @@ export const generateMockTranscript = async (): Promise<string> => {
 };
 
 export const transcribeMedia = async (base64Data: string, mimeType: string, userId?: string): Promise<string> => {
+    // STRICT LIMIT CHECK
+    if (userId) {
+        const canProceed = await checkLimit(userId, COSTS.TRANSCRIPTION);
+        if (!canProceed) {
+            throw new Error(`Usage limit reached. Transcription requires ${COSTS.TRANSCRIPTION} credits.`);
+        }
+    }
+
     const ai = getAI();
     
     // Using 2.5 flash for multimodal input capability
@@ -255,6 +281,7 @@ export const connectLiveTraining = (scenario: TrainingScenario, callbacks: {
             speechConfig: {
                 voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } } 
             },
+            // Transcription config is supported
             inputAudioTranscription: {},
             outputAudioTranscription: {},
         },

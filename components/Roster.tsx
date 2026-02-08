@@ -94,7 +94,7 @@ export const Roster: React.FC<RosterProps> = ({ history, setView, onSelectEvalua
   // Filtering & Sorting
   const filteredAgents = agents
     .filter(a => {
-        const matchesSearch = a.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = (a.name || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesDropdown = selectedAgentFilter ? a.name === selectedAgentFilter : true;
         return matchesSearch && matchesDropdown;
     })
@@ -327,7 +327,7 @@ export const Roster: React.FC<RosterProps> = ({ history, setView, onSelectEvalua
                                     <td className="p-5">
                                         <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold text-sm shadow-sm border border-slate-300 dark:border-slate-600">
-                                                {agent.name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase()}
+                                                {(agent.name || 'Unknown').split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase()}
                                             </div>
                                             <div>
                                                 <div className="font-bold text-slate-900 dark:text-white group-hover:text-[#0500e2] transition-colors">{agent.name}</div>

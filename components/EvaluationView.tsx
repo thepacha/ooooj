@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AnalysisResult } from '../types';
 import { Sparkles, FileText, Download, Printer, ChevronDown, ChevronUp, CheckCircle, ArrowRight, Check, Shield, Copy } from 'lucide-react';
@@ -11,7 +12,7 @@ interface EvaluationViewProps {
 export const EvaluationView: React.FC<EvaluationViewProps> = ({ result, onBack, backLabel = "Back" }) => {
   // Auto-expand criteria with low scores (< 75) to highlight issues immediately
   const [expandedCriteria, setExpandedCriteria] = useState<number[]>(() => 
-    result.criteriaResults
+    (result.criteriaResults || [])
       .map((c, i) => c.score < 75 ? i : -1)
       .filter(i => i !== -1)
   );
@@ -41,7 +42,7 @@ ${result.summary}
 
 Detailed Criteria Breakdown
 ---------------------------
-${result.criteriaResults.map(c => `
+${(result.criteriaResults || []).map(c => `
 [${c.name}] - Score: ${c.score}/100
 Reasoning: ${c.reasoning}
 ${c.suggestion ? `Suggestion: ${c.suggestion}` : ''}
@@ -84,7 +85,7 @@ ${result.rawTranscript}
      return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800';
   };
 
-  const bestCoachingTip = result.criteriaResults.find(c => c.score < 90)?.suggestion || "Keep up the excellent performance!";
+  const bestCoachingTip = (result.criteriaResults || []).find(c => c.score < 90)?.suggestion || "Keep up the excellent performance!";
 
   return (
     <div className="space-y-8 md:space-y-12 pb-20 animate-fade-in">
@@ -233,7 +234,7 @@ ${result.rawTranscript}
                     <h3 className="text-xl md:text-2xl font-serif font-bold text-slate-900 dark:text-white">Scorecard Breakdown</h3>
                 </div>
                 <div className="divide-y divide-slate-50 dark:divide-slate-800">
-                    {result.criteriaResults.map((criterion, idx) => {
+                    {(result.criteriaResults || []).map((criterion, idx) => {
                         const isExpanded = expandedCriteria.includes(idx);
                         return (
                             <div key={idx} className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all bg-white dark:bg-slate-900">

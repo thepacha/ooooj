@@ -20,8 +20,8 @@ export const History: React.FC<HistoryProps> = ({ history, onSelectEvaluation, f
 
   const filteredHistory = history.filter(
     (item) => {
-      const matchesSearch = item.agentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            item.summary.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = (item.agentName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (item.summary || '').toLowerCase().includes(searchTerm.toLowerCase());
       
       let matchesFilter = true;
       if (activeFilter === 'high') {
