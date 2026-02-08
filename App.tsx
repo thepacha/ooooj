@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Analyzer } from './components/Analyzer';
@@ -107,13 +108,13 @@ function App() {
             const mappedEvals: AnalysisResult[] = evals.map(e => ({
               id: e.id,
               timestamp: e.timestamp,
-              agentName: e.agent_name,
-              customerName: e.customer_name,
+              agent_name: e.agent_name,
+              customer_name: e.customer_name,
               summary: e.summary,
-              overallScore: e.overall_score,
+              overall_score: e.overall_score,
               sentiment: e.sentiment,
-              criteriaResults: e.criteria_results,
-              rawTranscript: e.raw_transcript
+              criteria_results: e.criteria_results,
+              raw_transcript: e.raw_transcript
             }));
             setHistory(mappedEvals);
           }
@@ -431,6 +432,8 @@ function App() {
         <div className="animate-fade-in w-full min-h-screen">
             <Pricing 
                 onPlanSelect={() => setAuthView('signup')} 
+                onLogin={() => setAuthView('login')}
+                onSignup={() => setAuthView('signup')}
                 isLoggedIn={false} 
                 onBack={() => setAuthView('landing')}
             />
@@ -445,6 +448,7 @@ function App() {
             <Login 
                 onLogin={() => {}} 
                 onSwitchToSignup={() => setAuthView('signup')}
+                onPricing={() => setAuthView('pricing')}
                 onBackToHome={() => setAuthView('landing')}
             />
         </div>
@@ -457,6 +461,7 @@ function App() {
             <Signup 
                 onSignup={() => {}} 
                 onSwitchToLogin={() => setAuthView('login')}
+                onPricing={() => setAuthView('pricing')}
                 onBackToHome={() => setAuthView('landing')}
             />
         </div>

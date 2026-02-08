@@ -1,31 +1,102 @@
+
 import React, { useState } from 'react';
-import { RevuLogo } from './RevuLogo';
-import { ArrowRight, Loader2, User as UserIcon, Mail, Lock, Building2 } from 'lucide-react';
+import { ArrowRight, Loader2, User as UserIcon, Mail, Lock, Building2, Chrome, CheckCircle, AlertTriangle, Eye, EyeOff, Check, Globe, Sparkles } from 'lucide-react';
 import { User } from '../types';
 import { BackgroundGradientAnimation } from './ui/background-gradient-animation';
 import { supabase } from '../lib/supabase';
 import { DEFAULT_CRITERIA } from '../types';
+import { PublicNavigation } from './PublicNavigation';
 
 interface SignupProps {
   onSignup: (user: User) => void;
   onSwitchToLogin: () => void;
   onBackToHome: () => void;
+  onPricing: () => void;
 }
 
-export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBackToHome }) => {
-  const [name, setName] = useState('');
+export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBackToHome, onPricing }) => {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [company, setCompany] = useState('');
+  const [website, setWebsite] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Password Requirements State
+  const requirements = [
+      { id: 'length', label: '12-24 chars', met: password.length >= 12 && password.length <= 24 },
+      { id: 'number', label: 'Number', met: /\d/.test(password) },
+      { id: 'symbol', label: 'Symbol', met: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
+      { id: 'nospace', label: 'No spaces', met: !/\s/.test(password) }
+  ];
+
+  const allMet = requirements.every(r => r.met);
+
+  const handleWebsiteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      let val = e.target.value;
+      // Strip protocol, www, and path to allow domain only
+      val = val.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0].split('?')[0];
+      setWebsite(val);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccessMessage(null);
+
+    // Validate Password
+    if (!allMet) {
+        setError("Please ensure your password meets all security requirements.");
+        return;
+    }
+
+    // Validate Company Name
+    if (!company.trim()) {
+        setError("Company name is required.");
+        return;
+    }
+
+    // Validate Website
+    if (!website.trim()) {
+        setError("Company website is required.");
+        return;
+    }
+
+    // Basic domain validation regex
+    const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/;
+    if (!domainRegex.test(website)) {
+        setError("Please enter a valid website domain (e.g. acme.com).");
+        return;
+    }
+
+    // Strict Email Validation (must have @ and domain extension)
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+        setError("Please enter a valid email address (e.g., name@company.com).");
+        return;
+    }
+
+    // Validate Business Email (Public Domains Check)
+    const publicDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'live.com', 'msn.com', 'icloud.com', 'aol.com', 'protonmail.com', 'mail.com', 'yandex.com'];
+    const emailDomain = email.split('@')[1]?.toLowerCase();
+    if (emailDomain && publicDomains.includes(emailDomain)) {
+        setError("Please use a valid business email address (no public domains like Gmail).");
+        return;
+    }
+
+    // Validate Website Matches Email Domain
+    if (emailDomain && website.toLowerCase() !== emailDomain) {
+        setError("Company website domain must match your work email domain.");
+        return;
+    }
+
     setIsLoading(true);
+
+    const fullName = `${firstName.trim()} ${lastName.trim()}`;
 
     try {
         const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -33,31 +104,26 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
             password,
             options: {
                 data: {
-                    name: name, // Store in metadata as backup
-                    company: company
+                    name: fullName,
+                    company: company,
+                    website: website
                 }
             }
         });
 
         if (authError) throw authError;
 
-        // CRITICAL FIX: Only attempt DB writes if we have a session (Email verification disabled or auto-login)
-        // If email verification is enabled, authData.session will be null, and writes would fail RLS.
         if (authData.session && authData.user) {
-            // Create Profile
             const { error: profileError } = await supabase.from('profiles').upsert({
                 id: authData.user.id,
-                name: name,
+                name: fullName,
                 email: email,
-                company: company || 'My Company'
+                company: company,
+                website: website
             });
 
-            if (profileError) {
-                console.error("Error creating profile:", profileError);
-                // Don't block signup success
-            }
+            if (profileError) console.error("Error creating profile:", profileError);
             
-            // Insert Default Criteria
             const criteriaRecords = DEFAULT_CRITERIA.map(c => ({
                 id: crypto.randomUUID(),
                 user_id: authData.user!.id,
@@ -66,36 +132,34 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
                 weight: c.weight
             }));
             
-            const { error: criteriaError } = await supabase.from('criteria').insert(criteriaRecords);
-            if (criteriaError) {
-                 console.error("Error creating default criteria:", criteriaError);
-            }
+            await supabase.from('criteria').insert(criteriaRecords);
         } else if (authData.user && !authData.session) {
-            // Email confirmation flow
-            setSuccessMessage("Account created! Please check your email to confirm your registration.");
+            setSuccessMessage("Account created successfully! Please check your email to confirm registration.");
             setIsLoading(false);
             return; 
         }
-
-        // App.tsx will pick up the session change via onAuthStateChange if logged in
     } catch (err: any) {
         setError(err.message || 'Failed to sign up.');
         setIsLoading(false);
     }
   };
 
+  const handleSocialSignup = () => {
+      alert("Social signup integration coming soon!");
+  }
+
   if (successMessage) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950 font-sans p-6">
-            <div className="max-w-md w-full text-center">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 font-sans p-6">
+            <div className="max-w-md w-full text-center p-12 bg-white dark:bg-slate-900 rounded-[2rem] shadow-xl border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-500">
+                <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-sm">
                     <Mail size={32} />
                 </div>
-                <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-4">Check your inbox</h2>
-                <p className="text-slate-600 dark:text-slate-300 mb-8">{successMessage}</p>
+                <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white mb-4">Check your inbox</h2>
+                <p className="text-slate-600 dark:text-slate-300 mb-10 text-lg leading-relaxed">{successMessage}</p>
                 <button 
                     onClick={onSwitchToLogin}
-                    className="px-8 py-3 bg-[#0500e2] text-white rounded-xl font-bold hover:bg-[#0400c0] transition-colors"
+                    className="w-full px-8 py-4 bg-[#0500e2] text-white rounded-xl font-bold text-lg hover:bg-[#0400c0] transition-colors shadow-lg shadow-blue-600/20"
                 >
                     Return to Login
                 </button>
@@ -105,123 +169,230 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
   }
 
   return (
-    <div className="min-h-screen flex bg-white dark:bg-slate-950 font-sans">
+    <div className="min-h-screen flex bg-white dark:bg-slate-950 font-sans selection:bg-[#0500e2] selection:text-white">
+      {/* Header */}
+      <PublicNavigation 
+        onLanding={onBackToHome}
+        onLogin={onSwitchToLogin}
+        onSignup={() => {}} // Already on signup
+        onPricing={onPricing}
+        activePage="signup"
+      />
+
       {/* Left Side - Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center p-8 md:p-12 lg:p-24 relative z-10">
-        <div className="mb-10">
-            <button onClick={onBackToHome} className="flex items-center gap-2 text-[#0500e2] dark:text-[#4b53fa] mb-8 hover:opacity-80 transition-opacity">
-                <RevuLogo className="h-8 w-auto" />
-                <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white pt-1">QA</span>
-            </button>
-            <h1 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white mb-3">Create your account</h1>
-            <p className="text-slate-500 dark:text-slate-400">Start automating your quality assurance today.</p>
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 py-12 lg:px-20 relative z-10 bg-white dark:bg-slate-950 pt-32 lg:pt-32">
+        <div className="max-w-lg mx-auto w-full">
+            <div className="mb-10">
+                <h1 className="text-4xl lg:text-5xl font-serif font-bold text-slate-900 dark:text-white mb-3 tracking-tight">Create account</h1>
+                <p className="text-slate-500 dark:text-slate-400 text-lg">Start automating your quality assurance today.</p>
+            </div>
+
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                
+                {/* Social Signup */}
+                <button 
+                    onClick={handleSocialSignup}
+                    className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl border border-slate-200 dark:border-slate-800 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all mb-8 group bg-white dark:bg-slate-900 shadow-sm hover:shadow-md"
+                >
+                    <Chrome size={20} className="text-slate-900 dark:text-white" />
+                    <span>Sign up with Google</span>
+                </button>
+
+                <div className="relative flex items-center gap-4 mb-8">
+                    <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Or register with email</span>
+                    <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Name Row */}
+                    <div className="grid grid-cols-2 gap-5">
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">First Name</label>
+                            <div className="relative group">
+                                <UserIcon size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
+                                <input 
+                                    type="text" 
+                                    required
+                                    maxLength={12}
+                                    value={firstName}
+                                    onChange={(e) => setFirstName(e.target.value)}
+                                    placeholder="John"
+                                    className="w-full pl-11 pr-4 h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Last Name</label>
+                            <div className="relative group">
+                                <UserIcon size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
+                                <input 
+                                    type="text" 
+                                    required
+                                    maxLength={12}
+                                    value={lastName}
+                                    onChange={(e) => setLastName(e.target.value)}
+                                    placeholder="Doe"
+                                    className="w-full pl-11 pr-4 h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Email */}
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Work Email</label>
+                        <div className="relative group">
+                            <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
+                            <input 
+                                type="email" 
+                                required
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="name@company.com"
+                                className="w-full pl-11 pr-4 h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Company Info */}
+                    <div className="grid grid-cols-2 gap-5">
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Company</label>
+                            <div className="relative group">
+                                <Building2 size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
+                                <input 
+                                    type="text" 
+                                    required
+                                    maxLength={12}
+                                    value={company}
+                                    onChange={(e) => setCompany(e.target.value)}
+                                    placeholder="Acme Inc."
+                                    className="w-full pl-11 pr-4 h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Website</label>
+                            <div className="relative group">
+                                <Globe size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
+                                <input 
+                                    type="text"
+                                    required
+                                    value={website}
+                                    onChange={handleWebsiteChange}
+                                    placeholder="acme.com"
+                                    className="w-full pl-11 pr-4 h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Password */}
+                    <div className="space-y-3">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Password</label>
+                        <div className="relative group">
+                            <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
+                            <input 
+                                type={showPassword ? "text" : "password"}
+                                required
+                                maxLength={24}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Create a secure password"
+                                className="w-full pl-11 pr-12 h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
+                        
+                        {/* Password Requirements Checklist - Styled better */}
+                        <div className="flex flex-wrap gap-2 pt-1">
+                            {requirements.map((req) => (
+                                <div key={req.id} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold transition-all duration-300 ${
+                                    req.met 
+                                    ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800' 
+                                    : 'bg-slate-50 text-slate-400 dark:bg-slate-900 dark:text-slate-500 border border-slate-100 dark:border-slate-800'
+                                }`}>
+                                    {req.met ? <Check size={10} strokeWidth={4} /> : <div className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />}
+                                    {req.label}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {error && (
+                        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-1">
+                            <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                            <span>{error}</span>
+                        </div>
+                    )}
+
+                    <button 
+                        type="submit" 
+                        disabled={isLoading}
+                        className="w-full h-14 bg-[#0500e2] text-white rounded-xl font-bold text-lg shadow-xl shadow-blue-600/20 hover:bg-[#0400c0] hover:-translate-y-0.5 hover:shadow-blue-600/30 transition-all disabled:opacity-70 disabled:translate-y-0 flex items-center justify-center gap-2 mt-4"
+                    >
+                        {isLoading ? <Loader2 size={24} className="animate-spin" /> : <>Create Account <ArrowRight size={20} /></>}
+                    </button>
+                </form>
+
+                <div className="mt-8 text-center">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Already have an account?{' '}
+                        <button onClick={onSwitchToLogin} className="font-bold text-[#0500e2] dark:text-[#4b53fa] hover:underline">Log in</button>
+                    </p>
+                </div>
+            </div>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4 max-w-sm">
-            <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Full Name</label>
-                <div className="relative">
-                    <UserIcon size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input 
-                        type="text" 
-                        required
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="John Doe"
-                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0500e2] focus:border-[#0500e2] transition-all outline-none"
-                    />
-                </div>
-            </div>
-
-            <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Email address</label>
-                <div className="relative">
-                    <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input 
-                        type="email" 
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="john@company.com"
-                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0500e2] focus:border-[#0500e2] transition-all outline-none"
-                    />
-                </div>
-            </div>
-
-            <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Password</label>
-                <div className="relative">
-                    <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input 
-                        type="password" 
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Create a strong password"
-                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0500e2] focus:border-[#0500e2] transition-all outline-none"
-                    />
-                </div>
-            </div>
-
-             <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Company Name <span className="text-slate-400 font-normal">(Optional)</span></label>
-                <div className="relative">
-                    <Building2 size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input 
-                        type="text" 
-                        value={company}
-                        onChange={(e) => setCompany(e.target.value)}
-                        placeholder="Acme Inc."
-                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0500e2] focus:border-[#0500e2] transition-all outline-none"
-                    />
-                </div>
-            </div>
-
-            {error && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-lg flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                    {error}
-                </div>
-            )}
-
-            <button 
-                type="submit" 
-                disabled={isLoading}
-                className="w-full py-3.5 bg-[#0500e2] text-white rounded-xl font-bold shadow-lg shadow-blue-600/20 hover:bg-[#0400c0] hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:translate-y-0 flex items-center justify-center gap-2 mt-4"
-            >
-                {isLoading ? <Loader2 size={20} className="animate-spin" /> : <>Get Started <ArrowRight size={18} /></>}
-            </button>
-        </form>
-
-        <p className="mt-8 text-center text-sm text-slate-500 max-w-sm">
-            Already have an account?{' '}
-            <button onClick={onSwitchToLogin} className="font-bold text-[#0500e2] hover:underline">Log in</button>
-        </p>
       </div>
 
       {/* Right Side - Visual */}
-      <div className="hidden lg:block w-1/2 relative overflow-hidden bg-slate-900">
-         <BackgroundGradientAnimation containerClassName="h-full w-full opacity-60">
-             <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-12 z-10">
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-3xl max-w-md shadow-2xl">
-                    <div className="w-12 h-12 bg-[#0500e2] rounded-2xl flex items-center justify-center mb-6 text-white text-2xl font-bold mx-auto shadow-lg shadow-blue-500/50">
-                        🚀
+      <div className="hidden lg:block w-1/2 relative overflow-hidden bg-slate-900 border-l border-slate-800">
+         <BackgroundGradientAnimation containerClassName="h-full w-full opacity-40">
+             <div className="absolute inset-0 flex flex-col items-center justify-center p-20 z-10">
+                <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-10 rounded-[2.5rem] max-w-lg shadow-2xl transition-all hover:scale-[1.01] duration-700">
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="w-14 h-14 bg-gradient-to-br from-[#0500e2] to-violet-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-900/50">
+                            <Sparkles className="text-white" size={28} />
+                        </div>
+                        <div>
+                            <h3 className="text-2xl font-serif font-bold text-white">World-class QA</h3>
+                            <p className="text-blue-200 text-sm">Automated & Intelligent</p>
+                        </div>
                     </div>
-                    <h3 className="text-2xl font-serif font-bold text-white mb-3">Join the future of QA.</h3>
-                    <ul className="text-blue-100 text-left space-y-3 mb-6">
-                        <li className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-xs">✓</span>
-                            100% Automated Scoring
-                        </li>
-                        <li className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-xs">✓</span>
-                            Instant Coaching Tips
-                        </li>
-                        <li className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-xs">✓</span>
-                            Team Performance Dashboards
-                        </li>
-                    </ul>
+                    
+                    <div className="space-y-6">
+                        {[
+                            { title: '100% Coverage', desc: 'Every ticket analyzed automatically.' },
+                            { title: 'Instant Coaching', desc: 'Real-time feedback for your agents.' },
+                            { title: 'Bias-Free Grading', desc: 'Objective scoring based on your criteria.' }
+                        ].map((item, i) => (
+                            <div key={i} className="flex gap-4 p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                                <div className="mt-1 w-6 h-6 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center shrink-0 border border-green-500/20">
+                                    <CheckCircle size={14} strokeWidth={3} />
+                                </div>
+                                <div>
+                                    <h4 className="text-white font-bold text-sm">{item.title}</h4>
+                                    <p className="text-slate-300 text-xs mt-0.5">{item.desc}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                
+                <div className="mt-12 flex items-center gap-3 opacity-60">
+                    <div className="flex -space-x-3">
+                        {[1,2,3,4].map(i => (
+                            <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-700"></div>
+                        ))}
+                    </div>
+                    <p className="text-sm text-slate-400 font-medium">Join 500+ support teams</p>
                 </div>
              </div>
          </BackgroundGradientAnimation>

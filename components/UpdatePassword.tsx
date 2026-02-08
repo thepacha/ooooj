@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Lock, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Lock, Loader2, CheckCircle, AlertCircle, Eye, EyeOff, Check } from 'lucide-react';
 import { RevuLogo } from './RevuLogo';
 
 interface UpdatePasswordProps {
@@ -10,9 +10,20 @@ interface UpdatePasswordProps {
 export const UpdatePassword: React.FC<UpdatePasswordProps> = ({ onComplete }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  // Password Requirements State
+  const requirements = [
+      { id: 'length', label: '12-24 characters', met: password.length >= 12 && password.length <= 24 },
+      { id: 'number', label: 'Contains a number', met: /\d/.test(password) },
+      { id: 'symbol', label: 'Contains a symbol', met: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
+      { id: 'nospace', label: 'No spaces', met: !/\s/.test(password) }
+  ];
+
+  const allMet = requirements.every(r => r.met);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,8 +34,8 @@ export const UpdatePassword: React.FC<UpdatePasswordProps> = ({ onComplete }) =>
       return;
     }
 
-    if (password.length < 6) {
-        setError("Password must be at least 6 characters");
+    if (!allMet) {
+        setError("Please meet all password requirements.");
         return;
     }
 
@@ -80,17 +91,48 @@ export const UpdatePassword: React.FC<UpdatePasswordProps> = ({ onComplete }) =>
 
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">New Password</label>
+                        <div className="flex justify-between items-center mb-1.5">
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">New Password</label>
+                            <span className={`text-xs font-semibold ${password.length >= 24 ? 'text-amber-500' : 'text-slate-400'}`}>
+                                {password.length}/24
+                            </span>
+                        </div>
                         <div className="relative">
                             <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input 
-                                type="password" 
+                                type={showPassword ? "text" : "password"}
                                 required
+                                maxLength={24}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
-                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0500e2] focus:border-[#0500e2] transition-all outline-none"
+                                className="w-full pl-10 pr-12 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0500e2] focus:border-[#0500e2] transition-all outline-none"
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
+                        
+                        {/* Requirements List */}
+                        <div className="pt-2 space-y-1">
+                            {requirements.map((req) => (
+                                <div key={req.id} className={`flex items-center gap-2 text-xs font-medium transition-colors ${
+                                    password.length === 0 ? 'text-slate-400' : 
+                                    req.met ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'
+                                }`}>
+                                    <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center border transition-all ${
+                                        password.length === 0 ? 'border-slate-300 bg-transparent' :
+                                        req.met ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800'
+                                    }`}>
+                                        {req.met && <Check size={8} strokeWidth={4} />}
+                                    </div>
+                                    {req.label}
+                                </div>
+                            ))}
                         </div>
                     </div>
 
@@ -99,8 +141,9 @@ export const UpdatePassword: React.FC<UpdatePasswordProps> = ({ onComplete }) =>
                         <div className="relative">
                             <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input 
-                                type="password" 
+                                type={showPassword ? "text" : "password"}
                                 required
+                                maxLength={24}
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 placeholder="••••••••"

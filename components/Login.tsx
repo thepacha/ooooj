@@ -1,22 +1,25 @@
+
 import React, { useState } from 'react';
-import { RevuLogo } from './RevuLogo';
-import { ArrowRight, ArrowLeft, Loader2, Mail, Lock, KeyRound, CheckCircle, AlertTriangle } from 'lucide-react';
+import { ArrowRight, Loader2, Mail, Lock, KeyRound, CheckCircle, AlertTriangle, Chrome, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { User } from '../types';
 import { BackgroundGradientAnimation } from './ui/background-gradient-animation';
 import { supabase } from '../lib/supabase';
+import { PublicNavigation } from './PublicNavigation';
 
 interface LoginProps {
   onLogin: (user: User) => void;
   onSwitchToSignup: () => void;
   onBackToHome: () => void;
+  onPricing: () => void;
 }
 
 type LoginView = 'login' | 'forgot-password';
 
-export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToHome }) => {
+export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToHome, onPricing }) => {
   const [view, setView] = useState<LoginView>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   
   // Login State
   const [isLoading, setIsLoading] = useState(false);
@@ -53,7 +56,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
       setIsResetLoading(true);
       
       try {
-          // Use origin to prevent issues with query params in the redirect URL
           const { error } = await supabase.auth.resetPasswordForEmail(email, {
               redirectTo: window.location.origin,
           });
@@ -69,206 +71,254 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
       }
   };
 
+  const handleSocialLogin = () => {
+      alert("Social login integration coming soon!");
+  }
+
   return (
-    <div className="min-h-screen flex bg-white dark:bg-slate-950 font-sans">
+    <div className="min-h-screen flex bg-white dark:bg-slate-950 font-sans selection:bg-[#0500e2] selection:text-white">
+      {/* Header */}
+      <PublicNavigation 
+        onLanding={onBackToHome}
+        onLogin={() => {}} // Already on login
+        onSignup={onSwitchToSignup}
+        onPricing={onPricing}
+        activePage="login"
+      />
+
       {/* Left Side - Form Container */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center p-8 md:p-12 lg:p-24 relative z-10 transition-all duration-500">
+      <div className="w-full lg:w-[45%] flex flex-col justify-center p-8 md:p-12 lg:p-16 relative z-10 bg-white dark:bg-slate-950 border-r border-slate-100 dark:border-slate-900 pt-32 lg:pt-32">
         
-        {/* Header / Logo */}
-        <div className="mb-12">
-            <button onClick={onBackToHome} className="flex items-center gap-2 text-[#0500e2] dark:text-[#4b53fa] mb-8 hover:opacity-80 transition-opacity">
-                <RevuLogo className="h-8 w-auto" />
-                <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white pt-1">QA</span>
-            </button>
-            
-            <div className="overflow-hidden">
-                <h1 className={`text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white mb-3 transition-transform duration-500 ${view === 'forgot-password' ? 'translate-y-0' : 'translate-y-0'}`}>
-                    {view === 'login' ? 'Welcome back' : 'Reset Password'}
-                </h1>
-                <p className="text-slate-500 dark:text-slate-400">
-                    {view === 'login' ? 'Please enter your details to sign in.' : 'Enter your email to receive reset instructions.'}
-                </p>
+        <div className="max-w-md mx-auto w-full">
+            <div className="mb-10">
+                <div className="overflow-hidden">
+                    <h1 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white mb-3">
+                        {view === 'login' ? 'Welcome back' : 'Reset Password'}
+                    </h1>
+                    <p className="text-slate-500 dark:text-slate-400 text-lg">
+                        {view === 'login' ? 'Enter your details to access your dashboard.' : 'Enter your email to receive reset instructions.'}
+                    </p>
+                </div>
             </div>
-        </div>
 
-        {/* LOGIN FORM */}
-        {view === 'login' && (
-            <div className="animate-in fade-in slide-in-from-left-4 duration-500">
-                <form onSubmit={handleLoginSubmit} className="space-y-5 max-w-sm">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Email address</label>
-                        <div className="relative">
-                            <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input 
-                                type="email" 
-                                required
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="jane@company.com"
-                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0500e2] focus:border-[#0500e2] transition-all outline-none"
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <div className="flex justify-between items-center mb-1.5">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
-                            <button 
-                                type="button"
-                                onClick={() => {
-                                    setError(null);
-                                    setView('forgot-password');
-                                }}
-                                className="text-sm font-semibold text-[#0500e2] dark:text-[#4b53fa] hover:underline"
-                            >
-                                Forgot password?
-                            </button>
-                        </div>
-                        <div className="relative">
-                            <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input 
-                                type="password" 
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="••••••••"
-                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0500e2] focus:border-[#0500e2] transition-all outline-none"
-                            />
-                        </div>
-                    </div>
-
-                    {error && (
-                        <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
-                            <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                            {error}
-                        </div>
-                    )}
-
+            {/* LOGIN FORM */}
+            {view === 'login' && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    
+                    {/* Social Login Block */}
                     <button 
-                        type="submit" 
-                        disabled={isLoading}
-                        className="w-full py-3.5 bg-[#0500e2] text-white rounded-xl font-bold shadow-lg shadow-blue-600/20 hover:bg-[#0400c0] hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:translate-y-0 flex items-center justify-center gap-2 mt-4"
+                        onClick={handleSocialLogin}
+                        className="w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-slate-200 dark:border-slate-800 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all mb-6 group"
                     >
-                        {isLoading ? <Loader2 size={20} className="animate-spin" /> : <>Sign In <ArrowRight size={18} /></>}
+                        <Chrome size={20} className="text-slate-900 dark:text-white" />
+                        <span>Continue with Google</span>
                     </button>
-                </form>
 
-                <p className="mt-8 text-center text-sm text-slate-500 max-w-sm">
-                    Don't have an account?{' '}
-                    <button onClick={onSwitchToSignup} className="font-bold text-[#0500e2] hover:underline">Sign up for free</button>
-                </p>
-            </div>
-        )}
-
-        {/* FORGOT PASSWORD FORM */}
-        {view === 'forgot-password' && (
-            <div className="animate-in fade-in slide-in-from-right-4 duration-500 max-w-sm">
-                {resetStatus === 'success' ? (
-                    <div className="text-center py-6 bg-green-50 dark:bg-green-900/10 rounded-2xl border border-green-100 dark:border-green-800/30">
-                        <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <CheckCircle size={32} />
-                        </div>
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Check your email</h3>
-                        <div className="text-slate-600 dark:text-slate-300 text-sm mb-6 px-4 space-y-2">
-                            <p>We've sent password reset instructions to <span className="font-semibold text-slate-800 dark:text-white">{email}</span>.</p>
-                            <div className="flex items-start gap-2 bg-yellow-50 dark:bg-yellow-900/10 p-3 rounded-lg text-left mt-4 border border-yellow-100 dark:border-yellow-800/30">
-                                <AlertTriangle size={16} className="text-yellow-600 shrink-0 mt-0.5" />
-                                <p className="text-xs text-yellow-800 dark:text-yellow-200">
-                                    <strong>Not seeing it?</strong> Check your spam folder or ensure the email matches your account.
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex flex-col gap-2 px-6">
-                             <button 
-                                onClick={() => {
-                                    setResetStatus('idle');
-                                    setView('login');
-                                }}
-                                className="w-full px-6 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                            >
-                                Return to Log in
-                            </button>
-                            <button 
-                                onClick={() => setResetStatus('idle')}
-                                className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 mt-2"
-                            >
-                                Try different email
-                            </button>
-                        </div>
+                    <div className="relative flex items-center gap-4 mb-6">
+                        <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Or sign in with email</span>
+                        <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
                     </div>
-                ) : (
-                    <form onSubmit={handleResetSubmit} className="space-y-5">
-                         <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-800/30 flex gap-3 items-start mb-6">
-                            <div className="p-2 bg-blue-100 dark:bg-blue-800/30 rounded-full text-[#0500e2] dark:text-[#4b53fa] shrink-0">
-                                <KeyRound size={16} />
-                            </div>
-                            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                                Enter the email address associated with your account and we'll send you a link to reset your password.
-                            </p>
-                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Email address</label>
-                            <div className="relative">
-                                <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <form onSubmit={handleLoginSubmit} className="space-y-5">
+                        <div className="space-y-1.5">
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Email</label>
+                            <div className="relative group">
+                                <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
                                 <input 
                                     type="email" 
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="jane@company.com"
-                                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0500e2] focus:border-[#0500e2] transition-all outline-none"
+                                    placeholder="name@company.com"
+                                    className="w-full pl-11 pr-4 py-3.5 rounded-xl border-2 border-transparent bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
                                 />
                             </div>
                         </div>
 
-                        {resetStatus === 'error' && (
-                            <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-lg flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                                {resetMessage}
+                        <div className="space-y-1.5">
+                            <div className="flex justify-between items-center">
+                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Password</label>
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                        setError(null);
+                                        setView('forgot-password');
+                                    }}
+                                    className="text-sm font-semibold text-[#0500e2] dark:text-[#4b53fa] hover:underline"
+                                >
+                                    Forgot password?
+                                </button>
+                            </div>
+                            <div className="relative group">
+                                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
+                                <input 
+                                    type={showPassword ? "text" : "password"} 
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    className="w-full pl-11 pr-12 py-3.5 rounded-xl border-2 border-transparent bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <input type="checkbox" id="remember" className="w-4 h-4 rounded border-slate-300 text-[#0500e2] focus:ring-[#0500e2]" />
+                            <label htmlFor="remember" className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer select-none">Remember me for 30 days</label>
+                        </div>
+
+                        {error && (
+                            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-1">
+                                <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                                <span>{error}</span>
                             </div>
                         )}
 
                         <button 
                             type="submit" 
-                            disabled={isResetLoading}
-                            className="w-full py-3.5 bg-[#0500e2] text-white rounded-xl font-bold shadow-lg shadow-blue-600/20 hover:bg-[#0400c0] hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:translate-y-0 flex items-center justify-center gap-2 mt-4"
+                            disabled={isLoading}
+                            className="w-full py-4 bg-[#0500e2] text-white rounded-xl font-bold text-lg shadow-xl shadow-blue-600/20 hover:bg-[#0400c0] hover:-translate-y-0.5 hover:shadow-blue-600/30 transition-all disabled:opacity-70 disabled:translate-y-0 flex items-center justify-center gap-2 mt-2"
                         >
-                            {isResetLoading ? <Loader2 size={20} className="animate-spin" /> : 'Send Instructions'}
-                        </button>
-
-                        <button 
-                            type="button"
-                            onClick={() => {
-                                setResetStatus('idle');
-                                setError(null);
-                                setView('login');
-                            }}
-                            className="w-full py-3 text-slate-500 dark:text-slate-400 font-medium hover:text-slate-800 dark:hover:text-white transition-colors flex items-center justify-center gap-2"
-                        >
-                            <ArrowLeft size={16} /> Back to Log In
+                            {isLoading ? <Loader2 size={22} className="animate-spin" /> : <>Sign In <ArrowRight size={20} /></>}
                         </button>
                     </form>
-                )}
-            </div>
-        )}
+
+                    <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                        Don't have an account?{' '}
+                        <button onClick={onSwitchToSignup} className="font-bold text-[#0500e2] dark:text-[#4b53fa] hover:underline">Sign up for free</button>
+                    </p>
+                </div>
+            )}
+
+            {/* FORGOT PASSWORD FORM */}
+            {view === 'forgot-password' && (
+                <div className="animate-in fade-in slide-in-from-right-8 duration-500">
+                    {resetStatus === 'success' ? (
+                        <div className="text-center py-8 bg-green-50 dark:bg-green-900/10 rounded-2xl border border-green-100 dark:border-green-800/30 shadow-sm">
+                            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-in zoom-in duration-300">
+                                <CheckCircle size={32} />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Check your email</h3>
+                            <div className="text-slate-600 dark:text-slate-300 text-sm mb-8 px-6 space-y-2">
+                                <p>We've sent password reset instructions to <br/><span className="font-semibold text-slate-900 dark:text-white">{email}</span>.</p>
+                            </div>
+                            <div className="flex flex-col gap-3 px-8">
+                                <button 
+                                    onClick={() => {
+                                        setResetStatus('idle');
+                                        setView('login');
+                                    }}
+                                    className="w-full px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
+                                >
+                                    Back to Log in
+                                </button>
+                                <button 
+                                    onClick={() => setResetStatus('idle')}
+                                    className="text-xs font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                                >
+                                    Use a different email
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleResetSubmit} className="space-y-6">
+                            <div className="bg-blue-50 dark:bg-blue-900/10 p-5 rounded-2xl border border-blue-100 dark:border-blue-800/30 flex gap-4 items-start">
+                                <div className="p-2.5 bg-blue-100 dark:bg-blue-800/30 rounded-full text-[#0500e2] dark:text-[#4b53fa] shrink-0">
+                                    <KeyRound size={20} />
+                                </div>
+                                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed pt-1">
+                                    Enter the email address associated with your account and we'll send you a link to reset your password.
+                                </p>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Email Address</label>
+                                <div className="relative group">
+                                    <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
+                                    <input 
+                                        type="email" 
+                                        required
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder="name@company.com"
+                                        className="w-full pl-11 pr-4 py-3.5 rounded-xl border-2 border-transparent bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            {resetStatus === 'error' && (
+                                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-xl flex items-center gap-3">
+                                    <AlertTriangle size={18} />
+                                    {resetMessage}
+                                </div>
+                            )}
+
+                            <button 
+                                type="submit" 
+                                disabled={isResetLoading}
+                                className="w-full py-4 bg-[#0500e2] text-white rounded-xl font-bold text-lg shadow-xl shadow-blue-600/20 hover:bg-[#0400c0] hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:translate-y-0 flex items-center justify-center gap-2"
+                            >
+                                {isResetLoading ? <Loader2 size={22} className="animate-spin" /> : 'Send Instructions'}
+                            </button>
+
+                            <button 
+                                type="button"
+                                onClick={() => {
+                                    setResetStatus('idle');
+                                    setError(null);
+                                    setView('login');
+                                }}
+                                className="w-full py-2 text-slate-500 dark:text-slate-400 font-bold hover:text-slate-800 dark:hover:text-white transition-colors flex items-center justify-center gap-2"
+                            >
+                                <ArrowLeft size={18} /> Back to Log In
+                            </button>
+                        </form>
+                    )}
+                </div>
+            )}
+        </div>
       </div>
 
       {/* Right Side - Visual */}
-      <div className="hidden lg:block w-1/2 relative overflow-hidden bg-slate-900">
-         <BackgroundGradientAnimation containerClassName="h-full w-full opacity-60">
-             <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-12 z-10">
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-3xl max-w-md shadow-2xl transition-all hover:scale-[1.02]">
-                    <div className="text-4xl mb-4">✨</div>
-                    <h3 className="text-2xl font-serif font-bold text-white mb-3">"RevuQA cut our grading time by 90%."</h3>
-                    <p className="text-blue-100 italic mb-6 text-lg">
-                        "The AI insights are scary accurate. My team actually looks forward to their QA scores now because the feedback is so actionable."
+      <div className="hidden lg:block w-[55%] relative overflow-hidden bg-slate-900">
+         <BackgroundGradientAnimation containerClassName="h-full w-full opacity-50">
+             <div className="absolute inset-0 flex flex-col items-center justify-center p-16 z-10">
+                <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-10 rounded-[2.5rem] max-w-lg shadow-2xl transition-all hover:scale-[1.01] duration-500">
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#0500e2] to-violet-600 p-0.5 shadow-lg">
+                            <div className="w-full h-full bg-slate-900 rounded-full flex items-center justify-center">
+                                <span className="text-2xl">✨</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div className="flex gap-1 mb-1">
+                                {[1,2,3,4,5].map(i => <div key={i} className="w-4 h-4 text-yellow-400 fill-current">★</div>)}
+                            </div>
+                            <p className="text-white/60 text-sm font-medium">Trusted by 500+ teams</p>
+                        </div>
+                    </div>
+                    
+                    <h3 className="text-3xl font-serif font-bold text-white mb-4 leading-tight">
+                        "RevuQA completely transformed how we coach our support team."
+                    </h3>
+                    
+                    <p className="text-lg text-blue-100 leading-relaxed mb-8 font-light">
+                        The automated scoring and actionable insights helped us improve CSAT by 18% in just two months. It's like having a dedicated QA analyst for every agent.
                     </p>
-                    <div className="flex items-center justify-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 border-2 border-white/20"></div>
-                        <div className="text-left">
-                            <p className="text-white font-bold text-sm">Sarah Jenkins</p>
-                            <p className="text-blue-200 text-xs">VP of Support @ TechFlow</p>
+                    
+                    <div className="flex items-center gap-4 pt-6 border-t border-white/10">
+                        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold">SJ</div>
+                        <div>
+                            <p className="text-white font-bold">Sarah Jenkins</p>
+                            <p className="text-blue-200 text-sm">VP of Support @ TechFlow</p>
                         </div>
                     </div>
                 </div>

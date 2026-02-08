@@ -1,15 +1,17 @@
 
 import React, { useState } from 'react';
-import { Check, X, Zap, Shield, Crown, HelpCircle, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
-import { RevuLogo } from './RevuLogo';
+import { Check, X, Zap, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
+import { PublicNavigation } from './PublicNavigation';
 
 interface PricingProps {
   onPlanSelect?: (plan: string) => void;
   isLoggedIn?: boolean;
   onBack?: () => void;
+  onLogin?: () => void;
+  onSignup?: () => void;
 }
 
-export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = false, onBack }) => {
+export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = false, onBack, onLogin, onSignup }) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -93,29 +95,19 @@ export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = fal
   return (
     <div className={`animate-fade-in ${onBack ? 'min-h-screen bg-slate-50 dark:bg-slate-950' : ''}`}>
       
-      {/* Standalone Header */}
+      {/* Header */}
       {onBack && (
-        <div className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 sticky top-0 z-50">
-            <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-                <div 
-                    onClick={onBack}
-                    className="flex items-center gap-2 text-[#0500e2] dark:text-[#4b53fa] cursor-pointer hover:opacity-80 transition-opacity"
-                >
-                    <RevuLogo className="h-8 md:h-9 w-auto" />
-                    <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white pt-1">QA</span>
-                </div>
-                <button 
-                    onClick={onBack}
-                    className="flex items-center gap-2 text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-[#0500e2] dark:hover:text-white transition-colors"
-                >
-                    <ArrowLeft size={18} /> Back
-                </button>
-            </div>
-        </div>
+        <PublicNavigation 
+            onLanding={onBack}
+            onPricing={() => {}} // Already here
+            onLogin={onLogin} 
+            onSignup={onSignup}
+            activePage="pricing"
+        />
       )}
 
-      <div className={`py-12 md:py-20 ${onBack ? 'px-6' : ''}`}>
-        {/* Header */}
+      <div className={`py-12 md:py-20 pt-24 md:pt-32 ${onBack ? 'px-6' : ''}`}>
+        {/* Header Content */}
         <div className="max-w-3xl mx-auto text-center mb-16 px-4">
             <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white mb-6">
             Simple, transparent pricing

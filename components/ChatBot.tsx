@@ -43,8 +43,11 @@ export const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isOpen]);
 
+  const wordCount = input.trim() === '' ? 0 : input.trim().split(/\s+/).length;
+  const isOverLimit = wordCount > 24;
+
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isOverLimit) return;
     
     // Check usage if logged in
     if (user) {
@@ -150,27 +153,39 @@ export const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
 
           {/* Input */}
           <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0">
-            <div className="flex items-center gap-2 relative">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={error ? "Chat unavailable" : "Ask about QA or coaching..."}
-                className="w-full pl-4 pr-12 py-3 rounded-full bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-[#0500e2] text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400"
-                disabled={isLoading}
-              />
-              <button
-                onClick={handleSend}
-                disabled={!input.trim() || isLoading}
-                className={`absolute right-1.5 p-2 rounded-full transition-all ${
-                  !input.trim() || isLoading
-                    ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500' 
-                    : 'bg-[#0500e2] text-white hover:bg-[#0400c0]'
-                }`}
-              >
-                <Send size={16} />
-              </button>
+            <div className="relative">
+              <div className="flex items-center gap-2 relative">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={error ? "Chat unavailable" : "Ask about QA or coaching..."}
+                  className={`w-full pl-4 pr-12 py-3 rounded-full bg-slate-100 dark:bg-slate-800 border focus:ring-2 transition-all outline-none text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 ${
+                    isOverLimit 
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-200 dark:focus:ring-red-900/30' 
+                      : 'border-transparent focus:ring-[#0500e2]'
+                  }`}
+                  disabled={isLoading}
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!input.trim() || isLoading || isOverLimit}
+                  className={`absolute right-1.5 p-2 rounded-full transition-all ${
+                    !input.trim() || isLoading || isOverLimit
+                      ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500' 
+                      : 'bg-[#0500e2] text-white hover:bg-[#0400c0]'
+                  }`}
+                >
+                  <Send size={16} />
+                </button>
+              </div>
+              {/* Word Count Indicator */}
+              <div className={`text-[10px] mt-1.5 px-2 text-right font-medium transition-colors ${
+                  isOverLimit ? 'text-red-500' : 'text-slate-400'
+              }`}>
+                  {wordCount}/24 words
+              </div>
             </div>
           </div>
         </div>

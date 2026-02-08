@@ -4,7 +4,8 @@ create table if not exists profiles (
   id uuid references auth.users on delete cascade primary key,
   email text,
   name text,
-  company text
+  company text,
+  website text
 );
 
 create table if not exists user_usage (

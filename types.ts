@@ -49,6 +49,7 @@ export interface User {
   name: string;
   email: string;
   company?: string;
+  website?: string;
 }
 
 export interface UsageMetrics {

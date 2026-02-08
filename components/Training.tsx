@@ -333,8 +333,12 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         }
     };
 
+    // Calculate word count
+    const wordCount = input.trim() === '' ? 0 : input.trim().split(/\s+/).length;
+    const isOverLimit = wordCount > 24;
+
     const sendMessage = async () => {
-        if (!input.trim() || !chatSession.current || mode === 'voice') return;
+        if (!input.trim() || !chatSession.current || mode === 'voice' || isOverLimit) return;
         
         const userMsg = input.trim();
         setInput('');
@@ -434,7 +438,14 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                     initial_message: newScenario.initialMessage,
                     system_instruction: newScenario.systemInstruction
                 });
-                if (error) console.error("Error saving scenario", error);
+                if (error) {
+                    console.error("Error saving scenario", error);
+                    if (error.code === '42P01') {
+                        alert("Database table 'scenarios' not found. Please run the SQL migration script in Supabase.");
+                    } else {
+                        alert(`Failed to save scenario: ${error.message}`);
+                    }
+                }
             }
 
             setCustomScenarios(prev => [newScenario, ...prev]); // Add to top
@@ -476,7 +487,14 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                 initial_message: newScenario.initialMessage,
                 system_instruction: newScenario.systemInstruction
             });
-            if (error) console.error("Error saving scenario", error);
+            if (error) {
+                console.error("Error saving scenario", error);
+                if (error.code === '42P01') {
+                    alert("Database table 'scenarios' not found. Please run the SQL migration script in Supabase.");
+                } else {
+                    alert(`Failed to save scenario: ${error.message}`);
+                }
+            }
         }
 
         setCustomScenarios(prev => [newScenario, ...prev]);
@@ -494,7 +512,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         const { error } = await supabase.from('scenarios').delete().eq('id', id);
         if (error) {
             console.error("Error deleting scenario", error);
-            // Could revert state here if strict consistency needed
+            alert(`Failed to delete: ${error.message}`);
         }
     };
 
@@ -735,7 +753,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                         <select 
                                             value={aiParams.difficulty}
                                             onChange={(e) => setAiParams({...aiParams, difficulty: e.target.value})}
-                                            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-[#0500e2] outline-none"
+                                            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2]"
                                         >
                                             <option value="Beginner">Beginner</option>
                                             <option value="Intermediate">Intermediate</option>
@@ -747,69 +765,70 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                         <select 
                                             value={aiParams.category}
                                             onChange={(e) => setAiParams({...aiParams, category: e.target.value})}
-                                            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-[#0500e2] outline-none"
+                                            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2]"
                                         >
-                                            <option value="Sales">Sales</option>
-                                            <option value="Support">Support</option>
-                                            <option value="Technical">Technical</option>
+                                            <option value="Support">Customer Support</option>
+                                            <option value="Sales">Sales / Upsell</option>
+                                            <option value="Technical">Technical Support</option>
                                         </select>
                                     </div>
                                 </div>
+
                                 <button 
                                     onClick={handleGenerateScenario}
-                                    disabled={!aiParams.topic || isGenerating}
-                                    className="w-full py-4 bg-[#0500e2] text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:bg-[#0400c0] disabled:opacity-70 disabled:shadow-none transition-all flex items-center justify-center gap-2"
+                                    disabled={isGenerating || !aiParams.topic}
+                                    className="w-full py-4 bg-[#0500e2] text-white rounded-xl font-bold shadow-lg shadow-blue-600/20 hover:bg-[#0400c0] disabled:opacity-50 disabled:shadow-none transition-all flex items-center justify-center gap-2"
                                 >
-                                    {isGenerating ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
-                                    {isGenerating ? 'Generating Scenario...' : 'Generate Scenario'}
+                                    {isGenerating ? <Loader2 className="animate-spin" /> : <Sparkles size={20} />}
+                                    {isGenerating ? 'Generating Scenario...' : 'Generate with AI'}
                                 </button>
                             </div>
                         ) : (
-                            <div className="space-y-6">
+                            <div className="space-y-5">
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Scenario Title</label>
                                     <input 
                                         type="text"
                                         value={manualParams.title || ''}
                                         onChange={(e) => setManualParams({...manualParams, title: e.target.value})}
-                                        className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-[#0500e2] outline-none"
-                                        placeholder="e.g. Handling a Pricing Objection"
+                                        className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2]"
+                                        placeholder="e.g. The Difficult Transfer"
                                     />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                     <div>
-                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Category</label>
-                                        <select 
-                                            value={manualParams.category}
-                                            onChange={(e) => setManualParams({...manualParams, category: e.target.value as any})}
-                                            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-[#0500e2] outline-none"
-                                        >
-                                            <option value="Sales">Sales</option>
-                                            <option value="Support">Support</option>
-                                            <option value="Technical">Technical</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Difficulty</label>
-                                        <select 
-                                            value={manualParams.difficulty}
-                                            onChange={(e) => setManualParams({...manualParams, difficulty: e.target.value as any})}
-                                            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-[#0500e2] outline-none"
-                                        >
-                                            <option value="Beginner">Beginner</option>
-                                            <option value="Intermediate">Intermediate</option>
-                                            <option value="Advanced">Advanced</option>
-                                        </select>
-                                    </div>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Description</label>
                                     <textarea 
                                         value={manualParams.description || ''}
                                         onChange={(e) => setManualParams({...manualParams, description: e.target.value})}
-                                        className="w-full h-20 p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-[#0500e2] outline-none resize-none"
+                                        className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2]"
                                         placeholder="Brief context for the agent..."
                                     />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Difficulty</label>
+                                        <select 
+                                            value={manualParams.difficulty}
+                                            onChange={(e) => setManualParams({...manualParams, difficulty: e.target.value as any})}
+                                            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2]"
+                                        >
+                                            <option value="Beginner">Beginner</option>
+                                            <option value="Intermediate">Intermediate</option>
+                                            <option value="Advanced">Advanced</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Category</label>
+                                        <select 
+                                            value={manualParams.category}
+                                            onChange={(e) => setManualParams({...manualParams, category: e.target.value as any})}
+                                            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2]"
+                                        >
+                                            <option value="Support">Customer Support</option>
+                                            <option value="Sales">Sales</option>
+                                            <option value="Technical">Technical</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Initial Customer Message</label>
@@ -817,22 +836,22 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                         type="text"
                                         value={manualParams.initialMessage || ''}
                                         onChange={(e) => setManualParams({...manualParams, initialMessage: e.target.value})}
-                                        className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-[#0500e2] outline-none"
+                                        className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2]"
                                         placeholder="The first thing the customer says..."
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">AI System Prompt (Persona)</label>
+                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">AI Persona (System Prompt)</label>
                                     <textarea 
                                         value={manualParams.systemInstruction || ''}
                                         onChange={(e) => setManualParams({...manualParams, systemInstruction: e.target.value})}
-                                        className="w-full h-32 p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-[#0500e2] outline-none resize-none"
-                                        placeholder="Instructions for the AI: 'You are an angry customer named John. You want a refund...'"
+                                        className="w-full h-32 p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2]"
+                                        placeholder="Instructions for the AI: 'You are an angry customer who...'"
                                     />
                                 </div>
                                 <button 
                                     onClick={handleCreateManual}
-                                    className="w-full py-4 bg-[#0500e2] text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:bg-[#0400c0] transition-all"
+                                    className="w-full py-4 bg-[#0500e2] text-white rounded-xl font-bold shadow-lg shadow-blue-600/20 hover:bg-[#0400c0] transition-all"
                                 >
                                     Create Scenario
                                 </button>
@@ -847,232 +866,163 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     // --- VIEW: Active Session ---
     if (view === 'active' && activeScenario) {
         return (
-            <div className="max-w-4xl mx-auto h-[calc(100vh-140px)] flex flex-col animate-fade-in bg-white dark:bg-slate-900 rounded-[2rem] shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden relative">
-                
+            <div className="h-[calc(100vh-140px)] flex flex-col bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
                 {/* Session Header */}
-                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white/50 dark:bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
+                <div className="p-4 md:p-6 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-4">
-                        <button onClick={() => { stopVoiceSession(); setView('list'); }} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400">
-                             <ArrowRight size={20} className="rotate-180" />
-                        </button>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md ${
+                            activeScenario.category === 'Sales' ? 'bg-green-500' : 
+                            activeScenario.category === 'Technical' ? 'bg-slate-700' : 'bg-red-500'
+                        }`}>
+                            {activeScenario.icon === 'TrendingUp' ? <TrendingUp size={20} /> : activeScenario.icon === 'Wrench' ? <Wrench size={20} /> : <Shield size={20} />}
+                        </div>
                         <div>
-                            <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                {activeScenario.title}
-                                {mode === 'voice' && isVoiceActive ? (
-                                    <span className="flex h-2 w-2 relative">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                                    </span>
-                                ) : (
-                                    <span className="w-2 h-2 rounded-full bg-slate-300"></span>
-                                )}
-                            </h3>
-                            <p className="text-xs text-slate-500">{mode === 'voice' ? 'Voice Call' : 'Text Simulation'} • {activeScenario.difficulty}</p>
+                            <h3 className="font-bold text-slate-900 dark:text-white leading-tight">{activeScenario.title}</h3>
+                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                                <span className={`px-1.5 rounded-md border ${mode === 'voice' ? 'border-red-200 bg-red-50 text-red-600 animate-pulse' : 'border-slate-200 bg-slate-100'}`}>
+                                    {mode === 'voice' ? '● Live Voice' : 'Text Chat'}
+                                </span>
+                                <span>• {activeScenario.difficulty}</span>
+                            </div>
                         </div>
                     </div>
                     <button 
                         onClick={endSession}
-                        className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors border border-red-200"
+                        className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg font-bold text-sm hover:opacity-90 transition-opacity"
                     >
-                        {mode === 'voice' ? <PhoneOff size={16} /> : <StopCircle size={16} />} 
-                        {mode === 'voice' ? 'Hang Up & Grade' : 'End Session'}
+                        End Session
                     </button>
                 </div>
 
-                {/* Voice Visualizer Overlay */}
-                {mode === 'voice' && (
-                    <div className="absolute top-20 right-6 z-20 pointer-events-none">
-                        <div className={`flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-md border border-white/20 transition-all ${isVoiceActive ? 'bg-green-500/10 text-green-600' : 'bg-slate-500/10 text-slate-500'}`}>
-                            <div className={`w-2 h-2 rounded-full ${isVoiceActive ? 'bg-green-500 animate-pulse' : 'bg-slate-400'}`}></div>
-                            <span className="text-xs font-bold uppercase tracking-wider">{isVoiceActive ? 'On Air' : 'Connecting...'}</span>
-                        </div>
-                    </div>
-                )}
-
                 {/* Chat Area */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50 dark:bg-slate-950/50">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50 dark:bg-slate-900/50">
                     {messages.map((msg, idx) => (
                         <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[80%] ${msg.role === 'user' ? 'order-1' : 'order-2'}`}>
-                                <div className={`px-6 py-4 rounded-2xl text-base leading-relaxed shadow-sm ${
-                                    msg.role === 'user' 
-                                    ? 'bg-[#0500e2] text-white rounded-br-none' 
-                                    : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-bl-none'
-                                }`}>
-                                    {msg.text}
-                                </div>
-                                <p className={`text-[10px] text-slate-400 mt-2 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
-                                    {msg.role === 'user' ? 'You' : 'Customer'}
-                                </p>
+                            <div className={`max-w-[80%] rounded-2xl px-5 py-4 text-sm md:text-base shadow-sm ${
+                                msg.role === 'user' 
+                                ? 'bg-[#0500e2] text-white rounded-br-sm' 
+                                : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-bl-sm'
+                            }`}>
+                                {msg.text}
                             </div>
                         </div>
                     ))}
-                    {(isProcessing || (mode === 'voice' && isVoiceActive && messages.length === 0)) && (
-                         <div className="flex justify-start">
-                             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl rounded-bl-none border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-2">
-                                 {mode === 'voice' ? (
-                                     <>
-                                        <BarChart2 size={16} className="animate-pulse text-green-500" />
-                                        <span className="text-sm text-slate-500">Listening...</span>
-                                     </>
-                                 ) : (
-                                     <>
-                                        <Loader2 size={16} className="animate-spin text-slate-400" />
-                                        <span className="text-sm text-slate-500">Customer is typing...</span>
-                                     </>
-                                 )}
-                             </div>
-                         </div>
+                    {isProcessing && (
+                        <div className="flex justify-start">
+                            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-bl-sm px-5 py-4 shadow-sm flex items-center gap-3">
+                                <Loader2 size={18} className="animate-spin text-[#0500e2]" />
+                                <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Customer is thinking...</span>
+                            </div>
+                        </div>
                     )}
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input Area (Text Mode Only) */}
-                {mode === 'text' ? (
-                    <div className="p-4 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
-                        <div className="relative flex items-center gap-2">
-                            <input
-                                type="text"
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                placeholder="Type your response..."
-                                className="w-full pl-6 pr-14 py-4 rounded-xl bg-slate-100 dark:bg-slate-950 border-transparent focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-[#0500e2] transition-all outline-none text-slate-900 dark:text-white"
-                                disabled={isProcessing}
-                                autoFocus
-                            />
-                            <button
+                {/* Input Area */}
+                <div className="p-4 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0">
+                    {mode === 'text' ? (
+                        <div className="relative flex gap-3">
+                            <div className="flex-1 relative">
+                                <input 
+                                    type="text" 
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    placeholder={isOverLimit ? "Message too long!" : "Type your response..."}
+                                    className={`w-full pl-5 pr-12 py-4 rounded-xl bg-slate-50 dark:bg-slate-950 border outline-none focus:ring-2 focus:ring-[#0500e2] transition-all shadow-sm ${
+                                        isOverLimit ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : 'border-slate-200 dark:border-slate-800'
+                                    }`}
+                                />
+                                <div className={`absolute -bottom-6 right-1 text-[10px] font-bold transition-colors ${isOverLimit ? 'text-red-500' : 'text-slate-400'}`}>
+                                    {wordCount}/24 words
+                                </div>
+                            </div>
+                            <button 
                                 onClick={sendMessage}
-                                disabled={!input.trim() || isProcessing}
-                                className="absolute right-2 p-2.5 bg-[#0500e2] hover:bg-[#0400c0] disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white rounded-lg transition-colors shadow-lg shadow-blue-500/20"
+                                disabled={!input.trim() || isProcessing || isOverLimit}
+                                className="p-4 bg-[#0500e2] text-white rounded-xl hover:bg-[#0400c0] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-600/20 h-[58px] w-[58px] flex items-center justify-center"
                             >
-                                <Send size={18} />
+                                <Send size={20} />
                             </button>
                         </div>
-                    </div>
-                ) : (
-                    // Voice Mode Control Bar
-                    <div className="p-6 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-center items-center gap-6">
-                        <div className="flex flex-col items-center gap-2">
-                            <div className={`w-16 h-16 rounded-full flex items-center justify-center shadow-xl transition-all ${
-                                isVoiceActive ? 'bg-green-100 text-green-600 animate-pulse' : 'bg-red-50 text-red-500'
-                            }`}>
-                                <Mic size={28} />
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-4 gap-4">
+                            <div className="flex items-center gap-2 text-red-500 font-bold animate-pulse">
+                                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                                Live Voice Active
                             </div>
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                                {isVoiceActive ? 'Microphone On' : 'Microphone Off'}
-                            </span>
+                            <button 
+                                onClick={stopVoiceSession}
+                                className="px-8 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full text-slate-700 dark:text-slate-200 font-bold flex items-center gap-2 transition-all"
+                            >
+                                <PhoneOff size={18} /> Stop Speaking
+                            </button>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         );
     }
 
-    // --- VIEW: Result ---
-    if (view === 'result' && result && activeScenario) {
+    // --- VIEW: Results ---
+    if (view === 'result' && result) {
         return (
-            <div className="max-w-4xl mx-auto animate-fade-in pb-12">
-                 <button onClick={() => setView('list')} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors font-bold">
-                    <ArrowRight size={20} className="rotate-180" /> Back to Scenarios
-                 </button>
-
-                 <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl">
-                     {/* Score Header */}
-                     <div className="bg-slate-900 text-white p-10 md:p-14 text-center relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/50 to-slate-900 z-0"></div>
+            <div className="max-w-4xl mx-auto pb-12 animate-fade-in">
+                <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
+                    <div className="bg-slate-900 text-white p-8 md:p-12 text-center relative overflow-hidden">
                         <div className="relative z-10">
-                            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs mb-4">Training Performance</p>
-                            <div className="inline-flex items-center justify-center w-32 h-32 rounded-full border-4 border-white/10 bg-white/5 mb-6 relative">
-                                <span className={`text-5xl font-serif font-bold ${result.score >= 80 ? 'text-green-400' : result.score >= 60 ? 'text-yellow-400' : 'text-red-400'}`}>
-                                    {result.score}
-                                </span>
-                                <div className="absolute -bottom-3 bg-slate-800 px-3 py-1 rounded-full text-[10px] font-bold border border-slate-700">SCORE</div>
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-bold uppercase tracking-wider mb-4 border border-white/20">
+                                Session Complete
                             </div>
-                            <h2 className="text-2xl font-bold mb-2">{result.score >= 80 ? 'Excellent Work!' : result.score >= 60 ? 'Good Effort' : 'Needs Improvement'}</h2>
-                            <p className="text-slate-400 max-w-lg mx-auto text-lg leading-relaxed">{result.feedback}</p>
+                            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-4">{result.score}%</h2>
+                            <p className="text-blue-200 text-lg max-w-xl mx-auto">{result.feedback}</p>
                         </div>
-                     </div>
+                        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/50 via-slate-900 to-slate-900"></div>
+                    </div>
 
-                     {/* Details */}
-                     <div className="p-8 md:p-12 grid grid-cols-1 md:grid-cols-2 gap-10">
-                         <div>
-                             <h4 className="flex items-center gap-2 font-bold text-green-600 dark:text-green-400 mb-6 uppercase tracking-wider text-sm">
-                                <CheckCircle size={18} /> What went well
-                             </h4>
-                             <ul className="space-y-4">
+                    <div className="p-8 md:p-12 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                <CheckCircle className="text-emerald-500" size={20} /> Strengths
+                            </h3>
+                            <ul className="space-y-3">
                                 {result.strengths.map((s, i) => (
-                                    <li key={i} className="flex gap-3 text-slate-700 dark:text-slate-300">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 shrink-0"></div>
+                                    <li key={i} className="flex gap-3 text-sm text-slate-600 dark:text-slate-300 bg-emerald-50 dark:bg-emerald-900/10 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/20">
+                                        <Check size={16} className="text-emerald-500 mt-0.5 shrink-0" />
                                         {s}
                                     </li>
                                 ))}
-                             </ul>
-                         </div>
-                         <div>
-                             <h4 className="flex items-center gap-2 font-bold text-amber-500 mb-6 uppercase tracking-wider text-sm">
-                                <Award size={18} /> Coaching Tips
-                             </h4>
-                             <ul className="space-y-4">
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                <TrendingUp className="text-amber-500" size={20} /> Improvements
+                            </h3>
+                            <ul className="space-y-3">
                                 {result.improvements.map((s, i) => (
-                                    <li key={i} className="flex gap-3 text-slate-700 dark:text-slate-300">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0"></div>
+                                    <li key={i} className="flex gap-3 text-sm text-slate-600 dark:text-slate-300 bg-amber-50 dark:bg-amber-900/10 p-3 rounded-lg border border-amber-100 dark:border-amber-900/20">
+                                        <Sparkles size={16} className="text-amber-500 mt-0.5 shrink-0" />
                                         {s}
                                     </li>
                                 ))}
-                             </ul>
-                         </div>
-                     </div>
+                            </ul>
+                        </div>
+                    </div>
 
-                     {/* Training Transcript Viewer */}
-                     <div className="border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
-                        <div className="p-4 md:p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
-                            <h4 className="flex items-center gap-2 font-bold text-slate-700 dark:text-white uppercase tracking-wider text-sm">
-                                <FileText size={16} /> Training Transcript
-                            </h4>
-                            <button 
-                                onClick={handleCopyTranscript}
-                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-[#0500e2] dark:hover:text-[#4b53fa] hover:border-[#0500e2] dark:hover:border-[#4b53fa] transition-all"
-                            >
-                                {isCopied ? <Check size={14} /> : <Copy size={14} />}
-                                {isCopied ? 'Copied' : 'Copy'}
+                    <div className="p-8 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                        <button onClick={() => setView('list')} className="font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+                            Back to Scenarios
+                        </button>
+                        <div className="flex gap-3">
+                            <button onClick={handleCopyTranscript} className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2">
+                                {isCopied ? <Check size={16} /> : <Copy size={16} />} Transcript
+                            </button>
+                            <button onClick={() => activeScenario && startSession(activeScenario, mode)} className="px-6 py-2 bg-[#0500e2] text-white rounded-lg font-bold text-sm hover:bg-[#0400c0] transition-colors flex items-center gap-2">
+                                <RefreshCw size={16} /> Retry
                             </button>
                         </div>
-                        <div className="p-6 md:p-10 max-h-[400px] overflow-y-auto">
-                            <div className="space-y-4">
-                                {messages.map((msg, idx) => (
-                                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                                            msg.role === 'user' 
-                                            ? 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700' 
-                                            : 'bg-slate-100 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300'
-                                        }`}>
-                                            <span className="block text-[10px] font-bold uppercase mb-1 text-slate-400">
-                                                {msg.role === 'user' ? 'Agent (You)' : 'Customer'}
-                                            </span>
-                                            {msg.text}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                     </div>
-
-                     <div className="bg-slate-50 dark:bg-slate-950 p-6 flex justify-center gap-4 border-t border-slate-100 dark:border-slate-800">
-                         <button 
-                            onClick={() => startSession(activeScenario, 'text')}
-                            className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white rounded-xl font-bold transition-all"
-                         >
-                            <MessageSquare size={18} /> Retry Text
-                         </button>
-                         <button 
-                            onClick={() => startSession(activeScenario, 'voice')}
-                            className="flex items-center gap-2 px-6 py-3 bg-[#0500e2] hover:bg-[#0400c0] text-white rounded-xl font-bold shadow-lg shadow-blue-600/20 transition-all hover:scale-105"
-                         >
-                            <Phone size={18} /> Retry Voice
-                         </button>
-                     </div>
-                 </div>
+                    </div>
+                </div>
             </div>
         );
     }
