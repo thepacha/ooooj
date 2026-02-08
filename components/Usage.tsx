@@ -68,6 +68,8 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
   const strokeColor = isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#0500e2';
   const bgColor = isCritical ? 'bg-red-50 dark:bg-red-900/10' : isWarning ? 'bg-amber-50 dark:bg-amber-900/10' : 'bg-blue-50 dark:bg-blue-900/10';
 
+  const currentAudioCredits = (metrics?.transcriptions_count || 0) * COSTS.TRANSCRIPTION;
+
   return (
     <div className="space-y-8 animate-fade-in pb-12">
       
@@ -241,13 +243,42 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
                       </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {/* Live Current Period Row */}
+                      <tr className="bg-blue-50/30 dark:bg-blue-900/10 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 transition-colors">
+                          <td className="p-5">
+                              <div className="flex items-center gap-3">
+                                  <span className="relative flex h-2.5 w-2.5 shrink-0">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                                  </span>
+                                  <div>
+                                      <div className="font-bold text-[#0500e2] dark:text-[#4b53fa]">Current Period</div>
+                                      <div className="text-[10px] uppercase tracking-wide text-slate-400 font-bold">Ends {new Date(metrics.reset_date).toLocaleDateString()}</div>
+                                  </div>
+                              </div>
+                          </td>
+                          <td className="p-5 font-mono font-bold text-slate-900 dark:text-white">
+                              {metrics.credits_used.toLocaleString()}
+                          </td>
+                          <td className="p-5 font-mono text-slate-600 dark:text-slate-400">
+                              {currentAudioCredits.toLocaleString()}
+                          </td>
+                          <td className="p-5 text-slate-600 dark:text-slate-400">
+                              {metrics.analyses_count}
+                          </td>
+                          <td className="p-5 text-slate-600 dark:text-slate-400">
+                              {metrics.transcriptions_count}
+                          </td>
+                          <td className="p-5 text-slate-600 dark:text-slate-400">
+                              {metrics.chat_messages_count}
+                          </td>
+                      </tr>
+
+                      {/* Past Periods */}
                       {(history || []).length === 0 ? (
                           <tr>
-                              <td colSpan={6} className="p-12 text-center text-slate-400">
-                                  <div className="flex flex-col items-center gap-2">
-                                      <Calendar size={24} className="opacity-50" />
-                                      <p>No billing history available yet.</p>
-                                  </div>
+                              <td colSpan={6} className="p-8 text-center text-slate-400 text-sm">
+                                  No past billing history available.
                               </td>
                           </tr>
                       ) : (
