@@ -257,7 +257,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                 <div className="col-span-2 lg:col-span-2">
                     <div className="flex items-center gap-2 text-[#0500e2] dark:text-[#4b53fa] mb-6">
                         <RevuLogo className="h-6 w-auto" />
-                        <span className="font-bold text-lg tracking-tight text-slate-900 dark:text-white pt-0.5">QA</span>
                     </div>
                     <p className="text-slate-500 text-sm max-w-xs mb-6">
                         AI-powered Quality Assurance for modern customer support teams. Build a world-class team with automated insights.
@@ -284,7 +283,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
             </div>
             
             <div className="pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-400">
-                <p>&copy; 2024 RevuQA AI Inc. All rights reserved.</p>
+                <p>&copy; 2026 RevuQA AI Inc. All rights reserved.</p>
                 <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     Systems Operational

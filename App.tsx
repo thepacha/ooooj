@@ -24,8 +24,15 @@ import { supabase } from './lib/supabase';
 type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing';
 
 function App() {
+  // Domain Detection
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  const isAppDomain = hostname.startsWith('app.');
+  const isProductionLanding = hostname === 'revuqai.com' || hostname === 'www.revuqai.com';
+  const isLocalhost = hostname.includes('localhost');
+
   const [user, setUser] = useState<User | null>(null);
-  const [authView, setAuthView] = useState<AuthState>('landing');
+  // Initialize view based on domain: App domain defaults to Login, others to Landing
+  const [authView, setAuthView] = useState<AuthState>(isAppDomain ? 'login' : 'landing');
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
 
@@ -129,14 +136,21 @@ function App() {
     const processSession = async (session: any) => {
         if (!session) {
             if (mounted) {
-                // Only reset to landing if we are NOT in recovery mode
-                // and NOT explicitly viewing public pricing
-                if (authView !== 'pricing') {
-                    setAuthView('landing');
+                // Logic: If on App Domain, stay on login. If on Landing Domain, go to Landing.
+                // Exception: Pricing page should stay accessible.
+                if (authView !== 'pricing' && authView !== 'signup') {
+                    setAuthView(isAppDomain ? 'login' : 'landing');
                 }
                 setUser(null);
                 setIsLoadingUser(false);
             }
+            return;
+        }
+
+        // Logic: User exists. 
+        // If on Landing Domain (Production), redirect to App Domain.
+        if (isProductionLanding) {
+            window.location.href = 'https://app.revuqai.com';
             return;
         }
 
@@ -193,10 +207,10 @@ function App() {
     // Safety timeout to prevent infinite loading
     const safetyTimeout = setTimeout(() => {
         if (mounted && isLoadingUser) {
-            console.warn("Auth check timed out, forcing landing page.");
+            console.warn("Auth check timed out, forcing default view.");
             setIsLoadingUser(false);
             if (authView !== 'pricing') {
-               setAuthView('landing');
+               setAuthView(isAppDomain ? 'login' : 'landing');
             }
         }
     }, 5000);
@@ -210,7 +224,7 @@ function App() {
             supabase.auth.signOut().then(() => {
                 if(mounted) {
                     setIsLoadingUser(false);
-                    setAuthView('landing');
+                    setAuthView(isAppDomain ? 'login' : 'landing');
                 }
             });
             return;
@@ -223,7 +237,7 @@ function App() {
         supabase.auth.signOut();
         if(mounted) {
             setIsLoadingUser(false);
-            setAuthView('landing');
+            setAuthView(isAppDomain ? 'login' : 'landing');
         }
     });
 
@@ -240,7 +254,7 @@ function App() {
         } else if (event === 'SIGNED_OUT') {
             if (mounted) {
                 setUser(null);
-                setAuthView('landing');
+                setAuthView(isAppDomain ? 'login' : 'landing');
                 setHistory([]);
                 setIsLoadingUser(false);
                 setIsRecoveryMode(false);
@@ -404,7 +418,7 @@ function App() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
-    setAuthView('landing');
+    setAuthView(isAppDomain ? 'login' : 'landing');
     setCurrentView('dashboard');
     setIsSidebarOpen(false);
   };
@@ -428,6 +442,29 @@ function App() {
          setAuthView('signup');
      }
   }
+
+  // --- Handlers for Landing Page Actions ---
+  const handleLandingLoginClick = () => {
+      if (isProductionLanding) {
+          window.location.href = 'https://app.revuqai.com';
+      } else {
+          setAuthView('login');
+      }
+  };
+
+  const handleLandingSignupClick = () => {
+      if (isProductionLanding) {
+          // You might also want to redirect signup to the app subdomain eventually, 
+          // or handle it on marketing site then redirect. For now, let's keep consistent.
+          // Ideally: window.location.href = 'https://app.revuqai.com/signup'; if routing was set up.
+          // Since we are SPA, redirecting to app domain will default to Login.
+          // Let's redirect to App and let the user click sign up there, or implement hash routing.
+          // For simplicity given constraints:
+          window.location.href = 'https://app.revuqai.com';
+      } else {
+          setAuthView('signup');
+      }
+  };
 
   const renderAppView = () => {
     switch (currentView) {
@@ -525,8 +562,8 @@ function App() {
       return (
         <div className="animate-fade-in w-full min-h-screen">
             <LandingPage 
-                onLoginClick={() => setAuthView('login')} 
-                onSignupClick={() => setAuthView('signup')} 
+                onLoginClick={handleLandingLoginClick} 
+                onSignupClick={handleLandingSignupClick} 
                 onPricingClick={() => setAuthView('pricing')}
             />
         </div>
@@ -537,11 +574,11 @@ function App() {
       return (
         <div className="animate-fade-in w-full min-h-screen">
             <Pricing 
-                onPlanSelect={() => setAuthView('signup')} 
-                onLogin={() => setAuthView('login')}
-                onSignup={() => setAuthView('signup')}
+                onPlanSelect={handleLandingSignupClick} 
+                onLogin={handleLandingLoginClick}
+                onSignup={handleLandingSignupClick}
                 isLoggedIn={false} 
-                onBack={() => setAuthView('landing')}
+                onBack={() => setAuthView(isAppDomain ? 'login' : 'landing')}
             />
         </div>
       );
@@ -555,7 +592,7 @@ function App() {
                 onLogin={() => {}} 
                 onSwitchToSignup={() => setAuthView('signup')}
                 onPricing={() => setAuthView('pricing')}
-                onBackToHome={() => setAuthView('landing')}
+                onBackToHome={() => setAuthView('landing')} // Will effectively reload or show login again if on app domain, which is fine
             />
         </div>
       );

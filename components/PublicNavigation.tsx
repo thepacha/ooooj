@@ -68,7 +68,6 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
                 aria-label="Go to Home"
             >
                 <RevuLogo className="h-8 md:h-9 w-auto" />
-                <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white pt-1">QA</span>
             </button>
             
             {/* Desktop Nav Links - Always Visible */}
