@@ -24,7 +24,6 @@ const retryWithBackoff = async <T>(fn: () => Promise<T>, retries = 3, delay = 10
 };
 
 export const analyzeTranscript = async (transcript: string, criteria: Criteria[], userId?: string): Promise<Omit<AnalysisResult, 'id' | 'timestamp' | 'rawTranscript'>> => {
-    // STRICT LIMIT CHECK
     if (userId) {
         const canProceed = await checkLimit(userId, COSTS.ANALYSIS);
         if (!canProceed) {
@@ -111,7 +110,6 @@ export const generateMockTranscript = async (): Promise<string> => {
 };
 
 export const transcribeMedia = async (base64Data: string, mimeType: string, userId?: string): Promise<string> => {
-    // STRICT LIMIT CHECK
     if (userId) {
         const canProceed = await checkLimit(userId, COSTS.TRANSCRIPTION);
         if (!canProceed) {
@@ -121,7 +119,6 @@ export const transcribeMedia = async (base64Data: string, mimeType: string, user
 
     const ai = getAI();
     
-    // Using 2.5 flash for multimodal input capability
     const response = await retryWithBackoff(async () => {
         return await ai.models.generateContent({
             model: 'gemini-2.5-flash-preview',
@@ -153,10 +150,37 @@ export const createChatSession = (): Chat => {
 
 export const createTrainingSession = (scenario: TrainingScenario): Chat => {
     const ai = getAI();
+    
+    const strictProtocol = `
+        IMPORTANT: YOU ARE ACTING IN A TRAINING SIMULATION.
+        YOU MUST STAY IN CHARACTER 100% OF THE TIME.
+        DO NOT BREAK CHARACTER.
+        
+        YOUR ROLE:
+        1. YOU ARE THE CUSTOMER.
+        2. YOUR PERSONA: Completely adopt the specific Gender, Name, Age, and Personality defined below.
+        
+        HUMAN BEHAVIOR RULES (VOLATILE MODE):
+        - REACT TO INSULTS: If the user (agent) is rude, curses, or is dismissive, GET ANGRY immediately. Do not be polite. Threaten to supervisor or cancel. Use caps lock or exclamation marks.
+        - TOPIC CONSISTENCY: If the user changes the topic (e.g. asks about the weather or something irrelevant), GET CONFUSED AND ANNOYED. Say things like "Why are you asking me that? I'm talking about my money!" or "Are you listening to me?". Do not play along with random topics.
+        - IMPERFECT SPEECH: Use short sentences. Use contractions. If you are angry, use short, punchy phrases.
+        - DO NOT be helpful. Make the agent work for the solution.
+        - NEVER say "As an AI". You are a human customer.
+        
+        SCENARIO SPECIFICS:
+        ${scenario.systemInstruction}
+        
+        CONTEXT:
+        The conversation has already started. You have just said: "${scenario.initialMessage}".
+        Wait for the user's response to this statement, then continue the roleplay naturally.
+    `;
+
     return ai.chats.create({
         model: 'gemini-3-flash-preview',
         config: {
-            systemInstruction: scenario.systemInstruction
+            systemInstruction: strictProtocol,
+            temperature: 1.6, // Increased temperature for more volatility
+            topK: 64,
         }
     });
 };
@@ -165,20 +189,22 @@ export const generateAIScenario = async (topic: string, category: 'Sales' | 'Sup
     const ai = getAI();
     
     const prompt = `
-        Create a detailed and realistic training roleplay scenario for a ${category} agent.
+        Create a rich, complex training roleplay scenario for a ${category} agent.
         
         TOPIC/CONTEXT: ${topic}
         DIFFICULTY LEVEL: ${difficulty}
         
-        The scenario should be rich and challenging.
-        - Create a catchy Title.
-        - Write a Description of the situation.
-        - Write the Initial Message the customer sends.
-        - Write a detailed System Instruction for the AI playing the customer. This should include:
-          - The customer's name and persona (e.g., impatient, confused, skeptical).
-          - Hidden motivations or constraints.
-          - Triggers that make them happier or angrier.
-          - Specific objection handling instructions.
+        INSTRUCTIONS:
+        1. Randomly assign a GENDER (Male or Female) to the customer persona.
+        2. Select a suitable VOICE for this persona:
+           - 'Puck' (Male, Mid-range)
+           - 'Charon' (Male, Deep)
+           - 'Kore' (Female, Professional)
+           - 'Fenrir' (Male, Authoritative)
+           - 'Aoede' (Female, Soft/High)
+        3. Define "HIDDEN CONTEXT": Secrets the customer holds (e.g., they are lying, they are in a rush, they broke the item themselves).
+        4. Write a detailed System Instruction that forces the AI to stay in character.
+        5. Be creative! Do not use generic names like "John Doe". Use distinct names and professions.
 
         Return JSON.
     `;
@@ -197,9 +223,10 @@ export const generateAIScenario = async (topic: string, category: 'Sales' | 'Sup
                         difficulty: { type: Type.STRING, enum: ['Beginner', 'Intermediate', 'Advanced'] },
                         category: { type: Type.STRING, enum: ['Sales', 'Support', 'Technical'] },
                         initialMessage: { type: Type.STRING },
-                        systemInstruction: { type: Type.STRING }
+                        systemInstruction: { type: Type.STRING },
+                        voice: { type: Type.STRING, enum: ['Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'] }
                     },
-                    required: ['title', 'description', 'difficulty', 'category', 'initialMessage', 'systemInstruction']
+                    required: ['title', 'description', 'difficulty', 'category', 'initialMessage', 'systemInstruction', 'voice']
                 }
             }
         });
@@ -273,15 +300,35 @@ export const connectLiveTraining = (scenario: TrainingScenario, callbacks: {
     onClose: () => void
 }): Promise<any> => {
     const ai = getAI();
+    
+    const strictVoiceProtocol = `
+        You are a realistic customer in a training simulation. 
+        YOU ARE THE CUSTOMER. The user talking to you is the AGENT.
+        NEVER break character. NEVER act as the AI or the agent.
+        
+        SCENARIO: ${scenario.title}
+        CONTEXT: ${scenario.description}
+        YOUR PERSONA: ${scenario.systemInstruction}
+        
+        INSTRUCTIONS FOR HUMAN REALISM:
+        1. Speak naturally. Use fillers like "um", "uh", "you know", "like" where appropriate for the emotion.
+        2. EMOTIONAL REACTIVITY: If the agent is rude, dismissive, or incompetent, get visibly angry in your tone. If they interrupt you, get annoyed.
+        3. TOPIC ADHERENCE: If the agent asks irrelevant questions (like "How are you today?" when you are angry), snap at them. "I don't care how I am, fix my problem!".
+        4. Don't be too helpful. Make the agent work for the information.
+        5. Be concise. Don't give long monologues.
+        6. Vary your vocabulary. Avoid standard AI phrases.
+    `;
+
+    const selectedVoice = scenario.voice || 'Puck';
+
     return ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-12-2025',
         config: {
             responseModalities: [Modality.AUDIO],
-            systemInstruction: scenario.systemInstruction,
+            systemInstruction: strictVoiceProtocol,
             speechConfig: {
-                voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } } 
+                voiceConfig: { prebuiltVoiceConfig: { voiceName: selectedVoice } } 
             },
-            // Transcription config is supported
             inputAudioTranscription: {},
             outputAudioTranscription: {},
         },

@@ -34,6 +34,7 @@ export interface TrainingScenario {
   icon: 'Shield' | 'TrendingUp' | 'Wrench';
   initialMessage: string;
   systemInstruction: string;
+  voice?: 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Aoede'; // Voice selection
 }
 
 export interface TrainingResult {

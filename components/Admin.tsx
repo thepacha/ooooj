@@ -2,11 +2,13 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { User, UsageMetrics } from '../types';
-import { Search, RefreshCw, Users, ShieldAlert, CreditCard, Activity, Check, RotateCcw, Edit3, ArrowUpDown, Filter, Shield, ShieldCheck, Copy, AlertTriangle, Lock } from 'lucide-react';
+import { Search, RefreshCw, Users, ShieldAlert, CreditCard, Activity, Check, RotateCcw, Pencil, ArrowUpDown, Filter, Shield, ShieldCheck, Copy, AlertTriangle, Lock } from 'lucide-react';
 
+// Extended interface to track if usage record exists in DB vs. mock default
 interface AdminUserView extends User {
   usage?: UsageMetrics;
   lifetime_usage: number;
+  has_usage_record: boolean;
 }
 
 interface AdminProps {
@@ -41,7 +43,7 @@ export const Admin: React.FC<AdminProps> = ({ user: currentUser }) => {
 
       if (profilesError) {
           if (profilesError.code === '42501') {
-              throw new Error("Access Denied: RLS Policy. Ensure you have run the `UPDATE profiles SET role = 'admin' ...` SQL query for your user.");
+              throw new Error("Access Denied: RLS Policy. You do not have admin permissions.");
           }
           throw profilesError;
       }
@@ -82,6 +84,7 @@ export const Admin: React.FC<AdminProps> = ({ user: currentUser }) => {
               company: p.company,
               role: p.role as any,
               lifetime_usage: historicSum + currentCredits,
+              has_usage_record: !!currentUsage,
               usage: currentUsage || {
                   user_id: p.id,
                   credits_used: 0,
@@ -95,6 +98,12 @@ export const Admin: React.FC<AdminProps> = ({ user: currentUser }) => {
       });
 
       setUsers(merged);
+      
+      // Auto-show SQL help if only 1 user is found (likely RLS restricting view)
+      if (merged.length === 1 && currentUser) {
+          setShowSql(true);
+      }
+
     } catch (e: any) {
       console.error("Admin load error:", e);
       setErrorMsg(e.message || "Failed to load users.");
@@ -111,19 +120,42 @@ export const Admin: React.FC<AdminProps> = ({ user: currentUser }) => {
   const handleSaveLimit = async (userId: string) => {
       setSaving(true);
       try {
+          const targetUser = users.find(u => u.id === userId);
+          if (!targetUser) throw new Error("User not found");
+
+          const payload: any = {
+              user_id: userId,
+              monthly_limit: tempLimit,
+          };
+
+          // BUG FIX: Only set reset_date if we are creating a NEW record.
+          // Setting it on update would reset the billing cycle immediately.
+          if (!targetUser.has_usage_record) {
+              const nextMonth = new Date();
+              nextMonth.setMonth(nextMonth.getMonth() + 1);
+              payload.reset_date = nextMonth.toISOString();
+              payload.credits_used = 0; // Initialize
+          }
+
           const { error } = await supabase
             .from('user_usage')
-            .upsert({
-                user_id: userId,
-                monthly_limit: tempLimit,
-                reset_date: new Date().toISOString()
-            }, { onConflict: 'user_id' });
+            .upsert(payload, { onConflict: 'user_id' });
 
           if (error) throw error;
 
+          // Optimistic Update
           setUsers(prev => prev.map(u => 
               u.id === userId 
-              ? { ...u, usage: { ...u.usage!, monthly_limit: tempLimit } } 
+              ? { 
+                  ...u, 
+                  has_usage_record: true,
+                  usage: { 
+                      ...u.usage!, 
+                      monthly_limit: tempLimit,
+                      // Preserve existing dates if we didn't touch them
+                      reset_date: !targetUser.has_usage_record ? payload.reset_date : u.usage!.reset_date
+                  } 
+              } 
               : u
           ));
           setEditingId(null);
@@ -142,6 +174,7 @@ export const Admin: React.FC<AdminProps> = ({ user: currentUser }) => {
       if (!confirm(`Are you sure you want to ${action}?`)) return;
 
       try {
+          // Optimistic update
           setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole as any } : u));
 
           const { error } = await supabase
@@ -153,7 +186,7 @@ export const Admin: React.FC<AdminProps> = ({ user: currentUser }) => {
       } catch (e: any) {
           console.error("Role update error:", e);
           alert("Failed to update role: " + e.message);
-          fetchUsers();
+          fetchUsers(); // Revert
       }
   };
 
@@ -162,7 +195,6 @@ export const Admin: React.FC<AdminProps> = ({ user: currentUser }) => {
       
       try {
           // Prepare payload: use existing usage data (or defaults) and zero out counters
-          // We use UPSERT to handle cases where the user has no usage record yet
           const currentUsage = user.usage || {
               monthly_limit: 1000,
               reset_date: new Date().toISOString()
@@ -186,7 +218,7 @@ export const Admin: React.FC<AdminProps> = ({ user: currentUser }) => {
 
           setUsers(prev => prev.map(u => 
               u.id === user.id 
-              ? { ...u, usage: { ...u.usage!, ...payload } } 
+              ? { ...u, has_usage_record: true, usage: { ...u.usage!, ...payload } } 
               : u
           ));
       } catch (e: any) {
@@ -283,11 +315,14 @@ export const Admin: React.FC<AdminProps> = ({ user: currentUser }) => {
         
         {/* Header Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-slate-900 text-white p-6 rounded-[2rem] shadow-xl flex items-center gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center">
+            <div className="bg-slate-900 text-white p-6 rounded-[2rem] shadow-xl flex items-center gap-5 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Users size={80} />
+                </div>
+                <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center relative z-10">
                     <Users size={24} />
                 </div>
-                <div>
+                <div className="relative z-10">
                     <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Users</p>
                     <h3 className="text-3xl font-serif font-bold">{users.length}</h3>
                 </div>
@@ -407,7 +442,7 @@ export const Admin: React.FC<AdminProps> = ({ user: currentUser }) => {
                                 <div className="flex items-center gap-2">Usage (Mo) <ArrowUpDown size={12}/></div>
                             </th>
                             <th className="p-5 cursor-pointer hover:text-[#0500e2] transition-colors" onClick={() => toggleSort('lifetime')}>
-                                <div className="flex items-center gap-2">Total Consumed (All Time) <ArrowUpDown size={12}/></div>
+                                <div className="flex items-center gap-2">Total Consumed <ArrowUpDown size={12}/></div>
                             </th>
                             <th className="p-5 cursor-pointer hover:text-[#0500e2] transition-colors" onClick={() => toggleSort('limit')}>
                                 <div className="flex items-center gap-2">Limit <ArrowUpDown size={12}/></div>
@@ -428,7 +463,7 @@ export const Admin: React.FC<AdminProps> = ({ user: currentUser }) => {
                                 <tr key={user.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group ${isOverLimit ? 'bg-red-50/50 dark:bg-red-900/5' : ''}`}>
                                     <td className="p-5">
                                         <div className="flex items-start gap-3">
-                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${isAdmin ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${isAdmin ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
                                                 {isAdmin ? <Shield size={16} /> : (user.name || '?').charAt(0)}
                                             </div>
                                             <div>
@@ -457,7 +492,7 @@ export const Admin: React.FC<AdminProps> = ({ user: currentUser }) => {
                                     <td className="p-5">
                                         <div className="w-full max-w-[120px]">
                                             <div className="flex justify-between text-xs mb-1 font-medium">
-                                                <span className={`${isOverLimit ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                                                <span className={`${isOverLimit ? 'text-red-600 dark:text-red-400 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
                                                     {usage.toLocaleString()}
                                                 </span>
                                                 <span className="text-slate-400">{pct}%</span>
@@ -483,7 +518,7 @@ export const Admin: React.FC<AdminProps> = ({ user: currentUser }) => {
                                                     type="number"
                                                     value={tempLimit}
                                                     onChange={(e) => setTempLimit(parseInt(e.target.value))}
-                                                    className="w-24 p-2 rounded-lg border border-[#0500e2] bg-white dark:bg-slate-900 text-sm font-bold shadow-sm outline-none"
+                                                    className="w-24 p-2 rounded-lg border border-[#0500e2] bg-white dark:bg-slate-900 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#0500e2]"
                                                     autoFocus
                                                 />
                                             </div>
@@ -526,7 +561,7 @@ export const Admin: React.FC<AdminProps> = ({ user: currentUser }) => {
                                                     className="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:text-[#0500e2] hover:border-[#0500e2] transition-all"
                                                     title="Edit Limit"
                                                 >
-                                                    <Edit3 size={16} />
+                                                    <Pencil size={16} />
                                                 </button>
                                                 <button 
                                                     onClick={() => handleResetUsage(user)}

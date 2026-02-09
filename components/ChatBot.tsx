@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Loader2, Sparkles, Minimize2, AlertTriangle } from 'lucide-react';
 import { createChatSession } from '../services/geminiService';
@@ -60,13 +61,24 @@ export const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
 
     const userMessage = input.trim();
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
+    
+    // Optimistic update
+    setMessages(prev => [
+        ...prev, 
+        { role: 'user', text: userMessage },
+        { role: 'model', text: '' } // Placeholder for stream
+    ]);
     
     if (!chatRef.current) {
         try {
             chatRef.current = createChatSession();
         } catch(e) {
-            setMessages(prev => [...prev, { role: 'model', text: "I'm currently unavailable. Please check your API Key configuration." }]);
+            setMessages(prev => {
+                const newMsgs = [...prev];
+                const last = newMsgs[newMsgs.length - 1];
+                if (last.role === 'model') last.text = "I'm currently unavailable. Please check your API Key configuration.";
+                return newMsgs;
+            });
             return;
         }
     }
@@ -74,19 +86,46 @@ export const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     setIsLoading(true);
 
     try {
-      const response = await chatRef.current.sendMessage({ message: userMessage });
-      const responseText = response.text;
+      // Use Streaming - iterate DIRECTLY over the result promise which resolves to the iterable response
+      const result = await chatRef.current.sendMessageStream({ message: userMessage });
       
-      setMessages(prev => [...prev, { role: 'model', text: responseText }]);
+      let fullResponse = '';
+      for await (const chunk of result) {
+          const chunkText = chunk.text;
+          if (chunkText) {
+              fullResponse += chunkText;
+              setMessages(prev => {
+                  const newMsgs = [...prev];
+                  const last = newMsgs[newMsgs.length - 1];
+                  if (last && last.role === 'model') {
+                      last.text += chunkText;
+                  }
+                  return newMsgs;
+              });
+          }
+      }
       
-      // Track Usage
-      if (user) {
+      // Track Usage only on success
+      if (user && fullResponse.length > 0) {
           await incrementUsage(user.id, COSTS.CHAT, 'chat');
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Chat error:", error);
-      setMessages(prev => [...prev, { role: 'model', text: "I'm sorry, I encountered an error. Please try again." }]);
+      let errorMsg = "I'm sorry, I encountered an error. Please try again.";
+      if (error.message?.includes('Failed to fetch')) {
+          errorMsg = "Network error: Unable to reach the AI service. Please check your connection.";
+      }
+      
+      setMessages(prev => {
+          const newMsgs = [...prev];
+          const last = newMsgs[newMsgs.length - 1];
+          if (last && last.role === 'model') {
+              // If we already streamed some text, append error. Otherwise replace.
+              last.text = last.text ? last.text + `\n\n[System: ${errorMsg}]` : errorMsg;
+          }
+          return newMsgs;
+      });
     } finally {
       setIsLoading(false);
     }
@@ -130,7 +169,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div 
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
+                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm whitespace-pre-wrap ${
                     msg.role === 'user' 
                       ? 'bg-[#0500e2] text-white rounded-br-none' 
                       : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-bl-none'
@@ -140,7 +179,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
                 </div>
               </div>
             ))}
-            {isLoading && (
+            {isLoading && messages[messages.length-1].role === 'user' && (
               <div className="flex justify-start">
                 <div className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-bl-none px-4 py-3 shadow-sm flex items-center gap-2">
                   <Loader2 size={14} className="animate-spin text-[#0500e2] dark:text-[#4b53fa]" />
