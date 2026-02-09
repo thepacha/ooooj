@@ -31,8 +31,20 @@ function App() {
   const isLocalhost = hostname.includes('localhost');
 
   const [user, setUser] = useState<User | null>(null);
-  // Initialize view based on domain: App domain defaults to Login, others to Landing
-  const [authView, setAuthView] = useState<AuthState>(isAppDomain ? 'login' : 'landing');
+  
+  // Initialize view based on domain: 
+  // If App Domain: Check hash for specific view (e.g. #signup), otherwise default to Login.
+  // If Landing Domain: Default to Landing.
+  const [authView, setAuthView] = useState<AuthState>(() => {
+      if (isAppDomain) {
+          if (typeof window !== 'undefined' && window.location.hash === '#signup') {
+              return 'signup';
+          }
+          return 'login';
+      }
+      return 'landing';
+  });
+
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
 
@@ -252,9 +264,14 @@ function App() {
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'PASSWORD_RECOVERY') {
             processSession(session);
         } else if (event === 'SIGNED_OUT') {
+            // Redirect to marketing site if on app domain
+            if (isAppDomain) {
+                window.location.href = 'https://revuqai.com';
+                return;
+            }
             if (mounted) {
                 setUser(null);
-                setAuthView(isAppDomain ? 'login' : 'landing');
+                setAuthView('landing');
                 setHistory([]);
                 setIsLoadingUser(false);
                 setIsRecoveryMode(false);
@@ -417,8 +434,13 @@ function App() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    // Redirect to marketing site if on app domain
+    if (isAppDomain) {
+        window.location.href = 'https://revuqai.com';
+        return;
+    }
     setUser(null);
-    setAuthView(isAppDomain ? 'login' : 'landing');
+    setAuthView('landing');
     setCurrentView('dashboard');
     setIsSidebarOpen(false);
   };
@@ -454,13 +476,8 @@ function App() {
 
   const handleLandingSignupClick = () => {
       if (isProductionLanding) {
-          // You might also want to redirect signup to the app subdomain eventually, 
-          // or handle it on marketing site then redirect. For now, let's keep consistent.
-          // Ideally: window.location.href = 'https://app.revuqai.com/signup'; if routing was set up.
-          // Since we are SPA, redirecting to app domain will default to Login.
-          // Let's redirect to App and let the user click sign up there, or implement hash routing.
-          // For simplicity given constraints:
-          window.location.href = 'https://app.revuqai.com';
+          // Redirect with hash to trigger signup view on the app domain
+          window.location.href = 'https://app.revuqai.com/#signup';
       } else {
           setAuthView('signup');
       }
