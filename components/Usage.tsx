@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { User, UsageMetrics, UsageHistory } from '../types';
 import { getUsage, getUsageHistory, purchaseCredits, COSTS } from '../lib/usageService';
-import { Loader2, Zap, AlertTriangle, FileText, Mic, MessageSquare, CreditCard, Plus, History, Calendar } from 'lucide-react';
+import { Loader2, Zap, AlertTriangle, FileText, Mic, MessageSquare, CreditCard, Plus, History, Calendar, Lock } from 'lucide-react';
 
 interface UsageProps {
   user: User | null;
@@ -40,6 +40,10 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
 
   const handlePurchase = async (amount: number) => {
       if (!user) return;
+      if (metrics?.suspended) {
+          alert("Your account is suspended. Please contact support.");
+          return;
+      }
       setPurchasing(true);
       try {
           await purchaseCredits(user.id, amount);
@@ -73,8 +77,24 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
   return (
     <div className="space-y-8 animate-fade-in pb-12">
       
+      {/* Suspended Banner */}
+      {metrics.suspended && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-2xl p-6 flex items-start gap-4 animate-pulse">
+              <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full text-red-600 dark:text-red-400">
+                  <Lock size={24} />
+              </div>
+              <div>
+                  <h3 className="text-lg font-bold text-red-700 dark:text-red-400 mb-1">Account Suspended</h3>
+                  <p className="text-red-600 dark:text-red-300 text-sm">
+                      Your access to credit consumption has been temporarily suspended by an administrator. 
+                      You can still view your history, but cannot run new analyses. Please contact support for assistance.
+                  </p>
+              </div>
+          </div>
+      )}
+
       {/* Top Banner - Usage Gauge */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className={`grid grid-cols-1 lg:grid-cols-3 gap-8 ${metrics.suspended ? 'opacity-75 grayscale-[0.5]' : ''}`}>
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
           <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
              
@@ -155,24 +175,24 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
                 <div className="space-y-3">
                     <button 
                         onClick={() => handlePurchase(1000)}
-                        disabled={purchasing}
-                        className="w-full flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all border border-white/10 text-sm group"
+                        disabled={purchasing || metrics.suspended}
+                        className="w-full flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all border border-white/10 text-sm group disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <span className="font-bold flex items-center gap-2"><Plus size={14} className="text-blue-200" /> 1,000 Credits</span>
                         <span className="font-mono bg-white/20 px-2 py-1 rounded text-xs group-hover:bg-white group-hover:text-[#0500e2] transition-colors">$5</span>
                     </button>
                     <button 
                         onClick={() => handlePurchase(5000)}
-                        disabled={purchasing}
-                        className="w-full flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all border border-white/10 text-sm group"
+                        disabled={purchasing || metrics.suspended}
+                        className="w-full flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all border border-white/10 text-sm group disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <span className="font-bold flex items-center gap-2"><Plus size={14} className="text-blue-200" /> 5,000 Credits</span>
                         <span className="font-mono bg-white/20 px-2 py-1 rounded text-xs group-hover:bg-white group-hover:text-[#0500e2] transition-colors">$20</span>
                     </button>
                     <button 
                         onClick={() => handlePurchase(10000)}
-                        disabled={purchasing}
-                        className="w-full flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all border border-white/10 text-sm group"
+                        disabled={purchasing || metrics.suspended}
+                        className="w-full flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all border border-white/10 text-sm group disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <span className="font-bold flex items-center gap-2"><Plus size={14} className="text-blue-200" /> 10,000 Credits</span>
                         <span className="font-mono bg-white/20 px-2 py-1 rounded text-xs group-hover:bg-white group-hover:text-[#0500e2] transition-colors">$35</span>

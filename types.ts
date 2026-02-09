@@ -61,6 +61,7 @@ export interface UsageMetrics {
   transcriptions_count: number;
   chat_messages_count: number;
   reset_date: string;
+  suspended: boolean;
 }
 
 export interface UsageHistory {
