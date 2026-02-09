@@ -22,12 +22,8 @@ create table if not exists user_usage (
   analyses_count int default 0,
   transcriptions_count int default 0,
   chat_messages_count int default 0,
-  reset_date timestamp with time zone,
-  suspended boolean default false
+  reset_date timestamp with time zone
 );
-
--- Safely add suspended column if it doesn't exist (Migration)
-alter table user_usage add column if not exists suspended boolean default false;
 
 -- USAGE HISTORY
 create table if not exists usage_history (
@@ -123,8 +119,6 @@ create policy "Admins can update all profiles" on profiles for update using (is_
 drop policy if exists "Users can read own usage" on user_usage;
 create policy "Users can read own usage" on user_usage for select using (auth.uid() = user_id);
 
--- Only allow system or admin to update usage generally, but for credit consumption we normally use service role or stored procedures.
--- For simplicity in this demo, we allow users to update their own usage (e.g. consuming credits) BUT admin override via UI needs policy.
 drop policy if exists "Users can update own usage" on user_usage;
 create policy "Users can update own usage" on user_usage for update using (auth.uid() = user_id);
 
@@ -173,3 +167,22 @@ create policy "Users view own evaluations" on evaluations for select using (auth
 
 drop policy if exists "Users insert own evaluations" on evaluations;
 create policy "Users insert own evaluations" on evaluations for insert with check (auth.uid() = user_id);
+
+-- ==========================================
+-- DATA SEEDING (Run once)
+-- ==========================================
+
+-- Insert the requested 51 evaluations history record for all current users
+-- This makes the 'Billing History' table populate with data immediately.
+INSERT INTO usage_history (user_id, period_end, credits_used, analyses_count, transcriptions_count, chat_messages_count)
+SELECT 
+  id as user_id,
+  NOW() - INTERVAL '1 month' as period_end,
+  5350 as credits_used, 
+  51 as analyses_count,
+  12 as transcriptions_count,
+  50 as chat_messages_count
+FROM auth.users
+WHERE NOT EXISTS (
+    SELECT 1 FROM usage_history WHERE user_id = auth.users.id AND analyses_count = 51
+);
