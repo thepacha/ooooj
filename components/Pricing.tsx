@@ -138,7 +138,7 @@ export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = fal
                     key={plan.id}
                     className={`relative flex flex-col p-8 rounded-[2rem] border transition-all duration-300 hover:-translate-y-2 ${
                         plan.highlight 
-                        ? 'bg-slate-900 text-white border-slate-800 shadow-2xl shadow-blue-900/20 z-10 scale-105 md:scale-110 ring-1 ring-white/10' 
+                        ? 'bg-slate-900 dark:bg-slate-800 text-white border-slate-800 dark:border-indigo-500/30 shadow-2xl shadow-blue-900/20 z-10 scale-105 md:scale-110 ring-1 ring-white/10' 
                         : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-xl hover:shadow-2xl'
                     }`}
                 >

@@ -202,13 +202,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
                 />
                 <Tooltip 
                     contentStyle={{ 
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                        backgroundColor: 'var(--tooltip-bg)', 
                         borderRadius: '12px', 
-                        border: 'none', 
-                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' 
+                        border: '1px solid var(--tooltip-border)', 
+                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                        color: 'var(--tooltip-text)'
                     }}
                     cursor={{ stroke: '#0500e2', strokeWidth: 1, strokeDasharray: '5 5' }}
                     labelStyle={{ color: '#64748b', fontWeight: 600, marginBottom: '0.5rem' }}
+                    itemStyle={{ color: 'var(--tooltip-text)' }}
                 />
                 <Area 
                     type="monotone" 

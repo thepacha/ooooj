@@ -668,7 +668,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     // --- VIEW: Create Scenario ---
     if (view === 'create') {
         return (
-            <div className="max-w-2xl mx-auto pb-12 animate-fade-in">
+            <div className="max-w-2xl mx-auto pb-24 md:pb-12 animate-fade-in">
                 <button onClick={() => setView('list')} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors font-bold">
                     <ArrowRight size={20} className="rotate-180" /> Back to List
                 </button>
@@ -694,7 +694,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         </button>
                     </div>
 
-                    <div className="p-8 md:p-10">
+                    <div className="p-6 md:p-10">
                         {creationType === 'ai' ? (
                             <div className="space-y-6">
                                 <div>
@@ -706,7 +706,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                         className="w-full h-32 p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-[#0500e2] outline-none resize-none"
                                     />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Difficulty</label>
                                         <select 
@@ -763,7 +763,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                         placeholder="Brief context for the agent..."
                                     />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Difficulty</label>
                                         <select 
@@ -832,21 +832,21 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         }
 
         return (
-            <div className="h-[calc(100vh-140px)] flex flex-col bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="h-[calc(100dvh-100px)] md:h-[calc(100vh-140px)] flex flex-col bg-white dark:bg-slate-900 rounded-xl md:rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
                 {/* Session Header */}
-                <div className="p-4 md:p-6 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shrink-0">
-                    <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md ${
+                <div className="p-3 md:p-6 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex flex-row justify-between items-center shrink-0 gap-2">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center text-white shadow-md shrink-0 ${
                             activeScenario.category === 'Sales' ? 'bg-green-500' : 
                             activeScenario.category === 'Technical' ? 'bg-slate-700' : 'bg-red-500'
                         }`}>
-                            {activeScenario.icon === 'TrendingUp' ? <TrendingUp size={20} /> : activeScenario.icon === 'Wrench' ? <Wrench size={20} /> : <Shield size={20} />}
+                            {activeScenario.icon === 'TrendingUp' ? <TrendingUp size={18} className="md:w-5 md:h-5" /> : activeScenario.icon === 'Wrench' ? <Wrench size={18} className="md:w-5 md:h-5" /> : <Shield size={18} className="md:w-5 md:h-5" />}
                         </div>
-                        <div>
-                            <h3 className="font-bold text-slate-900 dark:text-white leading-tight">{activeScenario.title}</h3>
-                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <div className="min-w-0">
+                            <h3 className="font-bold text-sm md:text-base text-slate-900 dark:text-white leading-tight truncate">{activeScenario.title}</h3>
+                            <div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-500 truncate">
                                 <span className={`px-1.5 rounded-md border ${mode === 'voice' ? 'border-red-200 bg-red-50 text-red-600 animate-pulse' : 'border-slate-200 bg-slate-100'}`}>
-                                    {mode === 'voice' ? '● Live Voice' : 'Text Chat'}
+                                    {mode === 'voice' ? '● Live' : 'Text'}
                                 </span>
                                 <span>• {activeScenario.difficulty}</span>
                             </div>
@@ -854,7 +854,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                     </div>
                     <button 
                         onClick={endSession}
-                        className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg font-bold text-sm hover:opacity-90 transition-opacity"
+                        className="px-3 py-1.5 md:px-4 md:py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg font-bold text-xs md:text-sm hover:opacity-90 transition-opacity whitespace-nowrap shrink-0"
                     >
                         End Session
                     </button>
@@ -875,10 +875,10 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                 )}
 
                 {/* Chat Area */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6 bg-slate-50/50 dark:bg-slate-900/50 scroll-smooth">
                     {messages.map((msg, idx) => (
                         <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[80%] rounded-2xl px-5 py-4 text-sm md:text-base shadow-sm whitespace-pre-wrap ${
+                            <div className={`max-w-[85%] md:max-w-[80%] rounded-2xl px-4 py-3 md:px-5 md:py-4 text-sm md:text-base shadow-sm whitespace-pre-wrap ${
                                 msg.role === 'user' 
                                 ? 'bg-[#0500e2] text-white rounded-br-sm' 
                                 : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-bl-sm'
@@ -899,9 +899,9 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0">
+                <div className="p-3 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0 safe-area-bottom">
                     {mode === 'text' ? (
-                        <div className="relative flex gap-3">
+                        <div className="relative flex gap-2 md:gap-3 items-end">
                             <div className="flex-1 relative">
                                 <input 
                                     type="text" 
@@ -909,33 +909,33 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyDown={handleKeyDown}
                                     placeholder={isOverLimit ? "Message too long!" : "Type your response..."}
-                                    className={`w-full pl-5 pr-12 py-4 rounded-xl bg-slate-50 dark:bg-slate-950 border outline-none focus:ring-2 focus:ring-[#0500e2] transition-all shadow-sm ${
+                                    className={`w-full pl-4 md:pl-5 pr-12 py-3 md:py-4 text-sm md:text-base rounded-xl bg-slate-50 dark:bg-slate-950 border outline-none focus:ring-2 focus:ring-[#0500e2] transition-all shadow-sm ${
                                         isOverLimit ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : 'border-slate-200 dark:border-slate-800'
                                     }`}
                                 />
-                                <div className={`absolute -bottom-6 right-1 text-[10px] font-bold transition-colors ${isOverLimit ? 'text-red-500' : 'text-slate-400'}`}>
+                                <div className={`absolute -bottom-5 right-1 text-[10px] font-bold transition-colors ${isOverLimit ? 'text-red-500' : 'text-slate-400'}`}>
                                     {wordCount}/24 words
                                 </div>
                             </div>
                             <button 
                                 onClick={sendMessage}
                                 disabled={!input.trim() || isProcessing || isOverLimit}
-                                className="p-4 bg-[#0500e2] text-white rounded-xl hover:bg-[#0400c0] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-600/20 h-[58px] w-[58px] flex items-center justify-center"
+                                className="p-3 md:p-4 bg-[#0500e2] text-white rounded-xl hover:bg-[#0400c0] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-600/20 h-[46px] w-[46px] md:h-[58px] md:w-[58px] flex items-center justify-center shrink-0"
                             >
-                                <Send size={20} />
+                                <Send size={18} className="md:w-5 md:h-5" />
                             </button>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-4 gap-4">
-                            <div className="flex items-center gap-2 text-red-500 font-bold animate-pulse">
-                                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <div className="flex flex-col items-center justify-center py-2 md:py-4 gap-3 md:gap-4">
+                            <div className="flex items-center gap-2 text-red-500 font-bold animate-pulse text-sm md:text-base">
+                                <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-red-500 rounded-full"></div>
                                 Live Voice Active
                             </div>
                             <button 
                                 onClick={stopVoiceSession}
-                                className="px-8 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full text-slate-700 dark:text-slate-200 font-bold flex items-center gap-2 transition-all"
+                                className="px-6 py-2.5 md:px-8 md:py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full text-slate-700 dark:text-slate-200 font-bold flex items-center gap-2 transition-all text-sm md:text-base"
                             >
-                                <PhoneOff size={18} /> Stop Speaking
+                                <PhoneOff size={16} className="md:w-[18px] md:h-[18px]" /> Stop Speaking
                             </button>
                         </div>
                     )}
@@ -947,20 +947,20 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     // --- VIEW: Results ---
     if (view === 'result' && result) {
         return (
-            <div className="max-w-4xl mx-auto pb-12 animate-fade-in">
-                <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
+            <div className="max-w-4xl mx-auto pb-20 md:pb-12 animate-fade-in px-4 md:px-0">
+                <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
                     <div className="bg-slate-900 text-white p-8 md:p-12 text-center relative overflow-hidden">
                         <div className="relative z-10">
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-bold uppercase tracking-wider mb-4 border border-white/20">
                                 Session Complete
                             </div>
                             <h2 className="text-4xl md:text-5xl font-serif font-bold mb-4">{result.score}%</h2>
-                            <p className="text-blue-200 text-lg max-w-xl mx-auto">{result.feedback}</p>
+                            <p className="text-blue-200 text-base md:text-lg max-w-xl mx-auto">{result.feedback}</p>
                         </div>
                         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/50 via-slate-900 to-slate-900"></div>
                     </div>
 
-                    <div className="p-8 md:p-12 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+                    <div className="p-6 md:p-12 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
                         <div>
                             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                                 <CheckCircle className="text-emerald-500" size={20} /> Strengths
@@ -989,15 +989,15 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         </div>
                     </div>
 
-                    <div className="p-8 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                        <button onClick={() => setView('list')} className="font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+                    <div className="p-6 md:p-8 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-200 dark:border-slate-800 flex flex-col-reverse sm:flex-row justify-between items-center gap-4">
+                        <button onClick={() => setView('list')} className="w-full sm:w-auto font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors py-2">
                             Back to Scenarios
                         </button>
-                        <div className="flex gap-3">
-                            <button onClick={handleCopyTranscript} className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2">
+                        <div className="flex w-full sm:w-auto gap-3">
+                            <button onClick={handleCopyTranscript} className="flex-1 sm:flex-none justify-center px-4 py-3 md:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl md:rounded-lg font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2">
                                 {isCopied ? <Check size={16} /> : <Copy size={16} />} Transcript
                             </button>
-                            <button onClick={() => activeScenario && startSession(activeScenario, mode)} className="px-6 py-2 bg-[#0500e2] text-white rounded-lg font-bold text-sm hover:bg-[#0400c0] transition-colors flex items-center gap-2">
+                            <button onClick={() => activeScenario && startSession(activeScenario, mode)} className="flex-1 sm:flex-none justify-center px-6 py-3 md:py-2 bg-[#0500e2] text-white rounded-xl md:rounded-lg font-bold text-sm hover:bg-[#0400c0] transition-colors flex items-center gap-2">
                                 <RefreshCw size={16} /> Retry
                             </button>
                         </div>
@@ -1009,44 +1009,44 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
 
     // --- VIEW: Scenario List (Default) ---
     return (
-        <div className="space-y-8 animate-fade-in pb-12">
-             <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[2rem] p-8 md:p-12 text-white relative overflow-hidden shadow-lg">
+        <div className="space-y-6 md:space-y-8 animate-fade-in pb-20 md:pb-12">
+             <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl md:rounded-[2rem] p-6 md:p-12 text-white relative overflow-hidden shadow-lg">
                 <div className="relative z-10 max-w-2xl">
-                    <h2 className="text-3xl font-serif font-bold mb-4">AI Training Companion</h2>
-                    <p className="text-indigo-100 text-lg mb-8">
+                    <h2 className="text-2xl md:text-3xl font-serif font-bold mb-2 md:mb-4">AI Training Companion</h2>
+                    <p className="text-indigo-100 text-sm md:text-lg mb-6 md:mb-8">
                         Practice real-world support and sales scenarios with unique AI personas. 
                         Get instant feedback on your tone, empathy, and problem-solving skills.
                     </p>
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
                         <button 
                             onClick={() => setView('create')}
-                            className="px-6 py-3 bg-white text-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition-colors shadow-lg flex items-center gap-2"
+                            className="px-6 py-3 bg-white text-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition-colors shadow-lg flex items-center justify-center gap-2 text-sm md:text-base"
                         >
                             <Plus size={18} /> Create New Scenario
                         </button>
                         <button 
                             onClick={refreshScenarios}
-                            className="px-6 py-3 bg-indigo-700/50 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors flex items-center gap-2 backdrop-blur-md"
+                            className="px-6 py-3 bg-indigo-700/50 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 backdrop-blur-md text-sm md:text-base"
                         >
                             <Shuffle size={18} /> Randomize Scenarios
                         </button>
                     </div>
                 </div>
                 <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-1/4 translate-y-1/4">
-                    <Shield size={400} />
+                    <Shield size={250} className="md:w-[400px] md:h-[400px]" />
                 </div>
              </div>
 
-             <div className="flex items-center gap-6 border-b border-slate-200 dark:border-slate-800">
+             <div className="flex items-center gap-6 border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
                 <button 
                     onClick={() => setActiveTab('scenarios')}
-                    className={`pb-4 text-sm font-bold border-b-2 transition-all ${activeTab === 'scenarios' ? 'text-[#0500e2] border-[#0500e2]' : 'text-slate-500 border-transparent hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'}`}
+                    className={`pb-4 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'scenarios' ? 'text-[#0500e2] border-[#0500e2]' : 'text-slate-500 border-transparent hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'}`}
                 >
                     Active Scenarios
                 </button>
                 <button 
                     onClick={() => setActiveTab('history')}
-                    className={`pb-4 text-sm font-bold border-b-2 transition-all ${activeTab === 'history' ? 'text-[#0500e2] border-[#0500e2]' : 'text-slate-500 border-transparent hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'}`}
+                    className={`pb-4 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'history' ? 'text-[#0500e2] border-[#0500e2]' : 'text-slate-500 border-transparent hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'}`}
                 >
                     Training History
                 </button>
@@ -1135,7 +1135,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
+                            <table className="w-full text-left border-collapse min-w-[600px]">
                                 <thead className="bg-slate-50 dark:bg-slate-900/50">
                                     <tr>
                                         <th className="p-4 pl-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>

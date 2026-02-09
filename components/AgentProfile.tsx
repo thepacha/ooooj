@@ -209,7 +209,14 @@ export const AgentProfile: React.FC<AgentProfileProps> = ({ agentName, history, 
                     <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} dy={10} />
                     <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
                     <Tooltip 
-                        contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                        contentStyle={{ 
+                            backgroundColor: 'var(--tooltip-bg)', 
+                            borderRadius: '12px', 
+                            border: '1px solid var(--tooltip-border)', 
+                            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                            color: 'var(--tooltip-text)'
+                        }}
+                        itemStyle={{ color: 'var(--tooltip-text)' }}
                         cursor={{ stroke: '#0500e2', strokeWidth: 1, strokeDasharray: '5 5' }}
                     />
                     <Area type="monotone" dataKey="score" stroke="#0500e2" strokeWidth={3} fillOpacity={1} fill="url(#colorScoreAgent)" />
@@ -230,7 +237,14 @@ export const AgentProfile: React.FC<AgentProfileProps> = ({ agentName, history, 
                         <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
                         <Tooltip 
                              cursor={{fill: 'transparent'}}
-                             contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                             contentStyle={{ 
+                                backgroundColor: 'var(--tooltip-bg)', 
+                                borderRadius: '8px', 
+                                border: '1px solid var(--tooltip-border)', 
+                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                                color: 'var(--tooltip-text)'
+                             }}
+                             itemStyle={{ color: 'var(--tooltip-text)' }}
                         />
                         <Bar dataKey="avg" barSize={20} radius={[0, 4, 4, 0]}>
                             {stats.criteriaStats.map((entry, index) => (
