@@ -23,6 +23,7 @@ export interface AnalysisResult {
   sentiment: 'Positive' | 'Neutral' | 'Negative';
   criteriaResults: CriteriaResult[];
   rawTranscript: string;
+  isDeleted?: boolean;
 }
 
 export interface TrainingScenario {

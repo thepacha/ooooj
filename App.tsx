@@ -36,7 +36,7 @@ function App() {
   const [selectedEvaluation, setSelectedEvaluation] = useState<AnalysisResult | null>(null);
   
   // Filter state for History view
-  const [historyFilter, setHistoryFilter] = useState<'all' | 'high' | 'low'>('all');
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'high' | 'low' | 'trash'>('all');
   
   // Theme state
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -110,13 +110,14 @@ function App() {
             const mappedEvals: AnalysisResult[] = evals.map(e => ({
               id: e.id,
               timestamp: e.timestamp,
-              agentName: e.agent_name || 'Unknown Agent', // Correctly map agent_name to agentName
-              customerName: e.customer_name || 'Unknown Customer', // Correctly map customer_name to customerName
+              agentName: e.agent_name || 'Unknown Agent', 
+              customerName: e.customer_name || 'Unknown Customer', 
               summary: e.summary || '',
               overallScore: e.overall_score || 0,
               sentiment: e.sentiment || 'Neutral',
-              criteriaResults: e.criteria_results || [], // Correctly map criteria_results to criteriaResults
-              rawTranscript: e.raw_transcript || ''
+              criteriaResults: e.criteria_results || [], 
+              rawTranscript: e.raw_transcript || '',
+              isDeleted: e.is_deleted || false // Map soft delete flag
             }));
             setHistory(mappedEvals);
           }
@@ -323,6 +324,83 @@ function App() {
       }
   };
 
+  const handleDeleteEvaluation = async (id: string) => {
+    // Soft Delete: Just mark as deleted
+    if (!window.confirm("Move this evaluation to Trash?")) {
+      return;
+    }
+
+    // Optimistic soft delete
+    setHistory(prev => prev.map(item => item.id === id ? { ...item, isDeleted: true } : item));
+    
+    // If deleting the currently selected one, go back
+    if (selectedEvaluation?.id === id) {
+        setSelectedEvaluation(null);
+        setCurrentView('history');
+    }
+
+    if (user) {
+        try {
+            // Perform Update instead of Delete
+            await supabase.from('evaluations').update({ is_deleted: true }).eq('id', id);
+        } catch(e) {
+            console.error("Error deleting evaluation:", e);
+        }
+    }
+  };
+
+  const handleRestoreEvaluation = async (id: string) => {
+      // Optimistic restore
+      setHistory(prev => prev.map(item => item.id === id ? { ...item, isDeleted: false } : item));
+      
+      if (user) {
+          try {
+              await supabase.from('evaluations').update({ is_deleted: false }).eq('id', id);
+          } catch(e) {
+              console.error("Error restoring evaluation:", e);
+          }
+      }
+  };
+
+  const handlePermanentDelete = async (id: string) => {
+      if (!window.confirm("Permanently delete this evaluation? This action cannot be undone.")) {
+          return;
+      }
+
+      // Optimistic permanent delete
+      setHistory(prev => prev.filter(item => item.id !== id));
+
+      if (user) {
+          try {
+              await supabase.from('evaluations').delete().eq('id', id);
+          } catch(e) {
+              console.error("Error permanently deleting evaluation:", e);
+          }
+      }
+  };
+
+  const handleUpdateEvaluation = async (updated: AnalysisResult) => {
+      // Optimistic update
+      setHistory(prev => prev.map(item => item.id === updated.id ? updated : item));
+      setSelectedEvaluation(updated); // Update the view
+
+      if (user) {
+          try {
+              await supabase.from('evaluations').update({
+                  agent_name: updated.agentName,
+                  customer_name: updated.customerName,
+                  summary: updated.summary,
+                  overall_score: updated.overallScore,
+                  sentiment: updated.sentiment,
+                  criteria_results: updated.criteriaResults,
+                  raw_transcript: updated.rawTranscript
+              }).eq('id', updated.id);
+          } catch(e) {
+              console.error("Error updating evaluation:", e);
+          }
+      }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -356,7 +434,7 @@ function App() {
       case 'dashboard':
         return (
           <Dashboard 
-            history={history} 
+            history={history.filter(h => !h.isDeleted)} 
             setView={setCurrentView} 
             onFilterSelect={(filter) => {
                 setHistoryFilter(filter);
@@ -367,17 +445,20 @@ function App() {
       case 'analyze':
         return <Analyzer criteria={criteria} onAnalysisComplete={handleAnalysisComplete} user={user} />;
       case 'training':
-        return <Training user={user} history={history} onAnalysisComplete={handleAnalysisComplete} />;
+        return <Training user={user} history={history.filter(h => !h.isDeleted)} onAnalysisComplete={handleAnalysisComplete} />;
       case 'history':
         return (
           <History 
             history={history} 
             onSelectEvaluation={handleSelectEvaluation} 
+            onDeleteEvaluation={handleDeleteEvaluation}
+            onRestoreEvaluation={handleRestoreEvaluation}
+            onPermanentDelete={handlePermanentDelete}
             filter={historyFilter}
           />
         );
       case 'roster':
-        return <Roster history={history} setView={setCurrentView} onSelectEvaluation={handleSelectEvaluation} />;
+        return <Roster history={history.filter(h => !h.isDeleted)} setView={setCurrentView} onSelectEvaluation={handleSelectEvaluation} />;
       case 'usage':
         return <Usage user={user} />;
       case 'settings':
@@ -392,7 +473,7 @@ function App() {
         if (user?.role !== 'admin') {
             return (
                 <Dashboard 
-                    history={history} 
+                    history={history.filter(h => !h.isDeleted)} 
                     setView={setCurrentView} 
                     onFilterSelect={(filter) => {
                         setHistoryFilter(filter);
@@ -405,16 +486,18 @@ function App() {
       case 'pricing':
         return <Pricing onPlanSelect={handlePlanSelect} isLoggedIn={true} />;
       case 'evaluation':
-        if (!selectedEvaluation) return <History history={history} onSelectEvaluation={handleSelectEvaluation} filter='all' />;
+        if (!selectedEvaluation) return <History history={history} onSelectEvaluation={handleSelectEvaluation} onDeleteEvaluation={handleDeleteEvaluation} filter='all' />;
         return (
           <EvaluationView 
             result={selectedEvaluation} 
             onBack={() => setCurrentView('history')} 
+            onDelete={() => handleDeleteEvaluation(selectedEvaluation.id)}
+            onUpdate={handleUpdateEvaluation}
             backLabel="Back to History"
           />
         );
       default:
-        return <Dashboard history={history} setView={setCurrentView} />;
+        return <Dashboard history={history.filter(h => !h.isDeleted)} setView={setCurrentView} />;
     }
   };
 

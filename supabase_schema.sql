@@ -60,6 +60,9 @@ create table if not exists evaluations (
   raw_transcript text
 );
 
+-- Add is_deleted column for Soft Delete functionality (Migration)
+alter table evaluations add column if not exists is_deleted boolean default false;
+
 -- SCENARIOS
 create table if not exists scenarios (
   id text primary key,
@@ -164,6 +167,9 @@ create policy "Users delete own criteria" on criteria for delete using (auth.uid
 
 drop policy if exists "Users view own evaluations" on evaluations;
 create policy "Users view own evaluations" on evaluations for select using (auth.uid() = user_id);
+
+drop policy if exists "Users update own evaluations" on evaluations;
+create policy "Users update own evaluations" on evaluations for update using (auth.uid() = user_id);
 
 drop policy if exists "Users insert own evaluations" on evaluations;
 create policy "Users insert own evaluations" on evaluations for insert with check (auth.uid() = user_id);
