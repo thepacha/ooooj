@@ -465,6 +465,19 @@ function App() {
      }
   }
 
+  // --- Navigation & Routing Helpers ---
+  
+  // Handles logic for "Back to Home" or Logo click on unauthenticated pages (Login/Signup)
+  const handleBackToHome = () => {
+      if (isAppDomain) {
+          // If we are on the App domain and unauthenticated, "Home" means the Marketing site
+          window.location.href = 'https://revuqai.com';
+      } else {
+          // If we are on localhost or the marketing domain, just show landing
+          setAuthView('landing');
+      }
+  };
+
   // --- Handlers for Landing Page Actions ---
   const handleLandingLoginClick = () => {
       if (isProductionLanding) {
@@ -595,7 +608,7 @@ function App() {
                 onLogin={handleLandingLoginClick}
                 onSignup={handleLandingSignupClick}
                 isLoggedIn={false} 
-                onBack={() => setAuthView(isAppDomain ? 'login' : 'landing')}
+                onBack={handleBackToHome}
             />
         </div>
       );
@@ -609,7 +622,7 @@ function App() {
                 onLogin={() => {}} 
                 onSwitchToSignup={() => setAuthView('signup')}
                 onPricing={() => setAuthView('pricing')}
-                onBackToHome={() => setAuthView('landing')} // Will effectively reload or show login again if on app domain, which is fine
+                onBackToHome={handleBackToHome}
             />
         </div>
       );
@@ -622,7 +635,7 @@ function App() {
                 onSignup={() => {}} 
                 onSwitchToLogin={() => setAuthView('login')}
                 onPricing={() => setAuthView('pricing')}
-                onBackToHome={() => setAuthView('landing')}
+                onBackToHome={handleBackToHome}
             />
         </div>
       );
