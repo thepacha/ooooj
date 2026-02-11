@@ -35,7 +35,7 @@ export const Terms: React.FC<TermsProps> = ({ onBack, onLogin, onSignup, onPrici
         <div className="space-y-12 text-lg leading-relaxed text-slate-700 dark:text-slate-300">
             <section>
                 <p>
-                    These Terms and Conditions ("Terms", "Terms and Conditions") govern your relationship with the RevuQA AI website and application (the "Service") operated by RevuQA AI Inc. ("us", "we", or "our").
+                    These Terms and Conditions ("Terms", "Terms and Conditions") govern your relationship with the RevuQA AI website and application (the "Service") operated by Mohamed Abdelmaguid ("us", "we", or "our").
                 </p>
                 <p className="mt-4">
                     Please read these Terms and Conditions carefully before using the Service. Your access to and use of the Service is conditioned on your acceptance of and compliance with these Terms. These Terms apply to all visitors, users, and others who access or use the Service.
@@ -112,7 +112,7 @@ export const Terms: React.FC<TermsProps> = ({ onBack, onLogin, onSignup, onPrici
             <section>
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Limitation Of Liability</h2>
                 <p>
-                    In no event shall RevuQA AI Inc., nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from (i) your access to or use of or inability to access or use the Service; (ii) any conduct or content of any third party on the Service; (iii) any content obtained from the Service; and (iv) unauthorized access, use or alteration of your transmissions or content.
+                    In no event shall Mohamed Abdelmaguid, nor his directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from (i) your access to or use of or inability to access or use the Service; (ii) any conduct or content of any third party on the Service; (iii) any content obtained from the Service; and (iv) unauthorized access, use or alteration of your transmissions or content.
                 </p>
             </section>
 

@@ -36,7 +36,7 @@ export const Privacy: React.FC<PrivacyProps> = ({ onBack, onLogin, onSignup, onP
             <section>
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Owner and Data Controller</h2>
                 <p>
-                    RevuQA AI Inc.<br />
+                    Mohamed Abdelmaguid<br />
                     123 Innovation Drive<br />
                     Suite 400<br />
                     San Francisco, CA 94103, USA

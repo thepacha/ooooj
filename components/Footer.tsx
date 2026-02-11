@@ -64,7 +64,7 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, on
             </div>
             
             <div className="pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-400">
-                <p>&copy; {new Date().getFullYear()} RevuQA AI Inc. {t('landing.footer.rights')}</p>
+                <p>&copy; {new Date().getFullYear()} RevuQA AI app. {t('landing.footer.rights')}</p>
                 <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     {t('landing.footer.status')}
