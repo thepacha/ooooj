@@ -9,9 +9,11 @@ interface LandingPageProps {
   onLoginClick: () => void;
   onSignupClick: () => void;
   onPricingClick: () => void;
+  onTermsClick: () => void;
+  onPrivacyClick: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignupClick, onPricingClick }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignupClick, onPricingClick, onTermsClick, onPrivacyClick }) => {
   const { t, isRTL } = useLanguage();
 
   return (
@@ -322,25 +324,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                 {[
                     { key: 'product', label: t('landing.footer.product') }, 
                     { key: 'company', label: t('landing.footer.company') }, 
-                    { key: 'resources', label: t('landing.footer.resources') }, 
+                    { key: 'resources', label: t('landing.footer.resources') }
                 ].map((col, i) => (
                     <div key={i}>
                         <h4 className="font-bold text-slate-900 dark:text-white mb-4 text-sm">{col.label}</h4>
                         <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
-                            {[1,2,3].map(item => (
+                            {[1,2,3,4].map(item => (
                                 <li key={item}><a href="#" className="hover:text-[#0500e2] transition-colors">Link Item {item}</a></li>
                             ))}
                         </ul>
                     </div>
                 ))}
 
+                {/* Legal Column with Functional Link */}
                 <div>
                     <h4 className="font-bold text-slate-900 dark:text-white mb-4 text-sm">{t('landing.footer.legal')}</h4>
                     <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
                         <li>
-                            <a href="/terms&conditions" className="hover:text-[#0500e2] transition-colors">Terms & Conditions</a>
+                            <button onClick={onTermsClick} className="hover:text-[#0500e2] transition-colors text-left">
+                                Terms of Service
+                            </button>
                         </li>
-                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Privacy Policy</a></li>
+                        <li>
+                            <button onClick={onPrivacyClick} className="hover:text-[#0500e2] transition-colors text-left">
+                                Privacy Policy
+                            </button>
+                        </li>
                     </ul>
                 </div>
             </div>

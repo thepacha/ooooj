@@ -16,32 +16,39 @@ import { Roster } from './components/Roster';
 import { Pricing } from './components/Pricing';
 import { Training } from './components/Training';
 import { Admin } from './components/Admin';
-import { TermsAndConditions } from './components/TermsAndConditions';
+import { Terms } from './components/Terms';
+import { Privacy } from './components/Privacy';
 import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA, User } from './types';
 import { Menu, Loader2 } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
 import { supabase } from './lib/supabase';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
-type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms';
+type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 'privacy';
 
 // Inner App Component to use the Language Context
 function AppContent() {
   // Domain Detection
   const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
   const isAppDomain = hostname.startsWith('app.');
   const isProductionLanding = hostname === 'revuqai.com' || hostname === 'www.revuqai.com';
 
   const [user, setUser] = useState<User | null>(null);
   const { t, isRTL } = useLanguage();
   
+  // URL & State Initialization
   const [authView, setAuthView] = useState<AuthState>(() => {
-      // Check for Terms URL specifically
-      if (pathname === '/terms' || pathname === '/terms&conditions' || pathname.includes('terms')) {
-          return 'terms';
-      }
+      // 1. Check URL Path first for specific pages
+      const path = typeof window !== 'undefined' ? window.location.pathname : '';
+      const cleanPath = path.replace(/\/$/, ''); // Remove trailing slash if present
 
+      if (cleanPath === '/termsandconditions') return 'terms';
+      if (cleanPath === '/pricing') return 'pricing';
+      if (cleanPath === '/privacypolicy') return 'privacy';
+      if (cleanPath === '/login') return 'login';
+      if (cleanPath === '/signup') return 'signup';
+
+      // 2. Domain/Hash Fallbacks
       if (isAppDomain) {
           if (typeof window !== 'undefined' && window.location.hash === '#signup') {
               return 'signup';
@@ -50,6 +57,43 @@ function AppContent() {
       }
       return 'landing';
   });
+
+  // Navigation Helper to sync URL with State
+  const navigateAuth = (view: AuthState) => {
+      let path = '/';
+      if (view === 'terms') path = '/termsandconditions';
+      else if (view === 'pricing') path = '/pricing';
+      else if (view === 'privacy') path = '/privacypolicy';
+      else if (view === 'login') path = '/login';
+      else if (view === 'signup') path = '/signup';
+      
+      // Update URL without reload
+      if (typeof window !== 'undefined' && window.location.pathname !== path) {
+          try {
+            window.history.pushState({}, '', path);
+          } catch (e) {
+            console.warn('Navigation blocked by environment:', e);
+          }
+      }
+      setAuthView(view);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Handle Browser Back/Forward Buttons
+  useEffect(() => {
+      const handlePopState = () => {
+          const path = window.location.pathname.replace(/\/$/, '');
+          if (path === '/termsandconditions') setAuthView('terms');
+          else if (path === '/pricing') setAuthView('pricing');
+          else if (path === '/privacypolicy') setAuthView('privacy');
+          else if (path === '/login') setAuthView('login');
+          else if (path === '/signup') setAuthView('signup');
+          else if (path === '' || path === '/') setAuthView('landing');
+      };
+
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
@@ -145,8 +189,9 @@ function AppContent() {
     const processSession = async (session: any) => {
         if (!session) {
             if (mounted) {
-                if (authView !== 'pricing' && authView !== 'signup' && authView !== 'terms') {
-                    setAuthView(isAppDomain ? 'login' : 'landing');
+                // If on public pages, don't redirect to login
+                if (authView !== 'pricing' && authView !== 'signup' && authView !== 'terms' && authView !== 'privacy') {
+                    navigateAuth(isAppDomain ? 'login' : 'landing');
                 }
                 setUser(null);
                 setIsLoadingUser(false);
@@ -169,7 +214,7 @@ function AppContent() {
             
             if (mounted) {
                 setUser(basicUser);
-                setAuthView('app');
+                setAuthView('app'); // No URL change for app view (usually /)
                 setIsLoadingUser(false); 
             }
 
@@ -209,8 +254,8 @@ function AppContent() {
         if (mounted && isLoadingUser) {
             console.warn("Auth check timed out, forcing default view.");
             setIsLoadingUser(false);
-            if (authView !== 'pricing' && authView !== 'terms') {
-               setAuthView(isAppDomain ? 'login' : 'landing');
+            if (authView !== 'pricing' && authView !== 'terms' && authView !== 'privacy') {
+               navigateAuth(isAppDomain ? 'login' : 'landing');
             }
         }
     }, 5000);
@@ -221,9 +266,7 @@ function AppContent() {
             supabase.auth.signOut().then(() => {
                 if(mounted) {
                     setIsLoadingUser(false);
-                    if (authView !== 'terms') {
-                        setAuthView(isAppDomain ? 'login' : 'landing');
-                    }
+                    navigateAuth(isAppDomain ? 'login' : 'landing');
                 }
             });
             return;
@@ -234,9 +277,7 @@ function AppContent() {
         supabase.auth.signOut();
         if(mounted) {
             setIsLoadingUser(false);
-            if (authView !== 'terms') {
-                setAuthView(isAppDomain ? 'login' : 'landing');
-            }
+            navigateAuth(isAppDomain ? 'login' : 'landing');
         }
     });
 
@@ -254,7 +295,7 @@ function AppContent() {
             }
             if (mounted) {
                 setUser(null);
-                setAuthView('landing');
+                navigateAuth('landing');
                 setHistory([]);
                 setIsLoadingUser(false);
                 setIsRecoveryMode(false);
@@ -397,7 +438,7 @@ function AppContent() {
         return;
     }
     setUser(null);
-    setAuthView('landing');
+    navigateAuth('landing');
     setCurrentView('dashboard');
     setIsSidebarOpen(false);
   };
@@ -416,20 +457,15 @@ function AppContent() {
      if (user) {
          alert(`You selected the ${plan} plan. Payment integration coming soon!`);
      } else {
-         setAuthView('signup');
+         navigateAuth('signup');
      }
   }
 
   const handleBackToHome = () => {
-      // If we are on /terms or similar specific path, we should probably reset URL state
-      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
-          window.history.pushState({}, '', '/');
-      }
-
       if (isAppDomain) {
           window.location.href = 'https://revuqai.com';
       } else {
-          setAuthView('landing');
+          navigateAuth('landing');
       }
   };
 
@@ -437,7 +473,7 @@ function AppContent() {
       if (isProductionLanding) {
           window.location.href = 'https://app.revuqai.com';
       } else {
-          setAuthView('login');
+          navigateAuth('login');
       }
   };
 
@@ -445,7 +481,7 @@ function AppContent() {
       if (isProductionLanding) {
           window.location.href = 'https://app.revuqai.com/#signup';
       } else {
-          setAuthView('signup');
+          navigateAuth('signup');
       }
   };
 
@@ -539,14 +575,27 @@ function AppContent() {
   if (authView === 'terms') {
       return (
           <div className="animate-fade-in w-full min-h-screen">
-              <TermsAndConditions 
-                  onBack={handleBackToHome}
-                  onLogin={handleLandingLoginClick}
-                  onSignup={handleLandingSignupClick}
-                  onPricing={() => setAuthView('pricing')}
+              <Terms 
+                onBack={handleBackToHome}
+                onLogin={handleLandingLoginClick} 
+                onSignup={handleLandingSignupClick} 
+                onPricing={() => navigateAuth('pricing')}
               />
           </div>
-      );
+      )
+  }
+
+  if (authView === 'privacy') {
+      return (
+          <div className="animate-fade-in w-full min-h-screen">
+              <Privacy 
+                onBack={handleBackToHome}
+                onLogin={handleLandingLoginClick} 
+                onSignup={handleLandingSignupClick} 
+                onPricing={() => navigateAuth('pricing')}
+              />
+          </div>
+      )
   }
 
   if (authView === 'landing') {
@@ -555,7 +604,9 @@ function AppContent() {
             <LandingPage 
                 onLoginClick={handleLandingLoginClick} 
                 onSignupClick={handleLandingSignupClick} 
-                onPricingClick={() => setAuthView('pricing')}
+                onPricingClick={() => navigateAuth('pricing')}
+                onTermsClick={() => navigateAuth('terms')}
+                onPrivacyClick={() => navigateAuth('privacy')}
             />
         </div>
       );
@@ -580,8 +631,8 @@ function AppContent() {
         <div className="animate-fade-in w-full min-h-screen">
             <Login 
                 onLogin={() => {}} 
-                onSwitchToSignup={() => setAuthView('signup')}
-                onPricing={() => setAuthView('pricing')}
+                onSwitchToSignup={() => navigateAuth('signup')}
+                onPricing={() => navigateAuth('pricing')}
                 onBackToHome={handleBackToHome}
             />
         </div>
@@ -593,8 +644,8 @@ function AppContent() {
         <div className="animate-fade-in w-full min-h-screen">
             <Signup 
                 onSignup={() => {}} 
-                onSwitchToLogin={() => setAuthView('login')}
-                onPricing={() => setAuthView('pricing')}
+                onSwitchToLogin={() => navigateAuth('login')}
+                onPricing={() => navigateAuth('pricing')}
                 onBackToHome={handleBackToHome}
             />
         </div>
@@ -646,6 +697,7 @@ function AppContent() {
                     </h1>
                     <p className="text-sm lg:text-base text-slate-500 dark:text-slate-400 mt-2">
                     {currentView === 'dashboard' && `${t('dash.welcome')}, ${(user?.name || 'User').split(' ')[0]}. ${t('dash.team_overview')}`}
+                    {/* Simplified for brevity in code output, can add all dynamic descriptions later */}
                     </p>
                 </header>
                 
