@@ -28,7 +28,7 @@ export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = fal
       id: 'starter',
       name: 'Starter',
       description: 'Perfect for small teams just getting started with QA automation.',
-      price: billingCycle === 'monthly' ? 0 : 0,
+      price: billingCycle === 'monthly' ? 20 : 15,
       credits: '1,000',
       features: [
         '1,000 Analysis Credits / mo',
