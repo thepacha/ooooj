@@ -621,6 +621,8 @@ function AppContent() {
                 onSignup={handleLandingSignupClick}
                 isLoggedIn={false} 
                 onBack={handleBackToHome}
+                onTermsClick={() => navigateAuth('terms')}
+                onPrivacyClick={() => navigateAuth('privacy')}
             />
         </div>
       );

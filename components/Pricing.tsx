@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Check, X, Zap, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
 import { PublicNavigation } from './PublicNavigation';
+import { Footer } from './Footer';
 
 interface PricingProps {
   onPlanSelect?: (plan: string) => void;
@@ -9,9 +10,11 @@ interface PricingProps {
   onBack?: () => void;
   onLogin?: () => void;
   onSignup?: () => void;
+  onTermsClick?: () => void;
+  onPrivacyClick?: () => void;
 }
 
-export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = false, onBack, onLogin, onSignup }) => {
+export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = false, onBack, onLogin, onSignup, onTermsClick, onPrivacyClick }) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -265,6 +268,10 @@ export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = fal
             </div>
         </div>
       </div>
+
+      {onBack && (
+        <Footer onTermsClick={onTermsClick} onPrivacyClick={onPrivacyClick} />
+      )}
     </div>
   );
 };
