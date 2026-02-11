@@ -323,17 +323,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                     { key: 'product', label: t('landing.footer.product') }, 
                     { key: 'company', label: t('landing.footer.company') }, 
                     { key: 'resources', label: t('landing.footer.resources') }, 
-                    { key: 'legal', label: t('landing.footer.legal') }
                 ].map((col, i) => (
                     <div key={i}>
                         <h4 className="font-bold text-slate-900 dark:text-white mb-4 text-sm">{col.label}</h4>
                         <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
-                            {[1,2,3,4].map(item => (
+                            {[1,2,3].map(item => (
                                 <li key={item}><a href="#" className="hover:text-[#0500e2] transition-colors">Link Item {item}</a></li>
                             ))}
                         </ul>
                     </div>
                 ))}
+
+                <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-4 text-sm">{t('landing.footer.legal')}</h4>
+                    <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
+                        <li>
+                            <a href="/terms&conditions" className="hover:text-[#0500e2] transition-colors">Terms & Conditions</a>
+                        </li>
+                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Privacy Policy</a></li>
+                    </ul>
+                </div>
             </div>
             
             <div className="pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-400">

@@ -16,18 +16,20 @@ import { Roster } from './components/Roster';
 import { Pricing } from './components/Pricing';
 import { Training } from './components/Training';
 import { Admin } from './components/Admin';
+import { TermsAndConditions } from './components/TermsAndConditions';
 import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA, User } from './types';
 import { Menu, Loader2 } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
 import { supabase } from './lib/supabase';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
-type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing';
+type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms';
 
 // Inner App Component to use the Language Context
 function AppContent() {
   // Domain Detection
   const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
   const isAppDomain = hostname.startsWith('app.');
   const isProductionLanding = hostname === 'revuqai.com' || hostname === 'www.revuqai.com';
 
@@ -35,6 +37,11 @@ function AppContent() {
   const { t, isRTL } = useLanguage();
   
   const [authView, setAuthView] = useState<AuthState>(() => {
+      // Check for Terms URL specifically
+      if (pathname === '/terms' || pathname === '/terms&conditions' || pathname.includes('terms')) {
+          return 'terms';
+      }
+
       if (isAppDomain) {
           if (typeof window !== 'undefined' && window.location.hash === '#signup') {
               return 'signup';
@@ -138,7 +145,7 @@ function AppContent() {
     const processSession = async (session: any) => {
         if (!session) {
             if (mounted) {
-                if (authView !== 'pricing' && authView !== 'signup') {
+                if (authView !== 'pricing' && authView !== 'signup' && authView !== 'terms') {
                     setAuthView(isAppDomain ? 'login' : 'landing');
                 }
                 setUser(null);
@@ -202,7 +209,7 @@ function AppContent() {
         if (mounted && isLoadingUser) {
             console.warn("Auth check timed out, forcing default view.");
             setIsLoadingUser(false);
-            if (authView !== 'pricing') {
+            if (authView !== 'pricing' && authView !== 'terms') {
                setAuthView(isAppDomain ? 'login' : 'landing');
             }
         }
@@ -214,7 +221,9 @@ function AppContent() {
             supabase.auth.signOut().then(() => {
                 if(mounted) {
                     setIsLoadingUser(false);
-                    setAuthView(isAppDomain ? 'login' : 'landing');
+                    if (authView !== 'terms') {
+                        setAuthView(isAppDomain ? 'login' : 'landing');
+                    }
                 }
             });
             return;
@@ -225,7 +234,9 @@ function AppContent() {
         supabase.auth.signOut();
         if(mounted) {
             setIsLoadingUser(false);
-            setAuthView(isAppDomain ? 'login' : 'landing');
+            if (authView !== 'terms') {
+                setAuthView(isAppDomain ? 'login' : 'landing');
+            }
         }
     });
 
@@ -410,6 +421,11 @@ function AppContent() {
   }
 
   const handleBackToHome = () => {
+      // If we are on /terms or similar specific path, we should probably reset URL state
+      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+          window.history.pushState({}, '', '/');
+      }
+
       if (isAppDomain) {
           window.location.href = 'https://revuqai.com';
       } else {
@@ -520,6 +536,19 @@ function AppContent() {
       );
   }
 
+  if (authView === 'terms') {
+      return (
+          <div className="animate-fade-in w-full min-h-screen">
+              <TermsAndConditions 
+                  onBack={handleBackToHome}
+                  onLogin={handleLandingLoginClick}
+                  onSignup={handleLandingSignupClick}
+                  onPricing={() => setAuthView('pricing')}
+              />
+          </div>
+      );
+  }
+
   if (authView === 'landing') {
       return (
         <div className="animate-fade-in w-full min-h-screen">
@@ -617,7 +646,6 @@ function AppContent() {
                     </h1>
                     <p className="text-sm lg:text-base text-slate-500 dark:text-slate-400 mt-2">
                     {currentView === 'dashboard' && `${t('dash.welcome')}, ${(user?.name || 'User').split(' ')[0]}. ${t('dash.team_overview')}`}
-                    {/* Simplified for brevity in code output, can add all dynamic descriptions later */}
                     </p>
                 </header>
                 
