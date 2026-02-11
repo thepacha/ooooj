@@ -13,13 +13,13 @@ import {
 import { 
   TrendingUp, 
   Users, 
-  CheckCircle, 
   AlertTriangle, 
   Activity, 
   Award, 
   BarChart2, 
   ArrowUpRight 
 } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface DashboardProps {
   history: AnalysisResult[];
@@ -28,6 +28,8 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilterSelect }) => {
+  const { t, isRTL } = useLanguage();
+
   // --- Logic (Untouched) ---
   const totalEvaluations = history.length;
   const averageScore = totalEvaluations > 0 
@@ -37,7 +39,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
   const lowScores = history.filter(h => h.overallScore < 75).length;
   const highScores = history.filter(h => h.overallScore >= 90).length;
 
-  // Reverse history for chart so it flows left to right chronologically
   const recentTrendData = [...history].reverse().slice(-10).map((h, i) => ({
     name: `Eval ${i + 1}`,
     score: h.overallScore,
@@ -57,7 +58,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
     .sort((a, b) => b.avg - a.avg)
     .slice(0, 5);
 
-  // --- Helper Functions (Requested) ---
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-emerald-600 dark:text-emerald-400';
     if (score >= 75) return 'text-[#0500e2] dark:text-[#4b53fa]';
@@ -95,18 +95,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
                 <Activity size={24} className={getScoreColor(averageScore)} />
               </div>
               <span className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full bg-white/50 dark:bg-slate-800/50 ${getScoreColor(averageScore)}`}>
-                <TrendingUp size={12} /> Live
+                <TrendingUp size={12} className={isRTL ? "transform scale-x-[-1]" : ""} /> {t('dash.live')}
               </span>
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Avg Quality Score</p>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('dash.avg_quality')}</p>
               <h3 className={`text-4xl font-serif font-bold mt-1 ${getScoreColor(averageScore)}`}>
                 {averageScore}<span className="text-xl align-top">%</span>
               </h3>
             </div>
           </div>
-          {/* Background decoration */}
-          <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-current opacity-5 rounded-full blur-2xl group-hover:scale-110 transition-transform text-slate-900 dark:text-white pointer-events-none"></div>
+          <div className="absolute -end-4 -bottom-4 w-32 h-32 bg-current opacity-5 rounded-full blur-2xl group-hover:scale-110 transition-transform text-slate-900 dark:text-white pointer-events-none"></div>
         </div>
 
         {/* Total Evaluations */}
@@ -120,7 +119,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
               </div>
            </div>
            <div>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Evaluated</p>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('dash.total_evals')}</p>
               <h3 className="text-4xl font-serif font-bold mt-1 text-slate-900 dark:text-white">{totalEvaluations}</h3>
            </div>
         </div>
@@ -136,9 +135,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
               </div>
            </div>
            <div>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">High Performers</p>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('dash.high_performers')}</p>
               <h3 className="text-4xl font-serif font-bold mt-1 text-slate-900 dark:text-white">{highScores}</h3>
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium">Score &ge; 90%</p>
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium">{t('dash.score_over_90')}</p>
            </div>
         </div>
 
@@ -153,9 +152,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
               </div>
            </div>
            <div>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Critical Review</p>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('dash.critical_review')}</p>
               <h3 className="text-4xl font-serif font-bold mt-1 text-slate-900 dark:text-white">{lowScores}</h3>
-              <p className="text-xs text-red-500 dark:text-red-400 mt-1 font-medium">Score &lt; 75%</p>
+              <p className="text-xs text-red-500 dark:text-red-400 mt-1 font-medium">{t('dash.score_under_75')}</p>
            </div>
         </div>
       </div>
@@ -167,8 +166,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <div>
-               <h3 className="text-xl font-bold font-serif text-slate-900 dark:text-white">Quality Trend</h3>
-               <p className="text-sm text-slate-500 dark:text-slate-400">Last 10 evaluations overview</p>
+               <h3 className="text-xl font-bold font-serif text-slate-900 dark:text-white">{t('dash.quality_trend')}</h3>
+               <p className="text-sm text-slate-500 dark:text-slate-400">{t('dash.last_10')}</p>
             </div>
             <div className="flex gap-2">
                 <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300">
@@ -177,7 +176,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
             </div>
           </div>
           
-          <div className="h-[350px] w-full">
+          <div className="h-[350px] w-full" dir="ltr"> {/* Charts often prefer LTR even in RTL contexts for axis consistency, or need specific Recharts RTL config. LTR wrapper is a safe default for charts */}
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={recentTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
@@ -230,8 +229,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
         <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <div>
-                <h3 className="text-xl font-bold font-serif text-slate-900 dark:text-white">Top Agents</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Based on avg. performance</p>
+                <h3 className="text-xl font-bold font-serif text-slate-900 dark:text-white">{t('dash.top_agents')}</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{t('dash.based_on_avg')}</p>
             </div>
             <Users size={20} className="text-slate-400" />
           </div>
@@ -240,7 +239,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
             {leaderboardData.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-slate-400">
                     <Users size={40} strokeWidth={1.5} className="mb-2 opacity-50" />
-                    <p className="text-sm">No data available yet</p>
+                    <p className="text-sm">{t('dash.no_data')}</p>
                 </div>
             ) : (
                 leaderboardData.map((agent, idx) => (
@@ -260,7 +259,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
                             <span className={`text-sm font-bold ${getScoreColor(agent.avg)}`}>{agent.avg}%</span>
                         </div>
                         {/* Progress Bar */}
-                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden" dir="ltr">
                             <div 
                                 className={`h-full rounded-full transition-all duration-1000 ease-out ${
                                     agent.avg >= 90 ? 'bg-emerald-500' : agent.avg >= 75 ? 'bg-[#0500e2]' : 'bg-amber-500'
@@ -277,7 +276,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
             onClick={() => setView('roster')}
             className="mt-8 w-full py-3 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
           >
-            View Full Roster <ArrowUpRight size={16} />
+            {t('dash.view_roster')} <ArrowUpRight size={16} className={isRTL ? "transform scale-x-[-1]" : ""} />
           </button>
         </div>
       </div>

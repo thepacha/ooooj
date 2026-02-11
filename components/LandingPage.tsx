@@ -3,6 +3,7 @@ import React from 'react';
 import { ArrowRight, Check, Zap, BarChart3, MessageSquare, ShieldCheck, Sparkles, PlayCircle } from 'lucide-react';
 import { RevuLogo } from './RevuLogo';
 import { PublicNavigation } from './PublicNavigation';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface LandingPageProps {
   onLoginClick: () => void;
@@ -11,8 +12,10 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignupClick, onPricingClick }) => {
+  const { t, isRTL } = useLanguage();
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-white selection:bg-[#0500e2] selection:text-white overflow-x-hidden">
+    <div className={`min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-white selection:bg-[#0500e2] selection:text-white overflow-x-hidden ${isRTL ? 'rtl' : ''}`}>
       
       {/* Navigation */}
       <PublicNavigation 
@@ -37,17 +40,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0500e2] opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-[#0500e2]"></span>
                 </span>
-                <span className="text-xs font-bold text-slate-600 dark:text-slate-300 tracking-wide uppercase">New Gemini 3.0 Integration</span>
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-300 tracking-wide uppercase">{t('landing.hero.badge')}</span>
             </div>
 
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif font-bold text-slate-900 dark:text-white tracking-tight mb-8 leading-[1.1] max-w-5xl mx-auto drop-shadow-sm">
-                Quality Assurance <br className="hidden md:block" />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0500e2] to-violet-600">on Autopilot.</span>
+                {t('landing.hero.title_start')} <br className="hidden md:block" />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0500e2] to-violet-600">{t('landing.hero.title_end')}</span>
             </h1>
 
             <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-                RevuQA analyzes 100% of your support interactions using advanced AI. 
-                Eliminate spreadsheets, uncover coaching opportunities, and scale your QA instantly.
+                {t('landing.hero.subtitle')}
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
@@ -55,18 +57,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                     onClick={onSignupClick}
                     className="w-full sm:w-auto px-8 py-4 bg-[#0500e2] text-white rounded-full font-bold text-lg shadow-xl shadow-blue-600/30 hover:bg-[#0400c0] hover:scale-105 hover:shadow-blue-600/40 transition-all flex items-center justify-center gap-2"
                 >
-                    Start Free Analysis
+                    {t('landing.cta.start')}
                 </button>
                 <button 
                     onClick={onLoginClick}
                     className="w-full sm:w-auto px-8 py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-white rounded-full font-bold text-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2 group"
                 >
-                    <PlayCircle size={20} className="text-slate-400 group-hover:text-[#0500e2] transition-colors" /> Watch Demo
+                    <PlayCircle size={20} className="text-slate-400 group-hover:text-[#0500e2] transition-colors" /> {t('landing.cta.demo')}
                 </button>
             </div>
 
             {/* Dashboard Mockup */}
-            <div className="relative max-w-6xl mx-auto perspective-1000 group">
+            <div className="relative max-w-6xl mx-auto perspective-1000 group" dir="ltr">
+                {/* Keep dashboard mockup always LTR for now as it simulates a generic interface, or force LTR to avoid breaking absolute positioning unless redesigned */}
                 {/* Glow under the dashboard */}
                 <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-[2rem] blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
                 
@@ -154,8 +157,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
       {/* Social Proof */}
       <section className="py-12 border-y border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
         <div className="max-w-7xl mx-auto px-6">
-            <p className="text-center text-sm font-semibold text-slate-400 uppercase tracking-widest mb-8">Trusted by modern support teams</p>
-            <div className="flex flex-wrap justify-center gap-x-12 gap-y-8 grayscale opacity-60 hover:opacity-100 transition-opacity duration-500">
+            <p className="text-center text-sm font-semibold text-slate-400 uppercase tracking-widest mb-8">{t('landing.social_proof')}</p>
+            <div className="flex flex-wrap justify-center gap-x-12 gap-y-8 grayscale opacity-60 hover:opacity-100 transition-opacity duration-500" dir="ltr">
                 <div className="flex items-center gap-2 text-xl font-bold font-sans"><div className="w-6 h-6 bg-slate-800 dark:bg-white rounded-md"></div>Acme Corp</div>
                 <div className="flex items-center gap-2 text-xl font-serif font-black"><span className="text-2xl">M</span> MonoSpace</div>
                 <div className="flex items-center gap-2 text-xl font-sans font-bold italic tracking-tighter">intercom</div>
@@ -169,8 +172,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
       <section id="features" className="py-24 px-6 bg-slate-50 dark:bg-slate-900">
         <div className="max-w-7xl mx-auto">
             <div className="max-w-3xl mx-auto text-center mb-16">
-                <h2 className="text-3xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white mb-6">Built for scale, <br/>designed for humans.</h2>
-                <p className="text-lg text-slate-600 dark:text-slate-400">RevuQA handles the heavy lifting of grading and analysis so your team can focus on complex customer problems.</p>
+                <h2 className="text-3xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white mb-6 whitespace-pre-line">{t('landing.features.title')}</h2>
+                <p className="text-lg text-slate-600 dark:text-slate-400">{t('landing.features.subtitle')}</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[minmax(300px,auto)]">
@@ -181,14 +184,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                         <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-[#0500e2] mb-6">
                             <BarChart3 size={28} />
                         </div>
-                        <h3 className="text-3xl font-serif font-bold text-slate-900 dark:text-white mb-4">100% Coverage. <br/>Zero Headaches.</h3>
+                        <h3 className="text-3xl font-serif font-bold text-slate-900 dark:text-white mb-4 whitespace-pre-line">{t('landing.feature1.title')}</h3>
                         <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed mb-8">
-                            Most teams only grade 2% of tickets. RevuQA scales to 100% instantly, giving you the full picture of your team's performance without adding headcount.
+                            {t('landing.feature1.desc')}
                         </p>
                         <div className="flex flex-col gap-3">
-                            {['Auto-detect compliance failures', 'Sentiment tracking over time', 'Bias-free AI grading'].map((item, i) => (
+                            {[
+                                t('landing.feature1.list1'), 
+                                t('landing.feature1.list2'), 
+                                t('landing.feature1.list3')
+                            ].map((item, i) => (
                                 <div key={i} className="flex items-center gap-3 text-slate-700 dark:text-slate-300 font-medium">
-                                    <div className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 flex items-center justify-center text-xs"><Check size={12} strokeWidth={3}/></div>
+                                    <div className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 flex items-center justify-center text-xs shrink-0"><Check size={12} strokeWidth={3}/></div>
                                     {item}
                                 </div>
                             ))}
@@ -196,7 +203,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                     </div>
                     
                     {/* Abstract Visual */}
-                    <div className="absolute top-1/2 -right-20 md:-right-10 w-[400px] h-[400px] bg-slate-50 dark:bg-slate-900 rounded-full border-[30px] border-slate-100 dark:border-slate-800/50 flex items-center justify-center transform -translate-y-1/2 group-hover:scale-105 transition-transform duration-700">
+                    <div className="absolute top-1/2 -right-20 md:-right-10 rtl:-left-20 rtl:md:-left-10 rtl:right-auto w-[400px] h-[400px] bg-slate-50 dark:bg-slate-900 rounded-full border-[30px] border-slate-100 dark:border-slate-800/50 flex items-center justify-center transform -translate-y-1/2 group-hover:scale-105 transition-transform duration-700">
                         <div className="w-[250px] h-[250px] bg-white dark:bg-slate-950 rounded-full border border-slate-200 dark:border-slate-800 flex items-center justify-center shadow-inner relative overflow-hidden">
                              <div className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent_0_340deg,#0500e2_360deg)] opacity-20 animate-spin-slow"></div>
                              <div className="text-center z-10">
@@ -213,11 +220,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                         <div className="w-12 h-12 bg-purple-50 dark:bg-purple-900/20 rounded-2xl flex items-center justify-center text-purple-600 mb-6">
                             <MessageSquare size={24} />
                         </div>
-                        <h3 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-2">Smart Coaching</h3>
-                        <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">AI identifies exactly what went wrong and suggests better responses.</p>
+                        <h3 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-2">{t('landing.feature2.title')}</h3>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{t('landing.feature2.desc')}</p>
                         
-                        {/* Chat Bubbles Visual */}
-                        <div className="space-y-3 mt-8">
+                        {/* Chat Bubbles Visual - Force LTR for consistency in example or translate content? Keeping simple for now. */}
+                        <div className="space-y-3 mt-8" dir="ltr">
                             <div className="bg-slate-100 dark:bg-slate-900 p-3 rounded-2xl rounded-tl-none w-[90%] text-xs text-slate-500">
                                 "Sorry, we can't do that."
                             </div>
@@ -235,15 +242,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                         <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-white mb-6 backdrop-blur-sm">
                             <Zap size={24} />
                         </div>
-                        <h3 className="text-2xl font-serif font-bold mb-2">Instant Setup</h3>
-                        <p className="text-blue-100 text-sm">No engineering required. Connect your tools and start grading in &lt; 5 minutes.</p>
+                        <h3 className="text-2xl font-serif font-bold mb-2">{t('landing.feature3.title')}</h3>
+                        <p className="text-blue-100 text-sm">{t('landing.feature3.desc')}</p>
                     </div>
                     
                     <button onClick={onSignupClick} className="relative z-10 mt-8 w-fit flex items-center gap-2 text-sm font-bold border-b border-white/30 pb-0.5 hover:border-white transition-colors">
-                        Try it out <ArrowRight size={14} />
+                        {t('landing.feature3.cta')} <ArrowRight size={14} className={isRTL ? "rotate-180" : ""} />
                     </button>
 
-                    <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
+                    <div className="absolute -bottom-12 -right-12 rtl:-left-12 rtl:right-auto w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
                 </div>
 
             </div>
@@ -259,20 +266,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                         <RevuLogo className="h-6 w-auto" />
                     </div>
                     <p className="text-slate-500 text-sm max-w-xs mb-6">
-                        AI-powered Quality Assurance for modern customer support teams. Build a world-class team with automated insights.
+                        {t('landing.footer.desc')}
                     </p>
                     <div className="flex gap-4">
                         {[1,2,3].map(i => (
                             <div key={i} className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-[#0500e2] hover:text-white transition-colors cursor-pointer">
-                                <ArrowRight size={14} className="-rotate-45" />
+                                <ArrowRight size={14} className={isRTL ? "-rotate-135" : "-rotate-45"} />
                             </div>
                         ))}
                     </div>
                 </div>
                 
-                {['Product', 'Company', 'Resources', 'Legal'].map((col, i) => (
+                {[
+                    { key: 'product', label: t('landing.footer.product') }, 
+                    { key: 'company', label: t('landing.footer.company') }, 
+                    { key: 'resources', label: t('landing.footer.resources') }, 
+                    { key: 'legal', label: t('landing.footer.legal') }
+                ].map((col, i) => (
                     <div key={i}>
-                        <h4 className="font-bold text-slate-900 dark:text-white mb-4">{col}</h4>
+                        <h4 className="font-bold text-slate-900 dark:text-white mb-4">{col.label}</h4>
                         <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
                             {[1,2,3,4].map(item => (
                                 <li key={item}><a href="#" className="hover:text-[#0500e2] transition-colors">Link Item {item}</a></li>
@@ -283,10 +295,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
             </div>
             
             <div className="pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-400">
-                <p>&copy; 2026 RevuQA AI Inc. All rights reserved.</p>
+                <p>&copy; 2026 RevuQA AI Inc. {t('landing.footer.rights')}</p>
                 <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Systems Operational
+                    {t('landing.footer.status')}
                 </div>
             </div>
         </div>
