@@ -12,9 +12,10 @@ interface LandingPageProps {
   onPricingClick: () => void;
   onTermsClick: () => void;
   onPrivacyClick: () => void;
+  onRefundClick: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignupClick, onPricingClick, onTermsClick, onPrivacyClick }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignupClick, onPricingClick, onTermsClick, onPrivacyClick, onRefundClick }) => {
   const { t, isRTL } = useLanguage();
 
   return (
@@ -309,7 +310,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
         </div>
       </section>
 
-      <Footer onTermsClick={onTermsClick} onPrivacyClick={onPrivacyClick} />
+      <Footer 
+        onTermsClick={onTermsClick} 
+        onPrivacyClick={onPrivacyClick} 
+        onRefundClick={onRefundClick}
+      />
     </div>
   );
 };

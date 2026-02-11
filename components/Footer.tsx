@@ -6,9 +6,10 @@ import { useLanguage } from '../contexts/LanguageContext';
 interface FooterProps {
   onTermsClick?: () => void;
   onPrivacyClick?: () => void;
+  onRefundClick?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick }) => {
+export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, onRefundClick }) => {
   const { t } = useLanguage();
 
   return (
@@ -51,6 +52,11 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick }) 
                         <li>
                             <button onClick={onPrivacyClick} className="hover:text-[#0500e2] transition-colors text-left">
                                 Privacy Policy
+                            </button>
+                        </li>
+                        <li>
+                            <button onClick={onRefundClick} className="hover:text-[#0500e2] transition-colors text-left">
+                                Refund Policy
                             </button>
                         </li>
                     </ul>
