@@ -5,6 +5,7 @@ import { User } from '../types';
 import { BackgroundGradientAnimation } from './ui/background-gradient-animation';
 import { supabase } from '../lib/supabase';
 import { PublicNavigation } from './PublicNavigation';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -20,6 +21,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const { t, isRTL } = useLanguage();
   
   // Login State
   const [isLoading, setIsLoading] = useState(false);
@@ -93,10 +95,10 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
             <div className="mb-10">
                 <div className="overflow-hidden">
                     <h1 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white mb-3">
-                        {view === 'login' ? 'Welcome back' : 'Reset Password'}
+                        {view === 'login' ? t('auth.welcome_back') : t('auth.reset_password')}
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400 text-lg">
-                        {view === 'login' ? 'Enter your details to access your dashboard.' : 'Enter your email to receive reset instructions.'}
+                        {view === 'login' ? t('auth.login_subtitle') : t('auth.reset_subtitle')}
                     </p>
                 </div>
             </div>
@@ -111,34 +113,34 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
                         className="w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-slate-200 dark:border-slate-800 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all mb-6 group"
                     >
                         <Chrome size={20} className="text-slate-900 dark:text-white" />
-                        <span>Continue with Google</span>
+                        <span>{t('auth.continue_google')}</span>
                     </button>
 
                     <div className="relative flex items-center gap-4 mb-6">
                         <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
-                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Or sign in with email</span>
+                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('auth.or_sign_in_email')}</span>
                         <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
                     </div>
 
                     <form onSubmit={handleLoginSubmit} className="space-y-5">
                         <div className="space-y-1.5">
-                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Email</label>
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">{t('auth.email_label')}</label>
                             <div className="relative group">
-                                <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
+                                <Mail size={18} className="absolute start-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
                                 <input 
                                     type="email" 
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="name@company.com"
-                                    className="w-full pl-11 pr-4 py-3.5 rounded-xl border-2 border-transparent bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
+                                    placeholder={t('auth.email_placeholder')}
+                                    className="w-full ps-11 pe-4 py-3.5 rounded-xl border-2 border-transparent bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-1.5">
                             <div className="flex justify-between items-center">
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Password</label>
+                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">{t('auth.password_label')}</label>
                                 <button 
                                     type="button"
                                     onClick={() => {
@@ -147,23 +149,23 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
                                     }}
                                     className="text-sm font-semibold text-[#0500e2] dark:text-[#4b53fa] hover:underline"
                                 >
-                                    Forgot password?
+                                    {t('auth.forgot_password')}
                                 </button>
                             </div>
                             <div className="relative group">
-                                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
+                                <Lock size={18} className="absolute start-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
                                 <input 
                                     type={showPassword ? "text" : "password"} 
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    className="w-full pl-11 pr-12 py-3.5 rounded-xl border-2 border-transparent bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
+                                    placeholder={t('auth.password_placeholder')}
+                                    className="w-full ps-11 pe-12 py-3.5 rounded-xl border-2 border-transparent bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                                    className="absolute end-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                                 >
                                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
@@ -172,7 +174,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
 
                         <div className="flex items-center gap-2">
                             <input type="checkbox" id="remember" className="w-4 h-4 rounded border-slate-300 text-[#0500e2] focus:ring-[#0500e2]" />
-                            <label htmlFor="remember" className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer select-none">Remember me for 30 days</label>
+                            <label htmlFor="remember" className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer select-none">{t('auth.remember_me')}</label>
                         </div>
 
                         {error && (
@@ -187,13 +189,13 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
                             disabled={isLoading}
                             className="w-full py-4 bg-[#0500e2] text-white rounded-xl font-bold text-lg shadow-xl shadow-blue-600/20 hover:bg-[#0400c0] hover:-translate-y-0.5 hover:shadow-blue-600/30 transition-all disabled:opacity-70 disabled:translate-y-0 flex items-center justify-center gap-2 mt-2"
                         >
-                            {isLoading ? <Loader2 size={22} className="animate-spin" /> : <>Sign In <ArrowRight size={20} /></>}
+                            {isLoading ? <Loader2 size={22} className="animate-spin" /> : <>{t('auth.sign_in_btn')} <ArrowRight size={20} className={isRTL ? "rotate-180" : ""} /></>}
                         </button>
                     </form>
 
                     <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                        Don't have an account?{' '}
-                        <button onClick={onSwitchToSignup} className="font-bold text-[#0500e2] dark:text-[#4b53fa] hover:underline">Sign up for free</button>
+                        {t('auth.no_account')}{' '}
+                        <button onClick={onSwitchToSignup} className="font-bold text-[#0500e2] dark:text-[#4b53fa] hover:underline">{t('auth.signup_link')}</button>
                     </p>
                 </div>
             )}
@@ -206,9 +208,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
                             <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-4 animate-in zoom-in duration-300">
                                 <CheckCircle size={32} />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Check your email</h3>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{t('auth.check_email')}</h3>
                             <div className="text-slate-600 dark:text-slate-300 text-sm mb-8 px-6 space-y-2">
-                                <p>We've sent password reset instructions to <br/><span className="font-semibold text-slate-900 dark:text-white">{email}</span>.</p>
+                                <p>{t('auth.sent_instructions')} <br/><span className="font-semibold text-slate-900 dark:text-white">{email}</span>.</p>
                             </div>
                             <div className="flex flex-col gap-3 px-8">
                                 <button 
@@ -218,13 +220,13 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
                                     }}
                                     className="w-full px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
                                 >
-                                    Back to Log in
+                                    {t('auth.back_login')}
                                 </button>
                                 <button 
                                     onClick={() => setResetStatus('idle')}
                                     className="text-xs font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                                 >
-                                    Use a different email
+                                    {t('auth.diff_email')}
                                 </button>
                             </div>
                         </div>
@@ -235,21 +237,21 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
                                     <KeyRound size={20} />
                                 </div>
                                 <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed pt-1">
-                                    Enter the email address associated with your account and we'll send you a link to reset your password.
+                                    {t('auth.reset_desc')}
                                 </p>
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Email Address</label>
+                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">{t('auth.email_label')}</label>
                                 <div className="relative group">
-                                    <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
+                                    <Mail size={18} className="absolute start-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
                                     <input 
                                         type="email" 
                                         required
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        placeholder="name@company.com"
-                                        className="w-full pl-11 pr-4 py-3.5 rounded-xl border-2 border-transparent bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
+                                        placeholder={t('auth.email_placeholder')}
+                                        className="w-full ps-11 pe-4 py-3.5 rounded-xl border-2 border-transparent bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
                                     />
                                 </div>
                             </div>
@@ -266,7 +268,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
                                 disabled={isResetLoading}
                                 className="w-full py-4 bg-[#0500e2] text-white rounded-xl font-bold text-lg shadow-xl shadow-blue-600/20 hover:bg-[#0400c0] hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:translate-y-0 flex items-center justify-center gap-2"
                             >
-                                {isResetLoading ? <Loader2 size={22} className="animate-spin" /> : 'Send Instructions'}
+                                {isResetLoading ? <Loader2 size={22} className="animate-spin" /> : t('auth.send_instructions')}
                             </button>
 
                             <button 
@@ -278,7 +280,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
                                 }}
                                 className="w-full py-2 text-slate-500 dark:text-slate-400 font-bold hover:text-slate-800 dark:hover:text-white transition-colors flex items-center justify-center gap-2"
                             >
-                                <ArrowLeft size={18} /> Back to Log In
+                                <ArrowLeft size={18} className={isRTL ? "rotate-180" : ""} /> {t('auth.back_login')}
                             </button>
                         </form>
                     )}
@@ -307,18 +309,18 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
                     </div>
                     
                     <h3 className="text-3xl font-serif font-bold text-white mb-4 leading-tight">
-                        "RevuQA completely transformed how we coach our support team."
+                        {t('auth.social_proof_quote')}
                     </h3>
                     
                     <p className="text-lg text-blue-100 leading-relaxed mb-8 font-light">
-                        The automated scoring and actionable insights helped us improve CSAT by 18% in just two months. It's like having a dedicated QA analyst for every agent.
+                        {t('auth.social_proof_body')}
                     </p>
                     
                     <div className="flex items-center gap-4 pt-6 border-t border-white/10">
                         <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold">SJ</div>
                         <div>
                             <p className="text-white font-bold">Sarah Jenkins</p>
-                            <p className="text-blue-200 text-sm">VP of Support @ TechFlow</p>
+                            <p className="text-blue-200 text-sm">{t('auth.social_proof_role')}</p>
                         </div>
                     </div>
                 </div>

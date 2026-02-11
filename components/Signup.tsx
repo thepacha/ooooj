@@ -6,6 +6,7 @@ import { BackgroundGradientAnimation } from './ui/background-gradient-animation'
 import { supabase } from '../lib/supabase';
 import { DEFAULT_CRITERIA } from '../types';
 import { PublicNavigation } from './PublicNavigation';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface SignupProps {
   onSignup: (user: User) => void;
@@ -25,13 +26,14 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { t, isRTL } = useLanguage();
 
   // Password Requirements State
   const requirements = [
-      { id: 'length', label: '12-24 chars', met: password.length >= 12 && password.length <= 24 },
-      { id: 'number', label: 'Number', met: /\d/.test(password) },
-      { id: 'symbol', label: 'Symbol', met: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
-      { id: 'nospace', label: 'No spaces', met: !/\s/.test(password) }
+      { id: 'length', label: t('auth.pwd_req.length'), met: password.length >= 12 && password.length <= 24 },
+      { id: 'number', label: t('auth.pwd_req.number'), met: /\d/.test(password) },
+      { id: 'symbol', label: t('auth.pwd_req.symbol'), met: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
+      { id: 'nospace', label: t('auth.pwd_req.nospace'), met: !/\s/.test(password) }
   ];
 
   const allMet = requirements.every(r => r.met);
@@ -155,7 +157,7 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
                 <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-sm">
                     <Mail size={32} />
                 </div>
-                <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white mb-4">Check your inbox</h2>
+                <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white mb-4">{t('auth.check_email')}</h2>
                 <p className="text-slate-600 dark:text-slate-300 mb-10 text-lg leading-relaxed">{successMessage}</p>
                 <button 
                     onClick={onSwitchToLogin}
@@ -183,8 +185,8 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
       <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 py-12 lg:px-20 relative z-10 bg-white dark:bg-slate-950 pt-32 lg:pt-32">
         <div className="max-w-lg mx-auto w-full">
             <div className="mb-10">
-                <h1 className="text-4xl lg:text-5xl font-serif font-bold text-slate-900 dark:text-white mb-3 tracking-tight">Create account</h1>
-                <p className="text-slate-500 dark:text-slate-400 text-lg">Start automating your quality assurance today.</p>
+                <h1 className="text-4xl lg:text-5xl font-serif font-bold text-slate-900 dark:text-white mb-3 tracking-tight">{t('auth.create_account')}</h1>
+                <p className="text-slate-500 dark:text-slate-400 text-lg">{t('auth.start_automating')}</p>
             </div>
 
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -195,12 +197,12 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
                     className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl border border-slate-200 dark:border-slate-800 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all mb-8 group bg-white dark:bg-slate-900 shadow-sm hover:shadow-md"
                 >
                     <Chrome size={20} className="text-slate-900 dark:text-white" />
-                    <span>Sign up with Google</span>
+                    <span>{t('auth.sign_up_google')}</span>
                 </button>
 
                 <div className="relative flex items-center gap-4 mb-8">
                     <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Or register with email</span>
+                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{t('auth.or_register_email')}</span>
                     <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
                 </div>
 
@@ -208,9 +210,9 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
                     {/* Name Row */}
                     <div className="grid grid-cols-2 gap-5">
                         <div className="space-y-1.5">
-                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">First Name</label>
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">{t('auth.first_name')}</label>
                             <div className="relative group">
-                                <UserIcon size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
+                                <UserIcon size={18} className="absolute start-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
                                 <input 
                                     type="text" 
                                     required
@@ -218,14 +220,14 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
                                     value={firstName}
                                     onChange={(e) => setFirstName(e.target.value)}
                                     placeholder="John"
-                                    className="w-full pl-11 pr-4 h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
+                                    className="w-full ps-11 pe-4 h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
                                 />
                             </div>
                         </div>
                         <div className="space-y-1.5">
-                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Last Name</label>
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">{t('auth.last_name')}</label>
                             <div className="relative group">
-                                <UserIcon size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
+                                <UserIcon size={18} className="absolute start-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
                                 <input 
                                     type="text" 
                                     required
@@ -233,7 +235,7 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
                                     value={lastName}
                                     onChange={(e) => setLastName(e.target.value)}
                                     placeholder="Doe"
-                                    className="w-full pl-11 pr-4 h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
+                                    className="w-full ps-11 pe-4 h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
                                 />
                             </div>
                         </div>
@@ -241,16 +243,16 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
 
                     {/* Email */}
                     <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Work Email</label>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">{t('auth.work_email')}</label>
                         <div className="relative group">
-                            <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
+                            <Mail size={18} className="absolute start-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
                             <input 
                                 type="email" 
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="name@company.com"
-                                className="w-full pl-11 pr-4 h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
+                                placeholder={t('auth.email_placeholder')}
+                                className="w-full ps-11 pe-4 h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
                             />
                         </div>
                     </div>
@@ -258,9 +260,9 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
                     {/* Company Info */}
                     <div className="grid grid-cols-2 gap-5">
                         <div className="space-y-1.5">
-                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Company</label>
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">{t('auth.company_name')}</label>
                             <div className="relative group">
-                                <Building2 size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
+                                <Building2 size={18} className="absolute start-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
                                 <input 
                                     type="text" 
                                     required
@@ -268,21 +270,21 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
                                     value={company}
                                     onChange={(e) => setCompany(e.target.value)}
                                     placeholder="Acme Inc."
-                                    className="w-full pl-11 pr-4 h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
+                                    className="w-full ps-11 pe-4 h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
                                 />
                             </div>
                         </div>
                         <div className="space-y-1.5">
-                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Website</label>
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">{t('auth.website')}</label>
                             <div className="relative group">
-                                <Globe size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
+                                <Globe size={18} className="absolute start-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
                                 <input 
                                     type="text"
                                     required
                                     value={website}
                                     onChange={handleWebsiteChange}
                                     placeholder="acme.com"
-                                    className="w-full pl-11 pr-4 h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
+                                    className="w-full ps-11 pe-4 h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
                                 />
                             </div>
                         </div>
@@ -290,22 +292,22 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
 
                     {/* Password */}
                     <div className="space-y-3">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Password</label>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">{t('auth.password_label')}</label>
                         <div className="relative group">
-                            <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
+                            <Lock size={18} className="absolute start-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0500e2] transition-colors" />
                             <input 
                                 type={showPassword ? "text" : "password"}
                                 required
                                 maxLength={24}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Create a secure password"
-                                className="w-full pl-11 pr-12 h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
+                                placeholder={t('auth.create_password_placeholder')}
+                                className="w-full ps-11 pe-12 h-12 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:bg-white dark:focus:bg-slate-950 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 transition-all outline-none"
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                                className="absolute end-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                             >
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
@@ -338,14 +340,14 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
                         disabled={isLoading}
                         className="w-full h-14 bg-[#0500e2] text-white rounded-xl font-bold text-lg shadow-xl shadow-blue-600/20 hover:bg-[#0400c0] hover:-translate-y-0.5 hover:shadow-blue-600/30 transition-all disabled:opacity-70 disabled:translate-y-0 flex items-center justify-center gap-2 mt-4"
                     >
-                        {isLoading ? <Loader2 size={24} className="animate-spin" /> : <>Create Account <ArrowRight size={20} /></>}
+                        {isLoading ? <Loader2 size={24} className="animate-spin" /> : <>{t('auth.create_account_btn')} <ArrowRight size={20} className={isRTL ? "rotate-180" : ""} /></>}
                     </button>
                 </form>
 
                 <div className="mt-8 text-center">
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                        Already have an account?{' '}
-                        <button onClick={onSwitchToLogin} className="font-bold text-[#0500e2] dark:text-[#4b53fa] hover:underline">Log in</button>
+                        {t('auth.have_account')}{' '}
+                        <button onClick={onSwitchToLogin} className="font-bold text-[#0500e2] dark:text-[#4b53fa] hover:underline">{t('auth.login_link')}</button>
                     </p>
                 </div>
             </div>
@@ -362,16 +364,16 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
                             <Sparkles className="text-white" size={28} />
                         </div>
                         <div>
-                            <h3 className="text-2xl font-serif font-bold text-white">World-class QA</h3>
-                            <p className="text-blue-200 text-sm">Automated & Intelligent</p>
+                            <h3 className="text-2xl font-serif font-bold text-white">{t('auth.marketing_title')}</h3>
+                            <p className="text-blue-200 text-sm">{t('auth.marketing_subtitle')}</p>
                         </div>
                     </div>
                     
                     <div className="space-y-6">
                         {[
-                            { title: '100% Coverage', desc: 'Every ticket analyzed automatically.' },
-                            { title: 'Instant Coaching', desc: 'Real-time feedback for your agents.' },
-                            { title: 'Bias-Free Grading', desc: 'Objective scoring based on your criteria.' }
+                            { title: t('auth.feature.coverage'), desc: t('auth.feature.coverage_desc') },
+                            { title: t('auth.feature.coaching'), desc: t('auth.feature.coaching_desc') },
+                            { title: t('auth.feature.grading'), desc: t('auth.feature.grading_desc') }
                         ].map((item, i) => (
                             <div key={i} className="flex gap-4 p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
                                 <div className="mt-1 w-6 h-6 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center shrink-0 border border-green-500/20">
@@ -392,7 +394,7 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
                             <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-700"></div>
                         ))}
                     </div>
-                    <p className="text-sm text-slate-400 font-medium">Join 500+ support teams</p>
+                    <p className="text-sm text-slate-400 font-medium">{t('auth.join_teams')}</p>
                 </div>
              </div>
          </BackgroundGradientAnimation>
