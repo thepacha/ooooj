@@ -26,6 +26,46 @@ import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
 type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 'privacy';
 
+// URL Routing Configuration
+const APP_ROUTES: Record<string, ViewState> = {
+  '/dashboard': 'dashboard',
+  '/settings': 'settings',
+  '/analyze': 'analyze',
+  '/ai-training': 'training',
+  '/usageandlimits': 'usage',
+  '/history': 'history',
+  '/team': 'roster',
+  '/admin': 'admin'
+};
+
+const VIEW_TO_PATH: Record<string, string> = {
+  'dashboard': '/dashboard',
+  'settings': '/settings',
+  'analyze': '/analyze',
+  'training': '/ai-training',
+  'usage': '/usageandlimits',
+  'history': '/history',
+  'roster': '/team',
+  'admin': '/admin'
+};
+
+// Safe History Wrappers
+const safePushState = (data: any, unused: string, url: string) => {
+    try {
+        window.history.pushState(data, unused, url);
+    } catch (e) {
+        console.warn("Navigation URL update prevented in this environment:", e);
+    }
+};
+
+const safeReplaceState = (data: any, unused: string, url: string) => {
+    try {
+        window.history.replaceState(data, unused, url);
+    } catch (e) {
+        console.warn("History replacement prevented in this environment:", e);
+    }
+};
+
 // Inner App Component to use the Language Context
 function AppContent() {
   // Domain Detection
@@ -36,29 +76,89 @@ function AppContent() {
   const [user, setUser] = useState<User | null>(null);
   const { t, isRTL } = useLanguage();
   
-  // URL & State Initialization
-  const [authView, setAuthView] = useState<AuthState>(() => {
-      // 1. Check URL Path first for specific pages
-      const path = typeof window !== 'undefined' ? window.location.pathname : '';
-      const cleanPath = path.replace(/\/$/, ''); // Remove trailing slash if present
-
-      if (cleanPath === '/termsandconditions') return 'terms';
-      if (cleanPath === '/pricing') return 'pricing';
-      if (cleanPath === '/privacypolicy') return 'privacy';
-      if (cleanPath === '/login') return 'login';
-      if (cleanPath === '/signup') return 'signup';
-
-      // 2. Domain/Hash Fallbacks
+  // Initialize State based on URL
+  const getInitialState = () => {
+      const path = typeof window !== 'undefined' ? window.location.pathname.replace(/\/$/, '') : '';
+      
+      // Explicit Public/Auth Pages
+      if (path === '/termsandconditions') return { auth: 'terms', view: 'dashboard' };
+      if (path === '/privacypolicy') return { auth: 'privacy', view: 'dashboard' };
+      if (path === '/pricing') return { auth: 'pricing', view: 'dashboard' };
+      if (path === '/login') return { auth: 'login', view: 'dashboard' };
+      if (path === '/signup') return { auth: 'signup', view: 'dashboard' };
+      
+      // App Pages
+      if (APP_ROUTES[path]) {
+          return { auth: 'app', view: APP_ROUTES[path] };
+      }
+      
+      // Fallbacks
       if (isAppDomain) {
           if (typeof window !== 'undefined' && window.location.hash === '#signup') {
-              return 'signup';
+              return { auth: 'signup', view: 'dashboard' };
           }
-          return 'login';
+          return { auth: 'login', view: 'dashboard' };
       }
-      return 'landing';
-  });
+      
+      return { auth: 'landing', view: 'dashboard' };
+  };
 
-  // Navigation Helper to sync URL with State
+  const initialState = getInitialState();
+  const [authView, setAuthView] = useState<AuthState>(initialState.auth as AuthState);
+  const [currentView, setCurrentView] = useState<ViewState>(initialState.view as ViewState);
+
+  // Unified Navigation Handler
+  const handleNavigate = (view: ViewState) => {
+      // 1. Update URL if it's a primary view
+      const path = VIEW_TO_PATH[view];
+      if (path) {
+          safePushState({}, '', path);
+      }
+      // 2. Update State
+      setCurrentView(view);
+      
+      // 3. Reset filters when navigating away from history context (optional but good UX)
+      if (view !== 'history' && view !== 'evaluation') {
+          setHistoryFilter('all');
+      }
+  };
+
+  // Handle Browser Back/Forward Buttons
+  useEffect(() => {
+      const handlePopState = () => {
+          const path = window.location.pathname.replace(/\/$/, '');
+          
+          // Public Routes
+          if (path === '/termsandconditions') { setAuthView('terms'); return; }
+          if (path === '/pricing') { setAuthView('pricing'); return; }
+          if (path === '/privacypolicy') { setAuthView('privacy'); return; }
+          if (path === '/login') { setAuthView('login'); return; }
+          if (path === '/signup') { setAuthView('signup'); return; }
+          
+          // App Routes
+          if (APP_ROUTES[path]) {
+              setAuthView('app');
+              setCurrentView(APP_ROUTES[path]);
+              return;
+          }
+
+          // Root or Unknown
+          if (path === '' || path === '/') {
+              if (user) {
+                  setAuthView('app');
+                  setCurrentView('dashboard');
+                  safeReplaceState({}, '', '/dashboard');
+              } else {
+                  setAuthView('landing');
+              }
+          }
+      };
+
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+  }, [user]);
+
+  // Auth helper for public pages
   const navigateAuth = (view: AuthState) => {
       let path = '/';
       if (view === 'terms') path = '/termsandconditions';
@@ -67,38 +167,16 @@ function AppContent() {
       else if (view === 'login') path = '/login';
       else if (view === 'signup') path = '/signup';
       
-      // Update URL without reload
       if (typeof window !== 'undefined' && window.location.pathname !== path) {
-          try {
-            window.history.pushState({}, '', path);
-          } catch (e) {
-            console.warn('Navigation blocked by environment:', e);
-          }
+          safePushState({}, '', path);
       }
       setAuthView(view);
       window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Handle Browser Back/Forward Buttons
-  useEffect(() => {
-      const handlePopState = () => {
-          const path = window.location.pathname.replace(/\/$/, '');
-          if (path === '/termsandconditions') setAuthView('terms');
-          else if (path === '/pricing') setAuthView('pricing');
-          else if (path === '/privacypolicy') setAuthView('privacy');
-          else if (path === '/login') setAuthView('login');
-          else if (path === '/signup') setAuthView('signup');
-          else if (path === '' || path === '/') setAuthView('landing');
-      };
-
-      window.addEventListener('popstate', handlePopState);
-      return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
 
-  const [currentView, setCurrentView] = useState<ViewState>('dashboard');
   const [history, setHistory] = useState<AnalysisResult[]>([]);
   const [criteria, setCriteria] = useState<Criteria[]>(DEFAULT_CRITERIA);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -170,6 +248,7 @@ function AppContent() {
             const mappedEvals: AnalysisResult[] = evals.map(e => ({
               id: e.id,
               timestamp: e.timestamp,
+              agent_name: e.agent_name, 
               agentName: e.agent_name || 'Unknown Agent', 
               customerName: e.customer_name || 'Unknown Customer', 
               summary: e.summary || '',
@@ -189,7 +268,7 @@ function AppContent() {
     const processSession = async (session: any) => {
         if (!session) {
             if (mounted) {
-                // If on public pages, don't redirect to login
+                // If on public pages, stay there. Otherwise go to login/landing.
                 if (authView !== 'pricing' && authView !== 'signup' && authView !== 'terms' && authView !== 'privacy') {
                     navigateAuth(isAppDomain ? 'login' : 'landing');
                 }
@@ -214,7 +293,21 @@ function AppContent() {
             
             if (mounted) {
                 setUser(basicUser);
-                setAuthView('app'); // No URL change for app view (usually /)
+                
+                // Logic to set view based on URL if already authenticated
+                const currentPath = window.location.pathname.replace(/\/$/, '');
+                if (APP_ROUTES[currentPath]) {
+                    setAuthView('app');
+                    setCurrentView(APP_ROUTES[currentPath]);
+                } else {
+                    // Default to dashboard if we're on a non-app path
+                    setAuthView('app');
+                    setCurrentView('dashboard');
+                    if (currentPath !== '/dashboard') {
+                        safeReplaceState({}, '', '/dashboard');
+                    }
+                }
+                
                 setIsLoadingUser(false); 
             }
 
@@ -377,7 +470,7 @@ function AppContent() {
     setHistory(prev => prev.map(item => item.id === id ? { ...item, isDeleted: true } : item));
     if (selectedEvaluation?.id === id) {
         setSelectedEvaluation(null);
-        setCurrentView('history');
+        handleNavigate('history');
     }
     if (user) {
         try {
@@ -433,24 +526,26 @@ function AppContent() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    if (isAppDomain) {
-        window.location.href = 'https://revuqai.com';
-        return;
-    }
     setUser(null);
-    navigateAuth('landing');
+    setAuthView('landing');
+    safePushState({}, '', '/');
     setCurrentView('dashboard');
     setIsSidebarOpen(false);
+    
+    if (isAppDomain) {
+        window.location.href = 'https://revuqai.com';
+    }
   };
 
   const handleSelectEvaluation = (result: AnalysisResult) => {
     setSelectedEvaluation(result);
+    // Just change view state, no specific URL for individual evals requested
     setCurrentView('evaluation');
   };
   
   const handleNavWithFilter = (view: ViewState) => {
       setHistoryFilter('all');
-      setCurrentView(view);
+      handleNavigate(view);
   };
 
   const handlePlanSelect = (plan: string) => {
@@ -491,10 +586,10 @@ function AppContent() {
         return (
           <Dashboard 
             history={history.filter(h => !h.isDeleted)} 
-            setView={setCurrentView} 
+            setView={handleNavigate} 
             onFilterSelect={(filter) => {
                 setHistoryFilter(filter);
-                setCurrentView('history');
+                handleNavigate('history');
             }}
           />
         );
@@ -514,7 +609,7 @@ function AppContent() {
           />
         );
       case 'roster':
-        return <Roster history={history.filter(h => !h.isDeleted)} setView={setCurrentView} onSelectEvaluation={handleSelectEvaluation} />;
+        return <Roster history={history.filter(h => !h.isDeleted)} setView={handleNavigate} onSelectEvaluation={handleSelectEvaluation} />;
       case 'usage':
         return <Usage user={user} />;
       case 'settings':
@@ -529,10 +624,10 @@ function AppContent() {
             return (
                 <Dashboard 
                     history={history.filter(h => !h.isDeleted)} 
-                    setView={setCurrentView} 
+                    setView={handleNavigate} 
                     onFilterSelect={(filter) => {
                         setHistoryFilter(filter);
-                        setCurrentView('history');
+                        handleNavigate('history');
                     }}
                 />
             );
@@ -545,14 +640,14 @@ function AppContent() {
         return (
           <EvaluationView 
             result={selectedEvaluation} 
-            onBack={() => setCurrentView('history')} 
+            onBack={() => handleNavigate('history')} 
             onDelete={() => handleDeleteEvaluation(selectedEvaluation.id)}
             onUpdate={handleUpdateEvaluation}
             backLabel="Back to History"
           />
         );
       default:
-        return <Dashboard history={history.filter(h => !h.isDeleted)} setView={setCurrentView} />;
+        return <Dashboard history={history.filter(h => !h.isDeleted)} setView={handleNavigate} />;
     }
   };
 
@@ -699,7 +794,6 @@ function AppContent() {
                     </h1>
                     <p className="text-sm lg:text-base text-slate-500 dark:text-slate-400 mt-2">
                     {currentView === 'dashboard' && `${t('dash.welcome')}, ${(user?.name || 'User').split(' ')[0]}. ${t('dash.team_overview')}`}
-                    {/* Simplified for brevity in code output, can add all dynamic descriptions later */}
                     </p>
                 </header>
                 
