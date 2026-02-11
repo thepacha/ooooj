@@ -94,7 +94,7 @@ function AppContent() {
       
       // Fallbacks
       if (isAppDomain) {
-          if (typeof window !== 'undefined' && window.location.hash === '#signup') {
+          if (typeof window !== 'undefined' && window.location.hash === 'signup') {
               return { auth: 'signup', view: 'dashboard' };
           }
           return { auth: 'login', view: 'dashboard' };
@@ -574,7 +574,7 @@ function AppContent() {
 
   const handleLandingSignupClick = () => {
       if (isProductionLanding) {
-          window.location.href = 'https://app.revuqai.com/#signup';
+          window.location.href = 'https://app.revuqai.com/signup';
       } else {
           navigateAuth('signup');
       }
