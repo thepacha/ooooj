@@ -6,6 +6,7 @@ import { Shield, TrendingUp, Wrench, ArrowRight, RefreshCw, CheckCircle, Loader2
 import { incrementUsage, COSTS, checkLimit } from '../lib/usageService';
 import { generateId } from '../lib/utils';
 import { supabase } from '../lib/supabase';
+import { PreSessionBriefing } from './PreSessionBriefing';
 
 // Define local interface for Audio Data to avoid SDK import conflicts
 interface AudioDataPart {
@@ -173,7 +174,7 @@ async function decodeAudioData(
 }
 
 export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisComplete }) => {
-    const [view, setView] = useState<'list' | 'active' | 'result' | 'create'>('list');
+    const [view, setView] = useState<'list' | 'briefing' | 'active' | 'result' | 'create'>('list');
     const [activeTab, setActiveTab] = useState<'scenarios' | 'history'>('scenarios');
     const [activeScenario, setActiveScenario] = useState<TrainingScenario | null>(null);
     const [messages, setMessages] = useState<{role: 'user' | 'model', text: string}[]>([]);
@@ -186,6 +187,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     const [staticScenarios, setStaticScenarios] = useState<TrainingScenario[]>([]);
     const [isLoadingScenarios, setIsLoadingScenarios] = useState(false);
     const [connectionError, setConnectionError] = useState<string | null>(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     // Creation State
     const [creationType, setCreationType] = useState<'manual' | 'ai'>('ai');
@@ -266,13 +268,28 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     }, []);
 
     const refreshScenarios = () => {
-        setStaticScenarios(generateDynamicScenarios());
+        setIsRefreshing(true);
+        // Add artificial delay to give user visual feedback that refresh is happening
+        setTimeout(() => {
+            setStaticScenarios(generateDynamicScenarios());
+            setIsRefreshing(false);
+        }, 600);
     };
 
     const allScenarios = [...customScenarios, ...staticScenarios];
     const trainingHistory = history.filter(h => h.customerName?.startsWith('Roleplay:') || h.summary?.startsWith('Training Session'));
 
-    const startSession = async (scenario: TrainingScenario, sessionMode: 'text' | 'voice') => {
+    // 1. Initial selection: Shows the briefing
+    const selectScenario = (scenario: TrainingScenario, sessionMode: 'text' | 'voice') => {
+        setActiveScenario(scenario);
+        setMode(sessionMode);
+        setView('briefing');
+    };
+
+    // 2. Actually starts the API connection
+    const confirmStartSession = async () => {
+        if (!activeScenario) return;
+        
         if (!process.env.API_KEY) {
             alert("API Key is missing. Please check your configuration.");
             return;
@@ -286,17 +303,15 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
              }
         }
 
-        setActiveScenario(scenario);
-        setMode(sessionMode);
-        setMessages([{ role: 'model', text: scenario.initialMessage }]); 
+        setMessages([{ role: 'model', text: activeScenario.initialMessage }]); 
         setResult(null);
         setConnectionError(null);
         
         chatSession.current = null;
 
-        if (sessionMode === 'text') {
+        if (mode === 'text') {
             try {
-                chatSession.current = createTrainingSession(scenario);
+                chatSession.current = createTrainingSession(activeScenario);
                 setView('active');
             } catch (e) {
                 console.error(e);
@@ -304,7 +319,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
             }
         } else {
             setView('active');
-            startVoiceConnection(scenario);
+            startVoiceConnection(activeScenario);
         }
     };
 
@@ -822,11 +837,25 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         );
     }
 
+    // --- VIEW: Briefing ---
+    if (view === 'briefing') {
+        if (!activeScenario) {
+            setView('list');
+            return null;
+        }
+        return (
+            <PreSessionBriefing 
+                scenario={activeScenario}
+                mode={mode}
+                onStart={confirmStartSession}
+                onBack={() => setView('list')}
+            />
+        );
+    }
+
     // --- VIEW: Active Session ---
-    // Safety check: ensure activeScenario exists, otherwise fallback
     if (view === 'active') {
         if (!activeScenario) {
-            // Fallback immediately if state is invalid
             setView('list');
             return null;
         }
@@ -866,7 +895,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         <AlertTriangle className="text-red-600 dark:text-red-400" size={20} />
                         <span className="text-sm font-medium text-red-700 dark:text-red-300">{connectionError}</span>
                         <button 
-                            onClick={() => startSession(activeScenario, mode)}
+                            onClick={() => confirmStartSession()}
                             className="ml-auto text-xs bg-white dark:bg-red-900/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900 transition-colors"
                         >
                             Retry
@@ -997,7 +1026,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                             <button onClick={handleCopyTranscript} className="flex-1 sm:flex-none justify-center px-4 py-3 md:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl md:rounded-lg font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2">
                                 {isCopied ? <Check size={16} /> : <Copy size={16} />} Transcript
                             </button>
-                            <button onClick={() => activeScenario && startSession(activeScenario, mode)} className="flex-1 sm:flex-none justify-center px-6 py-3 md:py-2 bg-[#0500e2] text-white rounded-xl md:rounded-lg font-bold text-sm hover:bg-[#0400c0] transition-colors flex items-center gap-2">
+                            <button onClick={() => activeScenario && selectScenario(activeScenario, mode)} className="flex-1 sm:flex-none justify-center px-6 py-3 md:py-2 bg-[#0500e2] text-white rounded-xl md:rounded-lg font-bold text-sm hover:bg-[#0400c0] transition-colors flex items-center gap-2">
                                 <RefreshCw size={16} /> Retry
                             </button>
                         </div>
@@ -1026,9 +1055,11 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         </button>
                         <button 
                             onClick={refreshScenarios}
-                            className="px-6 py-3 bg-indigo-700/50 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 backdrop-blur-md text-sm md:text-base"
+                            disabled={isRefreshing}
+                            className="px-6 py-3 bg-indigo-700/50 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 backdrop-blur-md text-sm md:text-base disabled:opacity-70 disabled:cursor-wait"
                         >
-                            <Shuffle size={18} /> Randomize Scenarios
+                            {isRefreshing ? <Loader2 size={18} className="animate-spin" /> : <Shuffle size={18} />}
+                            {isRefreshing ? 'Randomizing...' : 'Randomize Scenarios'}
                         </button>
                     </div>
                 </div>
@@ -1109,13 +1140,13 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                 
                                 <div className="flex flex-col gap-3">
                                     <button 
-                                        onClick={() => startSession(scenario, 'text')}
+                                        onClick={() => selectScenario(scenario, 'text')}
                                         className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold flex items-center justify-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                                     >
                                         <MessageSquare size={16} /> Text Chat
                                     </button>
                                     <button 
-                                        onClick={() => startSession(scenario, 'voice')}
+                                        onClick={() => selectScenario(scenario, 'voice')}
                                         className="w-full py-3 rounded-xl bg-[#0500e2] text-white font-bold flex items-center justify-center gap-2 hover:bg-[#0400c0] shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all"
                                     >
                                         <Phone size={16} /> Voice Call
