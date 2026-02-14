@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { DEFAULT_CRITERIA } from '../types';
 import { PublicNavigation } from './PublicNavigation';
 import { useLanguage } from '../contexts/LanguageContext';
+import { initiateCheckout } from '../lib/paymentService';
 
 interface SignupProps {
   onSignup: (user: User) => void;
@@ -115,7 +116,7 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
 
         if (authError) throw authError;
 
-        if (authData.session && authData.user) {
+        if (authData.user) {
             const { error: profileError } = await supabase.from('profiles').upsert({
                 id: authData.user.id,
                 name: fullName,
@@ -135,11 +136,30 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
             }));
             
             await supabase.from('criteria').insert(criteriaRecords);
-        } else if (authData.user && !authData.session) {
-            setSuccessMessage("Account created successfully! Please check your email to confirm registration.");
-            setIsLoading(false);
-            return; 
-        }
+
+            // FORCE PAYMENT FLOW: Redirect to Checkout Immediately
+            const tempUser: User = {
+                id: authData.user.id,
+                name: fullName,
+                email: email,
+                company: company,
+                website: website
+            };
+
+            // Using the specific test product ID provided
+            const testProductId = 'pdt_0NYTOTkTa1HbwcEJlSGXN';
+            
+            try {
+                // This will redirect the window location
+                await initiateCheckout(testProductId, tempUser);
+                // We deliberately do NOT set isLoading(false) here to prevent UI flash before redirect
+            } catch (payErr: any) {
+                console.error("Payment redirect failed:", payErr);
+                setError("Account created, but payment initialization failed. Please login to continue.");
+                setIsLoading(false);
+            }
+
+        } 
     } catch (err: any) {
         setError(err.message || 'Failed to sign up.');
         setIsLoading(false);
