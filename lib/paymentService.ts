@@ -19,13 +19,15 @@ export const initiateCheckout = async (productId: string, user: User | null, qua
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'Failed to initiate checkout');
+      console.error("Payment API Error Details:", data);
+      throw new Error(data.error || data.details || 'Failed to initiate checkout');
     }
 
     if (data.url) {
       window.location.href = data.url;
     } else {
-      throw new Error('No checkout URL received');
+      console.error("Missing URL in successful response:", data);
+      throw new Error('No checkout URL received in response');
     }
   } catch (error: any) {
     console.error('Checkout error:', error);
