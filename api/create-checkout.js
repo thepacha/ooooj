@@ -31,7 +31,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Fallback for origin if running in a context where it's missing
+    // Fallback for origin if running in a context where it's missing (e.g. some serverless environments)
     const origin = req.headers.origin || 'https://app.revuqai.com';
     const returnUrl = `${origin}/dashboard?payment=success`;
 
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.DODO_PAYMENTS_API_KEY}`,
       },
-      // Simplified payload matching user example exactly
+      // Strictly matching the user provided example payload
       body: JSON.stringify({
         product_cart: [{ product_id: productId, quantity: quantity }],
         customer: { 
@@ -57,7 +57,7 @@ export default async function handler(req, res) {
     const responseText = await response.text();
     
     if (!response.ok) {
-      console.error('Dodo API Error:', responseText);
+      console.error('Dodo API Error Response:', responseText);
       return res.status(response.status).json({ error: 'Payment gateway error', details: responseText });
     }
 
@@ -65,23 +65,22 @@ export default async function handler(req, res) {
     try {
         session = JSON.parse(responseText);
     } catch (e) {
-        console.error("Failed to parse JSON:", responseText);
+        console.error("Failed to parse Dodo response JSON:", responseText);
         return res.status(502).json({ error: 'Invalid JSON response from gateway', raw: responseText });
     }
 
-    // Check for url, payment_link, or checkout_url
-    const checkoutUrl = session.url || session.payment_link || session.checkout_url;
+    // Dodo Payments typically returns { url: "..." } or { checkout_url: "..." }
+    const checkoutUrl = session.url || session.checkout_url || session.payment_link;
 
     if (!checkoutUrl) {
-        console.error('Missing URL in Dodo response:', session);
-        // Return the whole session for debugging on client side if needed
-        return res.status(500).json({ error: 'No checkout URL received', debug: session });
+        console.error('Missing URL in Dodo success response:', session);
+        return res.status(500).json({ error: 'No checkout URL received from payment provider', debug: session });
     }
 
     return res.status(200).json({ url: checkoutUrl });
 
   } catch (error) {
-    console.error('Server Error:', error);
+    console.error('Server Internal Error:', error);
     return res.status(500).json({ error: error.message });
   }
 }

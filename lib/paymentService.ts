@@ -20,7 +20,9 @@ export const initiateCheckout = async (productId: string, user: User | null, qua
 
     if (!response.ok) {
       console.error("Payment API Error Details:", data);
-      throw new Error(data.error || data.details || 'Failed to initiate checkout');
+      // Construct a more helpful error message
+      const errorMessage = data.details || data.error || 'Failed to initiate checkout';
+      throw new Error(errorMessage);
     }
 
     if (data.url) {
@@ -30,7 +32,7 @@ export const initiateCheckout = async (productId: string, user: User | null, qua
       throw new Error('No checkout URL received in response');
     }
   } catch (error: any) {
-    console.error('Checkout error:', error);
+    console.error('Checkout flow error:', error);
     alert(`Payment initialization failed: ${error.message}`);
     throw error;
   }
