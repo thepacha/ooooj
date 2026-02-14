@@ -36,6 +36,9 @@ export interface TrainingScenario {
   initialMessage: string;
   systemInstruction: string;
   voice?: 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Aoede'; // Voice selection
+  objectives?: string[]; // Specific goals for the scenario
+  talkTracks?: string[]; // Suggested phrases
+  openers?: string[]; // Smart opening lines tailored to the scenario
 }
 
 export interface TrainingResult {

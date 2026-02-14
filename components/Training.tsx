@@ -1,8 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { TrainingScenario, TrainingResult, User, AnalysisResult, CriteriaResult } from '../types';
-import { createTrainingSession, evaluateTrainingSession, connectLiveTraining, generateAIScenario } from '../services/geminiService';
-import { Shield, TrendingUp, Wrench, ArrowRight, RefreshCw, CheckCircle, Loader2, Send, Phone, PhoneOff, MessageSquare, Copy, Check, Plus, Sparkles, X, Calendar, Trash2, AlertTriangle, Shuffle } from 'lucide-react';
+import { createTrainingSession, evaluateTrainingSession, connectLiveTraining, generateAIScenario, generateTrainingTopic, generateTrainingBatch } from '../services/geminiService';
+import { Shield, TrendingUp, Wrench, ArrowRight, RefreshCw, CheckCircle, Loader2, Send, Phone, PhoneOff, MessageSquare, Copy, Check, Plus, Sparkles, X, Calendar, Trash2, AlertTriangle, Shuffle, HelpCircle, Heart, Zap, Trophy, Target } from 'lucide-react';
 import { incrementUsage, COSTS, checkLimit } from '../lib/usageService';
 import { generateId } from '../lib/utils';
 import { supabase } from '../lib/supabase';
@@ -21,20 +21,24 @@ interface TrainingProps {
 }
 
 // --- Procedural Generation Data ---
-const NAMES_MALE = ["James", "Robert", "John", "Michael", "David", "William", "Richard", "Joseph", "Thomas", "Charles", "Daniel", "Matthew", "Anthony", "Mark", "Donald", "Steven", "Paul", "Andrew", "Joshua", "Kenneth", "Kevin", "Brian", "George", "Edward", "Ronald"];
-const NAMES_FEMALE = ["Mary", "Patricia", "Jennifer", "Linda", "Elizabeth", "Barbara", "Susan", "Jessica", "Sarah", "Karen", "Nancy", "Lisa", "Betty", "Margaret", "Sandra", "Ashley", "Kimberly", "Emily", "Donna", "Michelle", "Carol", "Amanda", "Melissa", "Deborah"];
-const PRODUCTS = ["Cloud CRM", "Video Editor Pro", "HR Payroll System", "Inventory Tracker", "Email Marketing Tool", "Project Management Suite", "Cybersecurity Shield", "VoIP Phone System"];
-const ROLES = ["Marketing Manager", "Freelance Designer", "Small Business Owner", "CTO", "Sales VP", "Accountant", "Developer", "Operations Director"];
+const NAMES_MALE = ["James", "Robert", "John", "Michael", "David", "William", "Richard", "Joseph", "Thomas", "Charles", "Daniel", "Matthew", "Anthony", "Mark", "Donald", "Steven", "Paul", "Andrew", "Joshua", "Kenneth", "Kevin", "Brian", "George", "Edward", "Ronald", "Ryan", "Gary", "Jacob", "Eric", "Stephen"];
+const NAMES_FEMALE = ["Mary", "Patricia", "Jennifer", "Linda", "Elizabeth", "Barbara", "Susan", "Jessica", "Sarah", "Karen", "Nancy", "Lisa", "Betty", "Margaret", "Sandra", "Ashley", "Kimberly", "Emily", "Donna", "Michelle", "Carol", "Amanda", "Melissa", "Deborah", "Stephanie", "Rebecca", "Sharon", "Laura"];
+const LAST_NAMES = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin"];
+const PRODUCTS = ["Cloud CRM", "Video Editor Pro", "HR Payroll System", "Inventory Tracker", "Email Marketing Tool", "Project Management Suite", "Cybersecurity Shield", "VoIP Phone System", "Analytics Dashboard", "Payment Gateway"];
+const ROLES = ["Marketing Manager", "Freelance Designer", "Small Business Owner", "CTO", "Sales VP", "Accountant", "Developer", "Operations Director", "CEO", "Office Admin"];
+const VOICES = ['Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'];
 
 const getRandom = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
 // Function to generate fresh scenarios on every load
 const generateDynamicScenarios = (): TrainingScenario[] => {
     
-    // Helper to build a random persona
-    const createPersona = (type: 'Angry' | 'Busy' | 'Tech') => {
+    // Helper to build a random persona with more variation
+    const createPersona = (difficultyLevel?: 'Beginner' | 'Intermediate' | 'Advanced') => {
         const isMale = Math.random() > 0.5;
-        const name = getRandom(isMale ? NAMES_MALE : NAMES_FEMALE);
+        const firstName = getRandom(isMale ? NAMES_MALE : NAMES_FEMALE);
+        const lastName = getRandom(LAST_NAMES);
+        const name = `${firstName} ${lastName}`;
         const product = getRandom(PRODUCTS);
         const role = getRandom(ROLES);
         const price = Math.floor(Math.random() * 200) + 49;
@@ -44,82 +48,175 @@ const generateDynamicScenarios = (): TrainingScenario[] => {
             ? (Math.random() > 0.5 ? 'Fenrir' : 'Puck') 
             : (Math.random() > 0.5 ? 'Kore' : 'Aoede');
 
-        if (type === 'Angry') {
-            const issues = ["was charged twice", "can't access my data", "feature is missing", "service is down"];
-            const issue = getRandom(issues);
-            const secrets = [
-                "You actually forgot to cancel the trial yourself but won't admit it.",
-                "You are having a terrible day because your car broke down.",
-                "You are lying about the 'double charge' to get a free month.",
-                "Your boss is yelling at you right now to fix this."
-            ];
-            const secret = getRandom(secrets);
+        // Randomly pick a category if not derived from constraints
+        const categories = ['Sales', 'Support', 'Technical'] as const;
+        const category = getRandom([...categories]);
+        
+        const difficulty = difficultyLevel || getRandom(['Beginner', 'Intermediate', 'Advanced'] as const);
 
+        // --- Sales Templates ---
+        if (category === 'Sales') {
+            if (difficulty === 'Beginner') {
+                return {
+                    id: generateId(),
+                    title: `Lead: ${name}`,
+                    description: `${name}, a ${role}, is interested in ${product} but needs a basic overview of features vs price.`,
+                    difficulty: 'Beginner',
+                    category: 'Sales',
+                    icon: 'TrendingUp',
+                    initialMessage: `Hi, I'm looking at ${product} for my team. Can you give me a quick rundown of the main benefits?`,
+                    systemInstruction: `You are ${name}. You are curious but budget-conscious. Ask about pricing early. Respond positively to value.`,
+                    voice: voice as any,
+                    objectives: ["Explain core value prop", "Qualify the lead", "Discuss pricing clearly"],
+                    talkTracks: ["We can help you scale", "The ROI is typically..."],
+                    openers: [
+                        "\"I noticed you're looking for a CRM. What is your current solution lacking?\"",
+                        "\"Many small businesses struggle with organization. Is that a challenge for you?\"",
+                        "\"I can offer a quick demo to show you how easy it is to use.\"",
+                        "\"Are you the primary decision maker for this purchase?\""
+                    ]
+                };
+            } else if (difficulty === 'Advanced') {
+                return {
+                    id: generateId(),
+                    title: `Negotiation: ${name}`,
+                    description: `${name} wants to buy ${product} but is aggressively demanding a 30% discount or they walk.`,
+                    difficulty: 'Advanced',
+                    category: 'Sales',
+                    icon: 'TrendingUp',
+                    initialMessage: `I like the product, but $${price} is way too high. I can get a competitor for half that. Match it or I'm gone.`,
+                    systemInstruction: `You are ${name}. You are a tough negotiator. Threaten to leave repeatedly. Only accept if they offer value add instead of just price drop.`,
+                    voice: voice as any,
+                    objectives: ["Stand firm on price", "Pivot to value", "Offer a non-monetary concession"],
+                    talkTracks: ["Our quality is unmatched", "I can't lower the price, but..."],
+                    openers: [
+                        "\"I understand budget is a concern. Let's focus on the value this brings.\"",
+                        "\"Competitors may be cheaper, but do they offer 24/7 support?\"",
+                        "\"What is the cost of inaction if you choose a cheaper, less reliable tool?\"",
+                        "\"I can't offer a discount, but I can include an extra user seat.\""
+                    ]
+                };
+            } else {
+                return {
+                    id: generateId(),
+                    title: `Skeptical: ${name}`,
+                    description: `${name} has been burned by similar tools before. They doubt ${product} will actually work for them.`,
+                    difficulty: 'Intermediate',
+                    category: 'Sales',
+                    icon: 'TrendingUp',
+                    initialMessage: `I've tried tools like ${product} before and they all failed. Why is yours any different?`,
+                    systemInstruction: `You are ${name}. You are skeptical and cynical. Demand proof/case studies.`,
+                    voice: voice as any,
+                    objectives: ["Build trust", "Provide social proof", "Offer a risk-free trial"],
+                    talkTracks: ["We are different because...", "Let me show you a case study"],
+                    openers: [
+                        "\"I appreciate your skepticism. Let me show you why we are different.\"",
+                        "\"What specific issues did you face with previous tools?\"",
+                        "\"We have a 99% retention rate. Would you like to see a case study?\"",
+                        "\"I can offer a 14-day risk-free trial so you can see for yourself.\""
+                    ]
+                };
+            }
+        }
+
+        // --- Technical Templates ---
+        if (category === 'Technical') {
+            const error = `Error ${Math.floor(Math.random() * 500) + 400}`;
+            if (difficulty === 'Beginner') {
+                return {
+                    id: generateId(),
+                    title: `Login Issue: ${name}`,
+                    description: `${name} locked themselves out of ${product} and doesn't know how to reset the password.`,
+                    difficulty: 'Beginner',
+                    category: 'Technical',
+                    icon: 'Wrench',
+                    initialMessage: `I can't get into my account. It says 'Invalid Credentials' but I know I'm typing it right!`,
+                    systemInstruction: `You are ${name}. You are slightly frustrated but cooperative. You have Caps Lock on by accident.`,
+                    voice: voice as any,
+                    objectives: ["Verify identity", "Check for simple errors (Caps Lock)", "Guide through reset"],
+                    talkTracks: ["Let's try one more time", "Check your keyboard"],
+                    openers: [
+                        "\"Don't worry, we'll get you back in. Are you using the correct email?\"",
+                        "\"Can you check if your Caps Lock key is on?\"",
+                        "\"Let's try resetting your password together.\"",
+                        "\"I can send you a password reset link right now.\""
+                    ]
+                };
+            } else {
+                return {
+                    id: generateId(),
+                    title: `API Fail: ${name}`,
+                    description: `${name} is integrating your API and getting ${error}. They claim your documentation is wrong.`,
+                    difficulty: 'Advanced',
+                    category: 'Technical',
+                    icon: 'Wrench',
+                    initialMessage: `Your documentation is garbage. I'm hitting the endpoint exactly as described and getting ${error}. Fix it.`,
+                    systemInstruction: `You are ${name}, a Developer. You are arrogant and impatient. You actually missed a header. Refuse to check unless asked politely.`,
+                    voice: voice as any,
+                    objectives: ["Don't take insults personally", "Verify their request format", "Spot the missing header"],
+                    talkTracks: ["Can you share the request body?", "Let's debug this together"],
+                    openers: [
+                        "\"I understand your frustration. Can you share the exact request you are sending?\"",
+                        "\"Let's look at the logs together to find the issue.\"",
+                        "\"I assure you our documentation is tested, but let's verify your specific case.\"",
+                        "\"Could you please copy and paste the error response here?\""
+                    ]
+                };
+            }
+        }
+
+        // --- Support Templates (Default) ---
+        if (difficulty === 'Advanced') {
             return {
                 id: generateId(),
-                title: `Escalated: ${name}`,
-                description: `A customer named ${name} is furious about a billing issue with ${product}. They claim they ${issue}.`,
+                title: `Crisis: ${name}`,
+                description: `${name} claims ${product} deleted their data before a major presentation. They are panicking.`,
+                difficulty: 'Advanced',
+                category: 'Support',
+                icon: 'Shield',
+                initialMessage: `MY DATA IS GONE. ALL OF IT. I have a presentation in 20 minutes! restore it NOW!`,
+                systemInstruction: `You are ${name}. You are PANICKING. Scream (use caps). Demand immediate results.`,
+                voice: voice as any,
+                objectives: ["De-escalate panic", "Check trash/archive", "Reassure the user"],
+                talkTracks: ["Take a deep breath", "I can check the backups"],
+                openers: [
+                    "\"I can hear how stressed you are. I am going to make this my top priority.\"",
+                    "\"Please try to stay calm. We have backups and I will check them now.\"",
+                    "\"I understand the urgency. Let's check the trash folder first.\"",
+                    "\"I'm here to help. Can you tell me exactly what you were doing before it disappeared?\""
+                ]
+            };
+        } else {
+            return {
+                id: generateId(),
+                title: `Refund: ${name}`,
+                description: `${name} wants a refund for ${product} because they didn't use it. It's past the policy window.`,
                 difficulty: 'Intermediate',
                 category: 'Support',
                 icon: 'Shield',
-                initialMessage: `I need to speak to a manager. NOW. I just saw a charge for $${price} on my card for ${product} and I cancelled this weeks ago!`,
-                systemInstruction: `You are '${name}' (${isMale ? 'Male' : 'Female'}, ${role}). You are ANGRY. \n\nCONTEXT: You saw a charge of $${price}. You believe you cancelled. \n\nHIDDEN SECRET: ${secret} \n\nBEHAVIOR: \n- Speak in short, aggressive bursts. \n- Do not listen to 'policy'. \n- If the agent says 'I understand', say 'No you don't, it's my money!' \n- Only calm down if they offer a refund OR a very clear explanation with empathy. \n- If the user is rude, get MORE angry.`,
-                voice: voice as any
+                initialMessage: `I realized I haven't used ${product} in 3 months. I want those months refunded please.`,
+                systemInstruction: `You are ${name}. You feel entitled to the refund. If refused, threaten bad reviews.`,
+                voice: voice as any,
+                objectives: ["Explain policy firmly", "Empathize with the loss", "Offer future credit instead"],
+                talkTracks: ["I understand you didn't use it", "Our policy states..."],
+                openers: [
+                    "\"I understand you'd like a refund. Let me check your account details.\"",
+                    "\"I see you haven't logged in recently. Unfortunately, our policy is...\"",
+                    "\"I can't refund the past months, but I can cancel your subscription moving forward.\"",
+                    "\"Would you be interested in a credit for future use instead?\""
+                ]
             };
         }
-
-        if (type === 'Busy') {
-            const time = Math.floor(Math.random() * 10) + 2;
-            const secrets = [
-                "You have a budget of $1000 but want to pay $500.",
-                "You really need the 'API Access' feature but don't want to ask directly.",
-                "Your current contract with a competitor ends tomorrow.",
-                "You are just price shopping and will likely buy if they offer a discount."
-            ];
-            const secret = getRandom(secrets);
-
-            return {
-                id: generateId(),
-                title: `Sales Pitch: ${name}`,
-                description: `${name}, a ${role}, has ${time} minutes to decide on a new ${product}. High pressure sales.`,
-                difficulty: 'Beginner',
-                category: 'Sales',
-                icon: 'TrendingUp',
-                initialMessage: `I've got ${time} minutes before a board meeting. Pitch me on ${product}. Why is it better than the competition? Go.`,
-                systemInstruction: `You are '${name}' (${isMale ? 'Male' : 'Female'}, ${role}). You are BUSY and DIRECT. \n\nHIDDEN SECRET: ${secret} \n\nBEHAVIOR: \n- Interrupt if the agent uses marketing fluff. \n- Ask about ROI and implementation speed. \n- If they take too long, threaten to hang up. \n- You respect concise, data-driven answers. \n- If the user goes off topic, get annoyed.`,
-                voice: voice as any
-            };
-        }
-
-        // Tech
-        const errors = ["500 Internal Server Error", "CORS policy block", "JSON parsing error", "Timeout Gateway"];
-        const errorMsg = getRandom(errors);
-        const secrets = [
-            "You made a typo in the API key.",
-            "Your firewall is blocking the connection.",
-            "You are using an outdated version of the SDK.",
-            "You copied the wrong documentation example."
-        ];
-        const secret = getRandom(secrets);
-
-        return {
-            id: generateId(),
-            title: `Tech Issue: ${name}`,
-            description: `${name} claims ${product} is broken due to a '${errorMsg}'. They refuse to check their own code.`,
-            difficulty: 'Advanced',
-            category: 'Technical',
-            icon: 'Wrench',
-            initialMessage: `Your API is throwing a ${errorMsg}. I've checked my implementation, it's perfect. When will you fix your servers?`,
-            systemInstruction: `You are '${name}' (${isMale ? 'Male' : 'Female'}, Developer). You are ARROGANT. \n\nHIDDEN SECRET: ${secret} \n\nBEHAVIOR: \n- Refuse to do basic troubleshooting ('Did you turn it off and on?'). \n- Use technical jargon. \n- You will only admit fault if the agent politely guides you to the specific log line proving you wrong.`,
-            voice: voice as any
-        };
     };
 
-    return [
-        createPersona('Angry') as TrainingScenario,
-        createPersona('Busy') as TrainingScenario,
-        createPersona('Tech') as TrainingScenario
+    // Generate 3 distinct scenarios with varied difficulties
+    const scenarios = [
+        createPersona('Beginner'),
+        createPersona('Intermediate'),
+        createPersona('Advanced')
     ];
+
+    return scenarios as TrainingScenario[];
 };
 
 // --- Audio Helpers ---
@@ -188,11 +285,13 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     const [isLoadingScenarios, setIsLoadingScenarios] = useState(false);
     const [connectionError, setConnectionError] = useState<string | null>(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [regeneratingIds, setRegeneratingIds] = useState<Set<string>>(new Set());
 
     // Creation State
     const [creationType, setCreationType] = useState<'manual' | 'ai'>('ai');
     const [aiParams, setAiParams] = useState({ topic: '', difficulty: 'Intermediate', category: 'Support' });
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isGeneratingTopic, setIsGeneratingTopic] = useState(false);
     const [manualParams, setManualParams] = useState<Partial<TrainingScenario>>({ difficulty: 'Intermediate', category: 'Support' });
     
     // Chat Refs
@@ -209,6 +308,10 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     // Live Transcription State Buffers
     const currentInputTranscription = useRef('');
     const currentOutputTranscription = useRef('');
+
+    // Derived state for input limits
+    const wordCount = input.trim() === '' ? 0 : input.trim().split(/\s+/).length;
+    const isOverLimit = wordCount > 24;
 
     // Load dynamic scenarios on mount
     useEffect(() => {
@@ -241,7 +344,11 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         icon: s.icon as any,
                         initialMessage: s.initial_message,
                         systemInstruction: s.system_instruction,
-                        voice: 'Puck'
+                        // Attempt to load voice/openers if columns exist (graceful degradation)
+                        voice: (s.voice || getRandom(VOICES)) as any, 
+                        objectives: s.objectives || [],
+                        talkTracks: s.talk_tracks || [],
+                        openers: s.openers || []
                     }));
                     setCustomScenarios(mapped);
                 }
@@ -267,17 +374,92 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         }
     }, []);
 
-    const refreshScenarios = () => {
+    const handleRefreshScenarios = async () => {
         setIsRefreshing(true);
-        // Add artificial delay to give user visual feedback that refresh is happening
-        setTimeout(() => {
-            setStaticScenarios(generateDynamicScenarios());
+        // Small delay for visual feedback of the spin animation
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        try {
+            // Attempt AI Generation first for better variety
+            const newBatch = await generateTrainingBatch();
+            
+            // Map generic icon if missing, add IDs
+            const withIds = newBatch.map(s => ({
+                ...s, 
+                id: generateId(), 
+                icon: (s.category === 'Sales' ? 'TrendingUp' : s.category === 'Technical' ? 'Wrench' : 'Shield') as any
+            }));
+            
+            setStaticScenarios(withIds as any);
+        } catch (e) {
+            console.warn("AI generation failed, falling back to procedural", e);
+            // Fallback to procedural generation if AI fails or quota limits hit
+            // Force a new set of scenarios by calling generator again which uses fresh math.random
+            const newProcedural = generateDynamicScenarios();
+            setStaticScenarios(newProcedural);
+        } finally {
             setIsRefreshing(false);
-        }, 600);
+        }
+    };
+
+    const handleRegenerateCustomScenario = async (scenario: TrainingScenario, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (regeneratingIds.has(scenario.id)) return;
+
+        setRegeneratingIds(prev => new Set(prev).add(scenario.id));
+
+        try {
+            // Use the title as the topic context to keep the theme but change the persona details
+            const newVersion = await generateAIScenario(scenario.title, scenario.category, scenario.difficulty);
+            
+            // Map back to DB structure
+            const updates = {
+                description: newVersion.description,
+                initial_message: newVersion.initialMessage,
+                system_instruction: newVersion.systemInstruction,
+                voice: newVersion.voice,
+                objectives: newVersion.objectives,
+                talk_tracks: newVersion.talkTracks,
+                openers: newVersion.openers
+            };
+
+            if (user) {
+                const { error } = await supabase
+                    .from('scenarios')
+                    .update(updates)
+                    .eq('id', scenario.id);
+                
+                if (error) throw error;
+            }
+
+            setCustomScenarios(prev => prev.map(s => 
+                s.id === scenario.id 
+                ? { ...s, ...newVersion } 
+                : s
+            ));
+
+        } catch (e) {
+            console.error("Failed to regenerate custom scenario", e);
+            alert("Failed to regenerate scenario details.");
+        } finally {
+            setRegeneratingIds(prev => {
+                const next = new Set(prev);
+                next.delete(scenario.id);
+                return next;
+            });
+        }
     };
 
     const allScenarios = [...customScenarios, ...staticScenarios];
+    
+    // Gamification Calculations
     const trainingHistory = history.filter(h => h.customerName?.startsWith('Roleplay:') || h.summary?.startsWith('Training Session'));
+    const totalAttempts = trainingHistory.length;
+    const avgScore = totalAttempts > 0 
+        ? Math.round(trainingHistory.reduce((acc, curr) => acc + curr.overallScore, 0) / totalAttempts) 
+        : 0;
+    // Calculate XP: Base score * 10 + 50 bonus per session completed
+    const totalXP = trainingHistory.reduce((acc, curr) => acc + (curr.overallScore * 10) + 50, 0);
 
     // 1. Initial selection: Shows the briefing
     const selectScenario = (scenario: TrainingScenario, sessionMode: 'text' | 'voice') => {
@@ -459,9 +641,6 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         }
     };
 
-    const wordCount = input.trim() === '' ? 0 : input.trim().split(/\s+/).length;
-    const isOverLimit = wordCount > 24;
-
     const sendMessage = async () => {
         if (!input.trim() || !chatSession.current || mode === 'voice' || isOverLimit) return;
         
@@ -585,19 +764,26 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
             };
 
             if (user) {
-                const { error } = await supabase.from('scenarios').insert({
-                    id: newScenario.id,
-                    user_id: user.id,
-                    title: newScenario.title,
-                    description: newScenario.description,
-                    difficulty: newScenario.difficulty,
-                    category: newScenario.category,
-                    icon: newScenario.icon,
-                    initial_message: newScenario.initialMessage,
-                    system_instruction: newScenario.systemInstruction
-                });
-                if (error && error.code !== '42P01') {
-                    console.error("Error saving scenario", error);
+                // Try/Catch for robustness if columns don't exist yet
+                try {
+                    const { error } = await supabase.from('scenarios').insert({
+                        id: newScenario.id,
+                        user_id: user.id,
+                        title: newScenario.title,
+                        description: newScenario.description,
+                        difficulty: newScenario.difficulty,
+                        category: newScenario.category,
+                        icon: newScenario.icon,
+                        initial_message: newScenario.initialMessage,
+                        system_instruction: newScenario.systemInstruction,
+                        objectives: newScenario.objectives,
+                        talk_tracks: newScenario.talkTracks,
+                        openers: newScenario.openers, // Persist smart openers
+                        voice: newScenario.voice // Persist specific voice
+                    });
+                    if (error) throw error;
+                } catch (dbError) {
+                    // Fallback handled silently
                 }
             }
 
@@ -611,11 +797,49 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         }
     };
 
+    const handleAutoGenerateTopic = async () => {
+        setIsGeneratingTopic(true);
+        try {
+            const topic = await generateTrainingTopic();
+            setAiParams(prev => ({...prev, topic}));
+        } catch (e) {
+            console.error("Failed to auto-generate topic", e);
+        } finally {
+            setIsGeneratingTopic(false);
+        }
+    };
+
     const handleCreateManual = async () => {
         if (!manualParams.title || !manualParams.initialMessage || !manualParams.systemInstruction) {
             alert("Please fill in all required fields.");
             return;
         }
+        
+        // Generate generic objectives/tracks for manual creation
+        const genericObjectives = [
+            "Resolve the issue efficiently.",
+            "Maintain a professional and empathetic tone.",
+            "Follow standard procedures.",
+            "Ensure the customer feels heard.",
+            "Verify the solution before closing."
+        ];
+        
+        const genericTalkTracks = [
+            "I understand how frustrating this must be.",
+            "I'm here to help you with this.",
+            "Let's figure this out together.",
+            "Thank you for your patience.",
+            "Is there anything else I can help with?",
+            "I appreciate you bringing this to my attention."
+        ];
+        
+        const genericOpeners = [
+            "\"How can I help you today?\"",
+            "\"I'd be happy to assist with that.\"",
+            "\"Can you provide your account details?\"",
+            "\"Let's take a look at what's going on.\""
+        ];
+
         const newScenario: TrainingScenario = {
             id: generateId(),
             title: manualParams.title!,
@@ -625,11 +849,14 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
             icon: 'Shield',
             initialMessage: manualParams.initialMessage!,
             systemInstruction: manualParams.systemInstruction!,
-            voice: 'Puck'
+            voice: 'Puck',
+            objectives: genericObjectives,
+            talkTracks: genericTalkTracks,
+            openers: genericOpeners
         };
 
         if (user) {
-            const { error } = await supabase.from('scenarios').insert({
+            await supabase.from('scenarios').insert({
                 id: newScenario.id,
                 user_id: user.id,
                 title: newScenario.title,
@@ -638,11 +865,12 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                 category: newScenario.category,
                 icon: newScenario.icon,
                 initial_message: newScenario.initialMessage,
-                system_instruction: newScenario.systemInstruction
+                system_instruction: newScenario.systemInstruction,
+                objectives: newScenario.objectives,
+                talk_tracks: newScenario.talkTracks,
+                openers: newScenario.openers,
+                voice: newScenario.voice
             });
-            if (error && error.code !== '42P01') {
-                console.error("Error saving scenario", error);
-            }
         }
 
         setCustomScenarios(prev => [newScenario, ...prev]);
@@ -713,7 +941,17 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         {creationType === 'ai' ? (
                             <div className="space-y-6">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">What skills do you want to practice?</label>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">What skills do you want to practice?</label>
+                                        <button 
+                                            onClick={handleAutoGenerateTopic}
+                                            disabled={isGeneratingTopic}
+                                            className="text-xs flex items-center gap-1.5 px-3 py-1.5 bg-[#0500e2]/10 text-[#0500e2] dark:text-[#4b53fa] dark:bg-[#4b53fa]/10 rounded-full font-bold hover:bg-[#0500e2]/20 dark:hover:bg-[#4b53fa]/20 transition-colors disabled:opacity-50"
+                                        >
+                                            {isGeneratingTopic ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                                            {isGeneratingTopic ? 'Generating...' : 'Auto-fill with AI'}
+                                        </button>
+                                    </div>
                                     <textarea 
                                         value={aiParams.topic}
                                         onChange={(e) => setAiParams({...aiParams, topic: e.target.value})}
@@ -837,23 +1075,28 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         );
     }
 
-    // --- VIEW: Briefing ---
     if (view === 'briefing') {
         if (!activeScenario) {
             setView('list');
             return null;
         }
+        
+        const scenarioHistory = history.filter(h => h.customerName === `Roleplay: ${activeScenario.title}`);
+        const bestScore = scenarioHistory.reduce((max, curr) => Math.max(max, curr.overallScore), 0);
+        const attempts = scenarioHistory.length;
+
         return (
             <PreSessionBriefing 
                 scenario={activeScenario}
                 mode={mode}
                 onStart={confirmStartSession}
                 onBack={() => setView('list')}
+                bestScore={bestScore > 0 ? bestScore : undefined}
+                attempts={attempts}
             />
         );
     }
 
-    // --- VIEW: Active Session ---
     if (view === 'active') {
         if (!activeScenario) {
             setView('list');
@@ -862,7 +1105,6 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
 
         return (
             <div className="h-[calc(100dvh-100px)] md:h-[calc(100vh-140px)] flex flex-col bg-white dark:bg-slate-900 rounded-xl md:rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-                {/* Session Header */}
                 <div className="p-3 md:p-6 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex flex-row justify-between items-center shrink-0 gap-2">
                     <div className="flex items-center gap-3 overflow-hidden">
                         <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center text-white shadow-md shrink-0 ${
@@ -889,7 +1131,6 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                     </button>
                 </div>
 
-                {/* Connection Error Banner */}
                 {connectionError && (
                     <div className="bg-red-50 dark:bg-red-900/30 p-4 border-b border-red-100 dark:border-red-900/50 flex items-center gap-3 animate-in slide-in-from-top-2">
                         <AlertTriangle className="text-red-600 dark:text-red-400" size={20} />
@@ -903,7 +1144,6 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                     </div>
                 )}
 
-                {/* Chat Area */}
                 <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6 bg-slate-50/50 dark:bg-slate-900/50 scroll-smooth">
                     {messages.map((msg, idx) => (
                         <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -927,7 +1167,6 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input Area */}
                 <div className="p-3 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0 safe-area-bottom">
                     {mode === 'text' ? (
                         <div className="relative flex gap-2 md:gap-3 items-end">
@@ -973,7 +1212,6 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         );
     }
 
-    // --- VIEW: Results ---
     if (view === 'result' && result) {
         return (
             <div className="max-w-4xl mx-auto pb-20 md:pb-12 animate-fade-in px-4 md:px-0">
@@ -1039,32 +1277,84 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     // --- VIEW: Scenario List (Default) ---
     return (
         <div className="space-y-6 md:space-y-8 animate-fade-in pb-20 md:pb-12">
-             <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl md:rounded-[2rem] p-6 md:p-12 text-white relative overflow-hidden shadow-lg">
-                <div className="relative z-10 max-w-2xl">
-                    <h2 className="text-2xl md:text-3xl font-serif font-bold mb-2 md:mb-4">AI Training Companion</h2>
-                    <p className="text-indigo-100 text-sm md:text-lg mb-6 md:mb-8">
-                        Practice real-world support and sales scenarios with unique AI personas. 
-                        Get instant feedback on your tone, empathy, and problem-solving skills.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
-                        <button 
-                            onClick={() => setView('create')}
-                            className="px-6 py-3 bg-white text-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition-colors shadow-lg flex items-center justify-center gap-2 text-sm md:text-base"
-                        >
-                            <Plus size={18} /> Create New Scenario
-                        </button>
-                        <button 
-                            onClick={refreshScenarios}
-                            disabled={isRefreshing}
-                            className="px-6 py-3 bg-indigo-700/50 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 backdrop-blur-md text-sm md:text-base disabled:opacity-70 disabled:cursor-wait"
-                        >
-                            {isRefreshing ? <Loader2 size={18} className="animate-spin" /> : <Shuffle size={18} />}
-                            {isRefreshing ? 'Randomizing...' : 'Randomize Scenarios'}
-                        </button>
+             
+             {/* New "AI Training Companion" Header */}
+             <div className="bg-[#0500e2] rounded-[2.5rem] p-8 md:p-12 text-white relative overflow-hidden shadow-2xl">
+                {/* Background Decoration */}
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
+                <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-black/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4"></div>
+
+                <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-wider mb-6">
+                            <Sparkles size={12} className="text-yellow-300" /> AI-Powered Simulation
+                        </div>
+                        <h2 className="text-3xl md:text-5xl font-serif font-bold mb-4 leading-tight">
+                            Master Every Conversation.
+                        </h2>
+                        <p className="text-blue-100 text-lg mb-8 max-w-md leading-relaxed">
+                            Practice with realistic, adaptive AI personas that challenge your skills in Sales, Support, and Technical scenarios.
+                        </p>
+                        
+                        <div className="flex flex-wrap gap-4">
+                            <button 
+                                onClick={() => setView('create')}
+                                className="px-6 py-3.5 bg-white text-[#0500e2] rounded-xl font-bold hover:bg-blue-50 transition-all shadow-lg flex items-center gap-2"
+                            >
+                                <Plus size={18} /> Create Custom Scenario
+                            </button>
+                            <button 
+                                onClick={handleRefreshScenarios}
+                                disabled={isRefreshing}
+                                className="px-6 py-3.5 bg-white/10 border border-white/20 text-white rounded-xl font-bold hover:bg-white/20 transition-all flex items-center gap-2 backdrop-blur-sm"
+                            >
+                                <RefreshCw size={18} className={isRefreshing ? "animate-spin" : ""} />
+                                {isRefreshing ? "Generating..." : "Regenerate Personas"}
+                            </button>
+                        </div>
                     </div>
-                </div>
-                <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-1/4 translate-y-1/4">
-                    <Shield size={250} className="md:w-[400px] md:h-[400px]" />
+
+                    {/* Gamification Stats Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="bg-white/10 backdrop-blur-md border border-white/10 p-6 rounded-2xl flex flex-col justify-between h-full">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="p-2 bg-yellow-400/20 rounded-lg text-yellow-300">
+                                    <Trophy size={24} />
+                                </div>
+                                <span className="text-xs font-bold uppercase tracking-wider text-white/60">Total XP</span>
+                            </div>
+                            <div>
+                                <span className="text-4xl font-bold text-white">{trainingHistory.reduce((acc, curr) => acc + (curr.overallScore * 10) + 50, 0).toLocaleString()}</span>
+                                <p className="text-sm text-blue-200 mt-1">Experience Points Earned</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="bg-white/10 backdrop-blur-md border border-white/10 p-5 rounded-2xl flex items-center gap-4">
+                                <div className="p-2 bg-emerald-400/20 rounded-lg text-emerald-300">
+                                    <TrendingUp size={20} />
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-bold text-white">
+                                        {trainingHistory.length > 0 
+                                            ? Math.round(trainingHistory.reduce((acc, curr) => acc + curr.overallScore, 0) / trainingHistory.length) 
+                                            : 0}%
+                                    </p>
+                                    <p className="text-xs text-blue-200 font-bold uppercase tracking-wide">Avg Performance</p>
+                                </div>
+                            </div>
+                            
+                            <div className="bg-white/10 backdrop-blur-md border border-white/10 p-5 rounded-2xl flex items-center gap-4">
+                                <div className="p-2 bg-blue-400/20 rounded-lg text-blue-300">
+                                    <Target size={20} />
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-bold text-white">{trainingHistory.length}</p>
+                                    <p className="text-xs text-blue-200 font-bold uppercase tracking-wide">Total Attempts</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
              </div>
 
@@ -1096,61 +1386,89 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         const isCustom = customScenarios.some(s => s.id === scenario.id);
 
                         return (
-                            <div key={scenario.id} className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 p-8 shadow-sm hover:shadow-md transition-all flex flex-col h-full group relative">
-                                {isCustom && (
-                                    <button 
-                                        onClick={(e) => handleDeleteScenario(scenario.id, e)}
-                                        className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-                                        title="Delete Scenario"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                )}
+                            <div key={scenario.id} className="group relative flex flex-col h-full bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-blue-100 dark:hover:border-blue-900/30 transition-all duration-300 overflow-hidden">
+                                
+                                {/* Decorative Background Gradient (Subtle) */}
+                                <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br opacity-5 rounded-bl-[4rem] transition-opacity group-hover:opacity-10 pointer-events-none ${
+                                    scenario.category === 'Sales' ? 'from-green-500 to-emerald-600' : 
+                                    scenario.category === 'Technical' ? 'from-slate-600 to-slate-800' : 
+                                    'from-red-500 to-pink-600'
+                                }`}></div>
 
-                                <div className="flex justify-between items-start mb-6">
-                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg ${
-                                        scenario.category === 'Sales' ? 'bg-green-500 shadow-green-500/20' : 
-                                        scenario.category === 'Technical' ? 'bg-slate-700 shadow-slate-700/20' : 
-                                        'bg-red-500 shadow-red-500/20'
-                                    }`}>
-                                        <Icon size={24} />
+                                <div className="p-7 flex flex-col h-full">
+                                    <div className="flex justify-between items-start mb-6">
+                                        {/* Icon */}
+                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 ${
+                                            scenario.category === 'Sales' ? 'bg-gradient-to-br from-green-500 to-emerald-600 shadow-green-500/20' : 
+                                            scenario.category === 'Technical' ? 'bg-gradient-to-br from-slate-600 to-slate-800 shadow-slate-700/20' : 
+                                            'bg-gradient-to-br from-red-500 to-pink-600 shadow-red-500/20'
+                                        }`}>
+                                            <Icon size={26} strokeWidth={2} />
+                                        </div>
+
+                                        {/* Actions (Custom) */}
+                                        {isCustom && (
+                                            <div className="flex items-center gap-1">
+                                                <button 
+                                                    onClick={(e) => handleRegenerateCustomScenario(scenario, e)}
+                                                    disabled={regeneratingIds.has(scenario.id)}
+                                                    className="p-2.5 text-slate-400 hover:text-[#0500e2] hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all"
+                                                    title="Regenerate Persona Details"
+                                                >
+                                                    <RefreshCw size={18} className={regeneratingIds.has(scenario.id) ? "animate-spin text-[#0500e2]" : ""} />
+                                                </button>
+                                                <button 
+                                                    onClick={(e) => handleDeleteScenario(scenario.id, e)}
+                                                    className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
+                                                    title="Delete Scenario"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="flex gap-2">
-                                        <span className={`px-2 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border ${
-                                            scenario.category === 'Sales' ? 'bg-green-50 text-green-600 border-green-100' :
-                                            scenario.category === 'Technical' ? 'bg-slate-50 text-slate-600 border-slate-100' :
-                                            'bg-red-50 text-red-600 border-red-100'
+
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-[#0500e2] transition-colors line-clamp-1">
+                                        {scenario.title}
+                                    </h3>
+
+                                    {/* Tags */}
+                                    <div className="flex flex-wrap gap-2 mb-5">
+                                         <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${
+                                            scenario.category === 'Sales' ? 'bg-green-50 text-green-600 border-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/30' :
+                                            scenario.category === 'Technical' ? 'bg-slate-50 text-slate-600 border-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700' :
+                                            'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30'
                                         }`}>
                                             {scenario.category}
                                         </span>
-                                        <span className={`px-2 py-1 rounded-lg text-xs font-bold uppercase tracking-wide border ${
-                                            scenario.difficulty === 'Beginner' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                            scenario.difficulty === 'Intermediate' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                            'bg-purple-50 text-purple-600 border-purple-100'
+                                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${
+                                            scenario.difficulty === 'Beginner' ? 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/30' :
+                                            scenario.difficulty === 'Intermediate' ? 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-900/30' :
+                                            'bg-purple-50 text-purple-600 border-purple-100 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-900/30'
                                         }`}>
                                             {scenario.difficulty}
                                         </span>
                                     </div>
-                                </div>
-                                
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-[#0500e2] transition-colors line-clamp-1">{scenario.title}</h3>
-                                <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-8 flex-1 line-clamp-3">
-                                    {scenario.description}
-                                </p>
-                                
-                                <div className="flex flex-col gap-3">
-                                    <button 
-                                        onClick={() => selectScenario(scenario, 'text')}
-                                        className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold flex items-center justify-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
-                                    >
-                                        <MessageSquare size={16} /> Text Chat
-                                    </button>
-                                    <button 
-                                        onClick={() => selectScenario(scenario, 'voice')}
-                                        className="w-full py-3 rounded-xl bg-[#0500e2] text-white font-bold flex items-center justify-center gap-2 hover:bg-[#0400c0] shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all"
-                                    >
-                                        <Phone size={16} /> Voice Call
-                                    </button>
+
+                                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-8 line-clamp-3 flex-1">
+                                        {scenario.description}
+                                    </p>
+
+                                    {/* Action Grid */}
+                                    <div className="grid grid-cols-2 gap-3 mt-auto">
+                                        <button 
+                                            onClick={() => selectScenario(scenario, 'text')}
+                                            className="py-3 px-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-sm flex items-center justify-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all"
+                                        >
+                                            <MessageSquare size={16} className="text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300" /> Chat
+                                        </button>
+                                        <button 
+                                            onClick={() => selectScenario(scenario, 'voice')}
+                                            className="py-3 px-4 rounded-xl bg-[#0500e2] text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#0400c0] shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                                        >
+                                            <Phone size={16} /> Voice
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )

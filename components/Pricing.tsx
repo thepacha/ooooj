@@ -130,7 +130,7 @@ export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = fal
                     <div className={`w-6 h-6 bg-[#0500e2] rounded-full shadow-md transform transition-transform duration-300 ${billingCycle === 'yearly' ? 'translate-x-8' : 'translate-x-0'}`}></div>
                 </button>
                 <span className={`text-sm font-bold ${billingCycle === 'yearly' ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>
-                    Yearly <span className="text-[#0500e2] text-xs ml-1 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">Save 20%</span>
+                    Yearly <span className="text-[#0500e2] text-xs ml-1 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">Save 25%</span>
                 </span>
             </div>
         </div>

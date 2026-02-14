@@ -59,7 +59,7 @@ export const translations = {
     'landing.feature3.title': 'For Sales & Support',
     'landing.feature3.desc': 'Tailored scenarios for closing deals or solving complex tickets. Improve conversion rates and CSAT simultaneously.',
     'landing.feature3.cta': 'Explore Scenarios',
-    'landing.footer.desc': 'RevuQA: The AI-native platform for Customer Experience excellence.',
+    'landing.footer.desc': 'Revu: The #1 AI-native platform for Customer Experience excellence.',
     'landing.footer.rights': 'All rights reserved.',
     'landing.footer.status': 'Systems Operational',
     'landing.footer.product': 'Product',

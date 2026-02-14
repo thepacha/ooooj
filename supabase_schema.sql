@@ -77,6 +77,12 @@ create table if not exists scenarios (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Add new columns for enhanced scenarios (Migration)
+alter table scenarios add column if not exists objectives text[];
+alter table scenarios add column if not exists talk_tracks text[];
+alter table scenarios add column if not exists openers text[];
+alter table scenarios add column if not exists voice text;
+
 -- ==========================================
 -- SECURITY HELPER FUNCTIONS
 -- ==========================================

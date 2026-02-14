@@ -185,11 +185,37 @@ export const createTrainingSession = (scenario: TrainingScenario): Chat => {
     });
 };
 
+export const generateTrainingTopic = async (): Promise<string> => {
+    const ai = getAI();
+    const prompt = `
+        Generate a single, concise, and creative scenario description for a customer service or sales roleplay training session.
+        It should be 1-2 sentences.
+        
+        Examples:
+        - "A long-time customer is threatening to cancel because a competitor offered a lower price."
+        - "A confused user cannot find the export button and is getting frustrated."
+        - "A potential client is interested in the Enterprise plan but thinks the implementation time is too long."
+        
+        Return ONLY the text of the scenario description. No JSON, no markdown.
+    `;
+
+    const response = await retryWithBackoff(async () => {
+        return await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt,
+        });
+    });
+
+    return response.text?.trim() || "";
+};
+
 export const generateAIScenario = async (topic: string, category: 'Sales' | 'Support' | 'Technical', difficulty: string): Promise<Omit<TrainingScenario, 'id' | 'icon'>> => {
     const ai = getAI();
+    const seed = Date.now().toString();
     
     const prompt = `
         Create a rich, complex training roleplay scenario for a ${category} agent.
+        Random Seed: ${seed}
         
         TOPIC/CONTEXT: ${topic}
         DIFFICULTY LEVEL: ${difficulty}
@@ -205,6 +231,11 @@ export const generateAIScenario = async (topic: string, category: 'Sales' | 'Sup
         3. Define "HIDDEN CONTEXT": Secrets the customer holds (e.g., they are lying, they are in a rush, they broke the item themselves).
         4. Write a detailed System Instruction that forces the AI to stay in character.
         5. Be creative! Do not use generic names like "John Doe". Use distinct names and professions.
+        6. Generate 5 distinct "Mission Objectives" for the agent.
+        7. Generate 6 "Suggested Talk Tracks" (direct quotes/phrases).
+        8. Generate 4 "Smart Openers" - effective opening lines for the agent to use in this specific scenario.
+        
+        IMPORTANT: Ensure the scenario details (Name, Context, Secret) are fresh and creative, even if the topic is similar to previous requests.
 
         Return JSON.
     `;
@@ -224,9 +255,12 @@ export const generateAIScenario = async (topic: string, category: 'Sales' | 'Sup
                         category: { type: Type.STRING, enum: ['Sales', 'Support', 'Technical'] },
                         initialMessage: { type: Type.STRING },
                         systemInstruction: { type: Type.STRING },
-                        voice: { type: Type.STRING, enum: ['Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'] }
+                        voice: { type: Type.STRING, enum: ['Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'] },
+                        objectives: { type: Type.ARRAY, items: { type: Type.STRING } },
+                        talkTracks: { type: Type.ARRAY, items: { type: Type.STRING } },
+                        openers: { type: Type.ARRAY, items: { type: Type.STRING } }
                     },
-                    required: ['title', 'description', 'difficulty', 'category', 'initialMessage', 'systemInstruction', 'voice']
+                    required: ['title', 'description', 'difficulty', 'category', 'initialMessage', 'systemInstruction', 'voice', 'objectives', 'talkTracks', 'openers']
                 }
             }
         });
@@ -234,6 +268,112 @@ export const generateAIScenario = async (topic: string, category: 'Sales' | 'Sup
 
     const resultText = response.text || "{}";
     return JSON.parse(resultText) as Omit<TrainingScenario, 'id' | 'icon'>;
+};
+
+export const generateTrainingBatch = async (): Promise<Omit<TrainingScenario, 'id' | 'icon'>[]> => {
+    const ai = getAI();
+    
+    // Inject randomness to ensure variety on every click
+    const factors = [
+        "Include a VIP customer demanding special treatment.",
+        "Include a user who accidentally deleted their data.",
+        "Include a sales lead who is budget-conscious.",
+        "Include a technical user who thinks they know more than the agent.",
+        "Include a user rushing to catch a flight.",
+        "Include a user who is pleasantly surprised but has one concern."
+    ];
+    const randomFactor = factors[Math.floor(Math.random() * factors.length)];
+    const seed = Date.now().toString().slice(-4);
+
+    const prompt = `
+        Generate 3 distinct, highly realistic customer service roleplay scenarios.
+        Random Seed: ${seed}
+        Special Constraint: ${randomFactor}
+        
+        CRITERIA:
+        1. Unique Names: Use diverse names and professions (e.g. 'Dr. Aris', 'Captain Lee', 'Sarah the Architect').
+        2. Unique Personas: Vary age, job title, and temperament (Angry, Confused, Rush, Happy).
+        3. Contexts: Mix of Sales (objections), Technical (bugs), and Support (refunds).
+        4. Hidden Secrets: Give each persona a secret (e.g. "lying about usage", "actually broke it themselves", "needs approval from boss").
+        5. Voices: Assign a voice that fits the persona from: 'Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'.
+        
+        Return a JSON object with a "scenarios" key containing an array of 3 objects. Include smart openers for each.
+    `;
+
+    const response = await retryWithBackoff(async () => {
+        return await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        scenarios: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    title: { type: Type.STRING },
+                                    description: { type: Type.STRING },
+                                    difficulty: { type: Type.STRING, enum: ['Beginner', 'Intermediate', 'Advanced'] },
+                                    category: { type: Type.STRING, enum: ['Sales', 'Support', 'Technical'] },
+                                    initialMessage: { type: Type.STRING },
+                                    systemInstruction: { type: Type.STRING },
+                                    voice: { type: Type.STRING, enum: ['Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'] },
+                                    objectives: { type: Type.ARRAY, items: { type: Type.STRING } },
+                                    talkTracks: { type: Type.ARRAY, items: { type: Type.STRING } },
+                                    openers: { type: Type.ARRAY, items: { type: Type.STRING } }
+                                },
+                                required: ['title', 'description', 'difficulty', 'category', 'initialMessage', 'systemInstruction', 'voice', 'objectives', 'talkTracks', 'openers']
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+
+    const resultText = response.text || '{"scenarios": []}';
+    const parsed = JSON.parse(resultText);
+    return parsed.scenarios || [];
+};
+
+export const generateSmartOpeners = async (scenario: TrainingScenario): Promise<string[]> => {
+    const ai = getAI();
+    const prompt = `
+        Generate 4 distinct, professional, and highly effective opening lines for a customer service agent handling this specific situation.
+        
+        SCENARIO: ${scenario.title}
+        DESCRIPTION: ${scenario.description}
+        CUSTOMER PERSONA: ${scenario.systemInstruction}
+        GOAL: Resolve the issue efficiently while maintaining high empathy.
+
+        REQUIREMENTS:
+        1. Openers must be "Smart" & "Professional" - avoid generic "How can I help?".
+        2. Tailor them to the specific context (e.g. if angry, validate emotion first).
+        3. Use psychological techniques (e.g. labeling, agenda setting).
+        4. Make them sound human, not robotic.
+
+        Return strictly a JSON array of strings.
+    `;
+
+    const response = await retryWithBackoff(async () => {
+        return await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING }
+                }
+            }
+        });
+    });
+
+    const resultText = response.text || "[]";
+    return JSON.parse(resultText);
 };
 
 export const evaluateTrainingSession = async (transcript: string, scenario: TrainingScenario): Promise<TrainingResult> => {
@@ -245,12 +385,13 @@ export const evaluateTrainingSession = async (transcript: string, scenario: Trai
         SCENARIO: ${scenario.title}
         DIFFICULTY: ${scenario.difficulty}
         DESCRIPTION: ${scenario.description}
+        OBJECTIVES: ${scenario.objectives ? scenario.objectives.join(', ') : 'N/A'}
         
         TRANSCRIPT:
         ${transcript}
         
         Evaluate the Agent's performance based on:
-        1. Adherence to the goal of the scenario.
+        1. Adherence to the stated objectives (if any).
         2. Empathy and tone appropriate for the difficulty level.
         3. Problem-solving efficiency.
         
