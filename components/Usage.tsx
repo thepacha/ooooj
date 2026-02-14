@@ -1,8 +1,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { User, UsageMetrics, UsageHistory } from '../types';
-import { getUsage, getUsageHistory, purchaseCredits, COSTS } from '../lib/usageService';
-import { Loader2, Zap, AlertTriangle, FileText, Mic, MessageSquare, CreditCard, Plus, History, Calendar } from 'lucide-react';
+import { getUsage, getUsageHistory, COSTS } from '../lib/usageService';
+import { initiateCheckout } from '../lib/paymentService';
+import { Loader2, Zap, AlertTriangle, FileText, Mic, MessageSquare, CreditCard, Plus, History } from 'lucide-react';
 
 interface UsageProps {
   user: User | null;
@@ -42,11 +43,11 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
       if (!user) return;
       setPurchasing(true);
       try {
-          await purchaseCredits(user.id, amount);
-          await loadData(); // Refresh UI
-          // Optional: You could show a toast here
+          // Use the specific test ID provided
+          const testProductId = 'pdt_0NYTOTkTa1HbwcEJlSGXN';
+          await initiateCheckout(testProductId, user, 1);
       } catch (e) {
-          alert("Failed to purchase credits. Please try again.");
+          console.error("Purchase error", e);
       } finally {
           setPurchasing(false);
       }

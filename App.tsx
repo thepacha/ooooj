@@ -24,6 +24,7 @@ import { Menu, Loader2 } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
 import { supabase } from './lib/supabase';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+import { initiateCheckout } from './lib/paymentService';
 
 type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 'privacy' | 'refund';
 
@@ -552,9 +553,17 @@ function AppContent() {
       handleNavigate(view);
   };
 
-  const handlePlanSelect = (plan: string) => {
+  const handlePlanSelect = async (plan: string) => {
      if (user) {
-         alert(`You selected the ${plan} plan. Payment integration coming soon!`);
+         // Use the specific Test Product ID provided: pdt_0NYTOTkTa1HbwcEJlSGXN
+         // We trigger the checkout flow
+         try {
+             // For testing, we use the same ID regardless of the plan clicked, as requested
+             const testProductId = 'pdt_0NYTOTkTa1HbwcEJlSGXN'; 
+             await initiateCheckout(testProductId, user);
+         } catch(e) {
+             console.error("Checkout failed", e);
+         }
      } else {
          navigateAuth('signup');
      }
