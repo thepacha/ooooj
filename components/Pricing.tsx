@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Check, X, Zap, ChevronDown, ChevronUp, ArrowLeft, Loader2 } from 'lucide-react';
+import { Check, X, Zap, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
 import { PublicNavigation } from './PublicNavigation';
 import { Footer } from './Footer';
 
@@ -18,24 +18,9 @@ interface PricingProps {
 export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = false, onBack, onLogin, onSignup, onTermsClick, onPrivacyClick, onRefundClick }) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
-  };
-
-  const handlePlanClick = async (planId: string) => {
-      if (onPlanSelect) {
-          setLoadingPlan(planId);
-          try {
-              await onPlanSelect(planId);
-          } catch (e) {
-              // Error is handled in the service/parent, stop loading here
-              console.error(e);
-          } finally {
-              setLoadingPlan(null);
-          }
-      }
   };
 
   const plans = [
@@ -206,15 +191,14 @@ export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = fal
                     </div>
 
                     <button
-                        onClick={() => handlePlanClick(plan.id)}
-                        disabled={loadingPlan === plan.id}
-                        className={`w-full py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                        onClick={() => onPlanSelect && onPlanSelect(plan.id)}
+                        className={`w-full py-4 rounded-xl font-bold text-sm transition-all ${
                             plan.highlight
                             ? 'bg-[#0500e2] hover:bg-[#0400c0] text-white shadow-lg shadow-blue-600/30'
                             : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white'
                         }`}
                     >
-                        {loadingPlan === plan.id ? <Loader2 className="animate-spin" size={18} /> : plan.cta}
+                        {plan.cta}
                     </button>
                 </div>
             ))}
