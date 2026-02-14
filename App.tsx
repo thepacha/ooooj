@@ -5,6 +5,7 @@ import { Analyzer } from './components/Analyzer';
 import { Dashboard } from './components/Dashboard';
 import { History } from './components/History';
 import { Settings } from './components/Settings';
+import { Account } from './components/Account';
 import { Usage } from './components/Usage';
 import { ChatBot } from './components/ChatBot';
 import { LandingPage } from './components/LandingPage';
@@ -31,6 +32,7 @@ type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 
 const APP_ROUTES: Record<string, ViewState> = {
   '/dashboard': 'dashboard',
   '/settings': 'settings',
+  '/account': 'account',
   '/analyze': 'analyze',
   '/ai-training': 'training',
   '/usageandlimits': 'usage',
@@ -42,6 +44,7 @@ const APP_ROUTES: Record<string, ViewState> = {
 const VIEW_TO_PATH: Record<string, string> = {
   'dashboard': '/dashboard',
   'settings': '/settings',
+  'account': '/account',
   'analyze': '/analyze',
   'training': '/ai-training',
   'usage': '/usageandlimits',
@@ -292,7 +295,8 @@ function AppContent() {
                 id: session.user.id,
                 name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
                 email: session.user.email || '',
-                company: session.user.user_metadata?.company || 'My Company'
+                company: session.user.user_metadata?.company || 'My Company',
+                website: session.user.user_metadata?.website
             };
             
             if (mounted) {
@@ -326,7 +330,9 @@ function AppContent() {
                     ...prev, 
                     name: profile.name, 
                     company: profile.company,
-                    role: profile.role 
+                    website: profile.website,
+                    role: profile.role,
+                    avatar_url: profile.avatar_url
                 }) : prev);
             } else if (!profile) {
                 const newProfile = {
@@ -334,6 +340,7 @@ function AppContent() {
                     name: basicUser.name,
                     email: basicUser.email,
                     company: basicUser.company,
+                    website: basicUser.website,
                     role: 'user'
                 };
                 await supabase.from('profiles').insert(newProfile);
@@ -436,19 +443,11 @@ function AppContent() {
 
   const handleUpdateUser = async (updatedUser: User) => {
     if (!user) return;
+    // Optimistic update
     setUser(updatedUser);
-    try {
-        const { error } = await supabase
-            .from('profiles')
-            .update({
-                name: updatedUser.name,
-                company: updatedUser.company
-            })
-            .eq('id', user.id);
-        if (error) throw error;
-    } catch (e) {
-        console.error("Failed to update profile", e);
-    }
+    
+    // We do not call supabase update here because Account component already does it
+    // This function is mostly to update local state in App.tsx to reflect changes in Sidebar etc.
   };
 
   const handleSaveCriteria = async (newCriteria: Criteria[]) => {
@@ -622,6 +621,12 @@ function AppContent() {
             setCriteria={handleSaveCriteria} 
             user={user}
             onUpdateUser={handleUpdateUser}
+        />;
+      case 'account':
+        return <Account 
+            user={user}
+            onUpdateUser={handleUpdateUser}
+            onViewPricing={() => handleNavigate('pricing')}
         />;
       case 'admin':
         if (user?.role !== 'admin') {
@@ -806,6 +811,7 @@ function AppContent() {
                     currentView === 'usage' ? t('nav.usage') :
                     currentView === 'roster' ? t('nav.roster') :
                     currentView === 'settings' ? t('nav.settings') : 
+                    currentView === 'account' ? t('account.title') :
                     currentView === 'admin' ? t('nav.admin') :
                     currentView === 'pricing' ? 'Subscription Plans' : 
                     currentView === 'dashboard' ? t('nav.dashboard') : 

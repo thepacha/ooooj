@@ -1,4 +1,6 @@
 
+
+
 export const translations = {
   en: {
     // Sidebar
@@ -8,7 +10,8 @@ export const translations = {
     'nav.history': 'History',
     'nav.roster': 'Team Roster',
     'nav.usage': 'Usage & Limits',
-    'nav.settings': 'Settings',
+    'nav.settings': 'Scorecards',
+    'nav.account': 'Account',
     'nav.admin': 'Admin Console',
     'nav.light_mode': 'Light Mode',
     'nav.dark_mode': 'Dark Mode',
@@ -26,11 +29,29 @@ export const translations = {
     'dash.score_over_90': 'Score ≥ 90%',
     'dash.score_under_75': 'Score < 75%',
     'dash.quality_trend': 'Quality Trend',
-    'dash.last_10': 'Last 10 evaluations overview',
+    'dash.last_10': 'Last 50 evaluations overview',
     'dash.top_agents': 'Top Agents',
     'dash.based_on_avg': 'Based on avg. performance',
     'dash.view_roster': 'View Full Roster',
     'dash.no_data': 'No data available yet',
+
+    // Account
+    'account.title': 'Account Settings',
+    'account.subtitle': 'Manage your personal details and security.',
+    'account.personal': 'Personal Information',
+    'account.security': 'Security & Password',
+    'account.name': 'Full Name',
+    'account.email': 'Email Address',
+    'account.company': 'Company',
+    'account.website': 'Website',
+    'account.update_profile': 'Update Profile',
+    'account.new_password': 'New Password',
+    'account.confirm_password': 'Confirm Password',
+    'account.update_password': 'Update Password',
+    'account.plan': 'Current Plan',
+    'account.plan_desc': 'You are currently on the Starter plan.',
+    'account.upgrade': 'Upgrade Plan',
+    'account.avatar_upload': 'Change Photo',
 
     // Public Navigation
     'nav.features': 'Features',
@@ -131,7 +152,8 @@ export const translations = {
     'nav.history': 'السجل',
     'nav.roster': 'قائمة الفريق',
     'nav.usage': 'الاستخدام والحدود',
-    'nav.settings': 'الإعدادات',
+    'nav.settings': 'بطاقات التقييم',
+    'nav.account': 'الحساب',
     'nav.admin': 'وحدة تحكم المسؤول',
     'nav.light_mode': 'الوضع النهاري',
     'nav.dark_mode': 'الوضع الليلي',
@@ -149,11 +171,29 @@ export const translations = {
     'dash.score_over_90': 'النتيجة ≥ 90%',
     'dash.score_under_75': 'النتيجة < 75%',
     'dash.quality_trend': 'اتجاه الجودة',
-    'dash.last_10': 'نظرة عامة على آخر 10 تقييمات',
+    'dash.last_10': 'نظرة عامة على آخر 50 تقييم',
     'dash.top_agents': 'أفضل الوكلاء',
     'dash.based_on_avg': 'بناءً على متوسط الأداء',
     'dash.view_roster': 'عرض القائمة الكاملة',
     'dash.no_data': 'لا توجد بيانات متاحة بعد',
+
+    // Account
+    'account.title': 'إعدادات الحساب',
+    'account.subtitle': 'إدارة بياناتك الشخصية والأمان.',
+    'account.personal': 'المعلومات الشخصية',
+    'account.security': 'الأمان وكلمة المرور',
+    'account.name': 'الاسم الكامل',
+    'account.email': 'البريد الإلكتروني',
+    'account.company': 'الشركة',
+    'account.website': 'الموقع الإلكتروني',
+    'account.update_profile': 'تحديث الملف الشخصي',
+    'account.new_password': 'كلمة المرور الجديدة',
+    'account.confirm_password': 'تأكيد كلمة المرور',
+    'account.update_password': 'تحديث كلمة المرور',
+    'account.plan': 'الخطة الحالية',
+    'account.plan_desc': 'أنت حالياً على خطة Starter.',
+    'account.upgrade': 'ترقية الخطة',
+    'account.avatar_upload': 'تغيير الصورة',
 
     // Public Navigation
     'nav.features': 'المميزات',

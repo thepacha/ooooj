@@ -11,8 +11,10 @@ create table if not exists profiles (
   website text
 );
 
--- Safely add role column if it doesn't exist (Migration)
+-- MIGRATIONS: Add columns if they were missed during initial table creation
 alter table profiles add column if not exists role text default 'user';
+alter table profiles add column if not exists website text;
+alter table profiles add column if not exists avatar_url text;
 
 -- USER USAGE
 create table if not exists user_usage (

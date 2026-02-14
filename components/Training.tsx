@@ -1,8 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { TrainingScenario, TrainingResult, User, AnalysisResult, CriteriaResult } from '../types';
-import { createTrainingSession, evaluateTrainingSession, connectLiveTraining, generateAIScenario, generateTrainingTopic, generateTrainingBatch } from '../services/geminiService';
-import { Shield, TrendingUp, Wrench, ArrowRight, RefreshCw, CheckCircle, Loader2, Send, Phone, PhoneOff, MessageSquare, Copy, Check, Plus, Sparkles, X, Calendar, Trash2, AlertTriangle, Shuffle, HelpCircle, Heart, Zap, Trophy, Target } from 'lucide-react';
+import { createTrainingSession, evaluateTrainingSession, connectLiveTraining, generateAIScenario, generateTrainingTopic, generateTrainingBatch, GenerateScenarioParams } from '../services/geminiService';
+import { Shield, TrendingUp, Wrench, ArrowRight, RefreshCw, CheckCircle, Loader2, Send, Phone, PhoneOff, MessageSquare, Copy, Check, Plus, Sparkles, X, Calendar, Trash2, AlertTriangle, Shuffle, HelpCircle, Heart, Zap, Trophy, Target, Frown, Meh, Smile } from 'lucide-react';
 import { incrementUsage, COSTS, checkLimit } from '../lib/usageService';
 import { generateId } from '../lib/utils';
 import { supabase } from '../lib/supabase';
@@ -270,6 +270,15 @@ async function decodeAudioData(
   return buffer;
 }
 
+interface AIParamsState {
+    topic: string;
+    difficulty: string;
+    category: 'Sales' | 'Support' | 'Technical';
+    funnelStage: string;
+    persona: string;
+    mood: string;
+}
+
 export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisComplete }) => {
     const [view, setView] = useState<'list' | 'briefing' | 'active' | 'result' | 'create'>('list');
     const [activeTab, setActiveTab] = useState<'scenarios' | 'history'>('scenarios');
@@ -289,7 +298,14 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
 
     // Creation State
     const [creationType, setCreationType] = useState<'manual' | 'ai'>('ai');
-    const [aiParams, setAiParams] = useState({ topic: '', difficulty: 'Intermediate', category: 'Support' });
+    const [aiParams, setAiParams] = useState<AIParamsState>({ 
+        topic: '', 
+        difficulty: 'Intermediate', 
+        category: 'Sales', // Default to Sales to show funnel features
+        funnelStage: 'Discovery',
+        persona: '',
+        mood: 'Neutral'
+    });
     const [isGenerating, setIsGenerating] = useState(false);
     const [isGeneratingTopic, setIsGeneratingTopic] = useState(false);
     const [manualParams, setManualParams] = useState<Partial<TrainingScenario>>({ difficulty: 'Intermediate', category: 'Support' });
@@ -410,7 +426,15 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
 
         try {
             // Use the title as the topic context to keep the theme but change the persona details
-            const newVersion = await generateAIScenario(scenario.title, scenario.category, scenario.difficulty);
+            // We default to existing props if available in scenario object, otherwise defaults
+            const newVersion = await generateAIScenario({
+                topic: scenario.title,
+                category: scenario.category,
+                difficulty: scenario.difficulty,
+                funnelStage: '',
+                persona: '',
+                mood: ''
+            });
             
             // Map back to DB structure
             const updates = {
@@ -455,9 +479,6 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     // Gamification Calculations
     const trainingHistory = history.filter(h => h.customerName?.startsWith('Roleplay:') || h.summary?.startsWith('Training Session'));
     const totalAttempts = trainingHistory.length;
-    const avgScore = totalAttempts > 0 
-        ? Math.round(trainingHistory.reduce((acc, curr) => acc + curr.overallScore, 0) / totalAttempts) 
-        : 0;
     // Calculate XP: Base score * 10 + 50 bonus per session completed
     const totalXP = trainingHistory.reduce((acc, curr) => acc + (curr.overallScore * 10) + 50, 0);
 
@@ -756,11 +777,11 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         if (!aiParams.topic) return;
         setIsGenerating(true);
         try {
-            const generated = await generateAIScenario(aiParams.topic, aiParams.category as any, aiParams.difficulty);
+            const generated = await generateAIScenario(aiParams);
             const newScenario: TrainingScenario = {
                 ...generated,
                 id: generateId(),
-                icon: 'Shield',
+                icon: (aiParams.category === 'Sales' ? 'TrendingUp' : aiParams.category === 'Technical' ? 'Wrench' : 'Shield'),
             };
 
             if (user) {
@@ -778,8 +799,8 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         system_instruction: newScenario.systemInstruction,
                         objectives: newScenario.objectives,
                         talk_tracks: newScenario.talkTracks,
-                        openers: newScenario.openers, // Persist smart openers
-                        voice: newScenario.voice // Persist specific voice
+                        openers: newScenario.openers, 
+                        voice: newScenario.voice
                     });
                     if (error) throw error;
                 } catch (dbError) {
@@ -940,26 +961,58 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                     <div className="p-6 md:p-10">
                         {creationType === 'ai' ? (
                             <div className="space-y-6">
+                                {/* Category Selection First */}
                                 <div>
-                                    <div className="flex justify-between items-center mb-2">
-                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">What skills do you want to practice?</label>
-                                        <button 
-                                            onClick={handleAutoGenerateTopic}
-                                            disabled={isGeneratingTopic}
-                                            className="text-xs flex items-center gap-1.5 px-3 py-1.5 bg-[#0500e2]/10 text-[#0500e2] dark:text-[#4b53fa] dark:bg-[#4b53fa]/10 rounded-full font-bold hover:bg-[#0500e2]/20 dark:hover:bg-[#4b53fa]/20 transition-colors disabled:opacity-50"
-                                        >
-                                            {isGeneratingTopic ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-                                            {isGeneratingTopic ? 'Generating...' : 'Auto-fill with AI'}
-                                        </button>
+                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Category</label>
+                                    <div className="flex gap-2">
+                                        {(['Sales', 'Support', 'Technical'] as const).map(cat => (
+                                            <button
+                                                key={cat}
+                                                onClick={() => setAiParams({...aiParams, category: cat})}
+                                                className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                                                    aiParams.category === cat 
+                                                    ? 'bg-blue-50 border-blue-200 text-[#0500e2] dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300' 
+                                                    : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                                }`}
+                                            >
+                                                {cat}
+                                            </button>
+                                        ))}
                                     </div>
-                                    <textarea 
-                                        value={aiParams.topic}
-                                        onChange={(e) => setAiParams({...aiParams, topic: e.target.value})}
-                                        placeholder="e.g. A customer wants to cancel their account because it's too expensive, but I want to retain them."
-                                        className="w-full h-32 p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-[#0500e2] outline-none resize-none"
-                                    />
                                 </div>
+
+                                {/* Sales Funnel Stage (Conditional) */}
+                                {aiParams.category === 'Sales' && (
+                                    <div className="animate-in fade-in slide-in-from-top-1">
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Sales Funnel Stage</label>
+                                        <select 
+                                            value={aiParams.funnelStage}
+                                            onChange={(e) => setAiParams({...aiParams, funnelStage: e.target.value})}
+                                            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2]"
+                                        >
+                                            <option value="Prospecting">Prospecting / Cold Call</option>
+                                            <option value="Discovery">Discovery & Needs Analysis</option>
+                                            <option value="Demo">Product Demo / Presentation</option>
+                                            <option value="Objection Handling">Objection Handling</option>
+                                            <option value="Negotiation">Negotiation</option>
+                                            <option value="Closing">Closing the Deal</option>
+                                            <option value="Retention">Renewal / Retention</option>
+                                        </select>
+                                    </div>
+                                )}
+
+                                {/* Persona & Difficulty Row */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Buyer Persona</label>
+                                        <input 
+                                            type="text"
+                                            value={aiParams.persona}
+                                            onChange={(e) => setAiParams({...aiParams, persona: e.target.value})}
+                                            placeholder={aiParams.category === 'Sales' ? "e.g. Skeptical CTO" : "e.g. Confused Grandmother"}
+                                            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2]"
+                                        />
+                                    </div>
                                     <div>
                                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Difficulty</label>
                                         <select 
@@ -967,23 +1020,58 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                             onChange={(e) => setAiParams({...aiParams, difficulty: e.target.value})}
                                             className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2]"
                                         >
-                                            <option value="Beginner">Beginner</option>
-                                            <option value="Intermediate">Intermediate</option>
-                                            <option value="Advanced">Advanced</option>
+                                            <option value="Beginner">Beginner (Cooperative)</option>
+                                            <option value="Intermediate">Intermediate (Typical)</option>
+                                            <option value="Advanced">Advanced (Hostile/Complex)</option>
                                         </select>
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Category</label>
-                                        <select 
-                                            value={aiParams.category}
-                                            onChange={(e) => setAiParams({...aiParams, category: e.target.value})}
-                                            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2]"
+                                </div>
+
+                                {/* Mood Selection */}
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Buyer Mood</label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {['Curious', 'Skeptical', 'Urgent', 'Frustrated', 'Happy', 'Indifferent'].map(m => (
+                                            <button
+                                                key={m}
+                                                onClick={() => setAiParams({...aiParams, mood: m})}
+                                                className={`py-2 px-1 rounded-lg text-xs font-bold border transition-all flex flex-col items-center gap-1 ${
+                                                    aiParams.mood === m 
+                                                    ? 'bg-slate-800 text-white border-slate-800 dark:bg-white dark:text-slate-900' 
+                                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300 dark:hover:border-slate-600'
+                                                }`}
+                                            >
+                                                {m === 'Curious' && <HelpCircle size={14} />}
+                                                {m === 'Skeptical' && <Meh size={14} />}
+                                                {m === 'Urgent' && <Zap size={14} />}
+                                                {m === 'Frustrated' && <Frown size={14} />}
+                                                {m === 'Happy' && <Smile size={14} />}
+                                                {m === 'Indifferent' && <MinusCircle size={14} />}
+                                                {m}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Topic Description */}
+                                <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Topic Context</label>
+                                        <button 
+                                            onClick={handleAutoGenerateTopic}
+                                            disabled={isGeneratingTopic}
+                                            className="text-xs flex items-center gap-1.5 px-3 py-1.5 bg-[#0500e2]/10 text-[#0500e2] dark:text-[#4b53fa] dark:bg-[#4b53fa]/10 rounded-full font-bold hover:bg-[#0500e2]/20 dark:hover:bg-[#4b53fa]/20 transition-colors disabled:opacity-50"
                                         >
-                                            <option value="Support">Customer Support</option>
-                                            <option value="Sales">Sales / Upsell</option>
-                                            <option value="Technical">Technical Support</option>
-                                        </select>
+                                            {isGeneratingTopic ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                                            {isGeneratingTopic ? 'Generating...' : 'Auto-fill Topic'}
+                                        </button>
                                     </div>
+                                    <textarea 
+                                        value={aiParams.topic}
+                                        onChange={(e) => setAiParams({...aiParams, topic: e.target.value})}
+                                        placeholder="Describe the specific situation (e.g., Customer wants to upgrade but thinks the price is too high)"
+                                        className="w-full h-24 p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-[#0500e2] outline-none resize-none text-sm"
+                                    />
                                 </div>
 
                                 <button 
@@ -1530,3 +1618,4 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         </div>
     );
 };
+import { MinusCircle } from 'lucide-react';

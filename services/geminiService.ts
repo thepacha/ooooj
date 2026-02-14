@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type, Chat, LiveServerMessage, Modality } from "@google/genai";
 import { AnalysisResult, Criteria, TrainingResult, TrainingScenario } from "../types";
 import { incrementUsage, checkLimit, COSTS } from "../lib/usageService";
@@ -209,33 +208,51 @@ export const generateTrainingTopic = async (): Promise<string> => {
     return response.text?.trim() || "";
 };
 
-export const generateAIScenario = async (topic: string, category: 'Sales' | 'Support' | 'Technical', difficulty: string): Promise<Omit<TrainingScenario, 'id' | 'icon'>> => {
+export interface GenerateScenarioParams {
+    topic: string;
+    category: 'Sales' | 'Support' | 'Technical';
+    difficulty: string;
+    funnelStage?: string;
+    persona?: string;
+    mood?: string;
+}
+
+export const generateAIScenario = async (params: GenerateScenarioParams): Promise<Omit<TrainingScenario, 'id' | 'icon'>> => {
     const ai = getAI();
     const seed = Date.now().toString();
     
+    const { topic, category, difficulty, funnelStage, persona, mood } = params;
+
     const prompt = `
         Create a rich, complex training roleplay scenario for a ${category} agent.
         Random Seed: ${seed}
         
-        TOPIC/CONTEXT: ${topic}
-        DIFFICULTY LEVEL: ${difficulty}
+        CORE CONTEXT: ${topic}
+        DIFFICULTY: ${difficulty}
+        
+        ${funnelStage ? `SALES STAGE: ${funnelStage} (Ensure the customer behavior reflects this specific stage of the funnel)` : ''}
+        ${persona ? `BUYER PERSONA: ${persona}` : 'PERSONA: Create a random realistic persona'}
+        ${mood ? `CUSTOMER MOOD: ${mood}` : ''}
         
         INSTRUCTIONS:
-        1. Randomly assign a GENDER (Male or Female) to the customer persona.
+        1. Assign a GENDER and NAME suitable for the persona.
         2. Select a suitable VOICE for this persona:
            - 'Puck' (Male, Mid-range)
            - 'Charon' (Male, Deep)
            - 'Kore' (Female, Professional)
            - 'Fenrir' (Male, Authoritative)
            - 'Aoede' (Female, Soft/High)
-        3. Define "HIDDEN CONTEXT": Secrets the customer holds (e.g., they are lying, they are in a rush, they broke the item themselves).
-        4. Write a detailed System Instruction that forces the AI to stay in character.
-        5. Be creative! Do not use generic names like "John Doe". Use distinct names and professions.
-        6. Generate 5 distinct "Mission Objectives" for the agent.
+        3. Define "HIDDEN CONTEXT": Secrets the customer holds (e.g., budget constraints, hidden decision makers, technical limitations).
+        4. Write a detailed System Instruction that forces the AI to stay in character. 
+           If Sales Stage is 'Closing', make them negotiate terms.
+           If Sales Stage is 'Discovery', make them answer questions but be guarded.
+           If Mood is '${mood}', reflect that in sentence length and tone.
+        5. Be creative!
+        6. Generate 5 distinct "Mission Objectives" for the agent relevant to the ${funnelStage || 'situation'}.
         7. Generate 6 "Suggested Talk Tracks" (direct quotes/phrases).
         8. Generate 4 "Smart Openers" - effective opening lines for the agent to use in this specific scenario.
         
-        IMPORTANT: Ensure the scenario details (Name, Context, Secret) are fresh and creative, even if the topic is similar to previous requests.
+        IMPORTANT: Ensure the scenario details (Name, Context, Secret) are fresh and creative.
 
         Return JSON.
     `;

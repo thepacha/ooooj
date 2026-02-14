@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Check, X, Zap, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
+import { Check, X, Zap, ChevronDown, ChevronUp, Users, Sparkles, Shield, Globe, Brain, Info, CreditCard } from 'lucide-react';
 import { PublicNavigation } from './PublicNavigation';
 import { Footer } from './Footer';
 
@@ -23,87 +23,104 @@ export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = fal
     setOpenFaq(openFaq === index ? null : index);
   };
 
+  const calculatePrice = (basePrice: number) => {
+      return billingCycle === 'yearly' ? Math.floor(basePrice * 0.75) : basePrice;
+  };
+
   const plans = [
+    {
+      id: 'trial',
+      name: '7-Day Trial',
+      description: 'Experience the full power of Pro before you commit.',
+      price: 1,
+      period: 'one-time',
+      seats: 'Single User',
+      volume: '20 Training Sessions',
+      features: [
+        'Full Pro Feature Access',
+        '20 AI Roleplay Sessions',
+        'Advanced Analytics',
+        '8 Days Access'
+      ],
+      cta: 'Start for $1',
+      style: 'trial',
+      minSeats: 1
+    },
     {
       id: 'starter',
       name: 'Starter',
-      description: 'Perfect for small teams just getting started with QA automation.',
-      price: billingCycle === 'monthly' ? 20 : 15,
-      credits: '1,000',
+      description: 'For solo founders and individual rep practice.',
+      price: calculatePrice(20),
+      period: '/mo',
+      seats: 'Strictly 1 Seat',
+      volume: '80 Sessions / mo',
       features: [
-        '1,000 Analysis Credits / mo',
-        'Standard Transcription',
-        'Basic Sentiment Analysis',
-        '3 Team Members',
-        '7-day History Retention'
+        '80 Training Sessions/mo',
+        '15 Active Scenarios',
+        'Manual Scenario Creation',
+        'Basic Pass/Fail Analytics',
+        'Standard Neutral Voices'
       ],
-      notIncluded: [
-        'Advanced Coaching Tips',
-        'Custom Criteria Weights',
-        'API Access',
-        'Priority Support'
-      ],
-      cta: isLoggedIn ? 'Current Plan' : 'Start for Free',
-      highlight: false
+      cta: isLoggedIn ? 'Switch to Starter' : 'Choose Starter',
+      style: 'standard',
+      minSeats: 1
     },
     {
       id: 'pro',
-      name: 'Pro',
-      description: 'For growing support teams that need deeper insights and coaching.',
-      price: billingCycle === 'monthly' ? 49 : 39,
-      credits: '10,000',
+      name: 'Pro Team',
+      description: 'For sales managers and growing departments.',
+      price: calculatePrice(59),
+      period: '/seat/mo',
+      seats: 'Min 3 Seats',
+      volume: '300 Sessions / mo',
       features: [
-        '10,000 Analysis Credits / mo',
-        'High-Fidelity Transcription',
-        'Advanced Coaching & Tips',
-        'Custom Criteria & Weights',
-        'Unlimited Team Members',
-        '90-day History Retention',
-        'Export to PDF/CSV'
+        '300 Sessions/mo (per agent)',
+        '80 Active Scenarios',
+        'Shared Team Workspace',
+        'Deep Scorecards & Sentiment',
+        'Manager Oversight Dashboard'
       ],
-      notIncluded: [
-        'API Access',
-        'Dedicated Success Manager'
-      ],
-      cta: isLoggedIn ? 'Upgrade to Pro' : 'Start 14-Day Trial',
-      highlight: true
+      cta: isLoggedIn ? 'Upgrade to Pro' : 'Start Growth',
+      style: 'popular',
+      highlight: 'Most Popular',
+      minSeats: 3
     },
     {
-      id: 'scale',
-      name: 'Scale',
-      description: 'Full power for large organizations processing high volumes.',
-      price: billingCycle === 'monthly' ? 199 : 159,
-      credits: '50,000',
+      id: 'enterprise',
+      name: 'Enterprise',
+      description: 'For VPs of Sales and large contact centers.',
+      price: calculatePrice(199),
+      period: '/seat/mo',
+      seats: 'Min 5 Seats',
+      volume: 'Unlimited Sessions',
       features: [
-        '50,000 Analysis Credits / mo',
-        'Real-time API Access',
-        'Custom AI Models',
-        'SSO & Advanced Security',
-        'Unlimited History',
-        'Dedicated Success Manager',
-        'SLA Support'
+        'Unlimited Training Sessions',
+        '250+ Active Scenarios',
+        'AI Auto-Generated Scenarios',
+        'Local Dialects (Khaleeji, etc)',
+        'White-Labeled Reporting',
+        'BYOK (Bring Your Own Key)'
       ],
-      notIncluded: [],
       cta: 'Contact Sales',
-      highlight: false
+      style: 'enterprise',
+      minSeats: 5
     }
   ];
 
   const faqs = [
-    { q: "How are 'credits' calculated?", a: "Credits correspond to the complexity of the task. A standard text analysis costs 10 credits. A minute of audio transcription costs 20 credits. Chat messages cost 1 credit." },
-    { q: "Can I change plans anytime?", a: "Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately, with pro-rated billing." },
-    { q: "Is my data secure?", a: "Absolutely. We use enterprise-grade encryption for all data in transit and at rest. We do not use your customer data to train our public models." },
-    { q: "What happens if I run out of credits?", a: "We'll notify you when you reach 80% and 100% of your limit. You can purchase 'top-up' packs or upgrade to the next tier to keep analyzing without interruption." },
+    { q: "How do the seat minimums work?", a: "To ensure proper team collaboration features, Pro Team requires a minimum of 3 seats ($177/mo base), and Enterprise requires 5 seats. You can add more seats at the per-agent rate anytime." },
+    { q: "What happens if I run out of training sessions?", a: "No problem. All plans allow for Credit Top-Ups. You can purchase bundles of 25 additional training sessions for just $10, which never expire." },
+    { q: "Can I upgrade from Starter to Pro later?", a: "Absolutely. All your custom scenarios and training history will migrate seamlessly to the Team Workspace when you upgrade." },
+    { q: "How does the $1 Trial work?", a: "You get 8 days of access with a specific allowance of 20 training sessions. This gives you enough runway to test the AI realism and see the analytics engine in action." },
   ];
 
   return (
     <div className={`animate-fade-in ${onBack ? 'min-h-screen bg-slate-50 dark:bg-slate-950' : ''}`}>
       
-      {/* Header */}
       {onBack && (
         <PublicNavigation 
             onLanding={onBack}
-            onPricing={() => {}} // Already here
+            onPricing={() => {}} 
             onLogin={onLogin} 
             onSignup={onSignup}
             activePage="pricing"
@@ -111,90 +128,118 @@ export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = fal
       )}
 
       <div className={`py-12 md:py-20 pt-24 md:pt-32 ${onBack ? 'px-6' : ''}`}>
+        
         {/* Header Content */}
-        <div className="max-w-3xl mx-auto text-center mb-16 px-4">
-            <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 dark:text-white mb-6">
-            Simple, transparent pricing
+        <div className="max-w-4xl mx-auto text-center mb-16 px-4">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-[#0500e2] dark:text-indigo-300 text-xs font-bold uppercase tracking-wider mb-6 border border-indigo-100 dark:border-indigo-800">
+                <Sparkles size={14} /> World-Class Training Infrastructure
+            </div>
+            <h2 className="text-4xl md:text-6xl font-serif font-bold text-slate-900 dark:text-white mb-6 leading-tight">
+                Plans that scale with your<br className="hidden md:block" /> <span className="text-[#0500e2]">performance culture.</span>
             </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-10">
-            Choose the plan that fits your team's volume. No hidden fees, cancel anytime.
+            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+                From solo practice to global contact centers. Choose the capacity that fits your team's ambition.
             </p>
 
             {/* Toggle */}
-            <div className="flex items-center justify-center gap-4 mb-12">
-                <span className={`text-sm font-bold ${billingCycle === 'monthly' ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>Monthly</span>
+            <div className="flex items-center justify-center gap-6 mb-12 bg-white dark:bg-slate-900 p-2 rounded-full shadow-sm border border-slate-200 dark:border-slate-800 w-fit mx-auto">
                 <button 
-                    onClick={() => setBillingCycle(prev => prev === 'monthly' ? 'yearly' : 'monthly')}
-                    className="w-16 h-8 bg-slate-200 dark:bg-slate-700 rounded-full p-1 relative transition-colors duration-300 focus:outline-none"
+                    onClick={() => setBillingCycle('monthly')}
+                    className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${billingCycle === 'monthly' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
                 >
-                    <div className={`w-6 h-6 bg-[#0500e2] rounded-full shadow-md transform transition-transform duration-300 ${billingCycle === 'yearly' ? 'translate-x-8' : 'translate-x-0'}`}></div>
+                    Monthly Billing
                 </button>
-                <span className={`text-sm font-bold ${billingCycle === 'yearly' ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>
-                    Yearly <span className="text-[#0500e2] text-xs ml-1 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">Save 25%</span>
-                </span>
+                <button 
+                    onClick={() => setBillingCycle('yearly')}
+                    className={`px-6 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-2 ${billingCycle === 'yearly' ? 'bg-[#0500e2] text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
+                >
+                    Yearly Billing <span className="bg-white/20 text-white text-[10px] px-2 py-0.5 rounded-full">Save 25%</span>
+                </button>
+            </div>
+            
+            {/* Volume Discount Banner */}
+            <div className="max-w-md mx-auto bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-xl p-3 flex items-center justify-center gap-2 text-emerald-700 dark:text-emerald-400 text-sm font-medium mb-12">
+                <Users size={16} /> 
+                <span>Need 30+ seats?</span> 
+                <span className="font-bold underline cursor-pointer">Get an additional 10% volume discount.</span>
             </div>
         </div>
 
-        {/* Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto px-4 mb-24">
+        {/* Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 max-w-[1400px] mx-auto px-4 mb-24 items-start">
             {plans.map((plan) => (
                 <div 
                     key={plan.id}
-                    className={`relative flex flex-col p-8 rounded-[2rem] border transition-all duration-300 hover:-translate-y-2 ${
-                        plan.highlight 
-                        ? 'bg-slate-900 dark:bg-slate-800 text-white border-slate-800 dark:border-indigo-500/30 shadow-2xl shadow-blue-900/20 z-10 scale-105 md:scale-110 ring-1 ring-white/10' 
-                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-xl hover:shadow-2xl'
+                    className={`relative flex flex-col p-6 rounded-[2rem] border transition-all duration-300 hover:-translate-y-2 h-full ${
+                        plan.style === 'enterprise'
+                        ? 'bg-slate-900 text-white border-slate-800 shadow-2xl shadow-slate-900/20' 
+                        : plan.style === 'popular'
+                        ? 'bg-white dark:bg-slate-900 border-[#0500e2] dark:border-[#4b53fa] shadow-xl shadow-blue-900/10 ring-1 ring-[#0500e2]/20 scale-105 z-10'
+                        : plan.style === 'trial'
+                        ? 'bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950 border-slate-200 dark:border-slate-800'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-lg'
                     }`}
                 >
                     {plan.highlight && (
-                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
-                            Most Popular
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#0500e2] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
+                            {plan.highlight}
                         </div>
                     )}
 
-                    <div className="mb-8">
-                        <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-                        <p className={`text-sm ${plan.highlight ? 'text-slate-300' : 'text-slate-500 dark:text-slate-400'} min-h-[40px]`}>
+                    <div className="mb-6">
+                        <h3 className={`text-xl font-bold mb-2 ${plan.style === 'enterprise' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{plan.name}</h3>
+                        <p className={`text-xs leading-relaxed min-h-[40px] ${plan.style === 'enterprise' ? 'text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}>
                             {plan.description}
                         </p>
                     </div>
 
-                    <div className="mb-8">
+                    <div className="mb-6 pb-6 border-b border-slate-100 dark:border-slate-800/50">
                         <div className="flex items-baseline gap-1">
                             <span className="text-4xl font-serif font-bold">${plan.price}</span>
-                            <span className={`text-sm font-medium ${plan.highlight ? 'text-slate-400' : 'text-slate-500'}`}>/month</span>
+                            {plan.period !== 'one-time' && (
+                                <span className={`text-xs font-bold ${plan.style === 'enterprise' ? 'text-slate-500' : 'text-slate-400'}`}>{plan.period}</span>
+                            )}
                         </div>
-                        {billingCycle === 'yearly' && plan.price > 0 && (
-                            <p className="text-xs text-green-400 mt-2 font-medium">Billed ${plan.price * 12} yearly</p>
+                        {plan.minSeats > 1 ? (
+                            <p className={`text-[10px] font-medium mt-2 ${plan.style === 'enterprise' ? 'text-indigo-300' : 'text-[#0500e2] dark:text-[#4b53fa]'}`}>
+                                Starts at ${plan.price * plan.minSeats}/mo ({plan.minSeats} seats)
+                            </p>
+                        ) : (
+                            <p className="text-[10px] text-transparent mt-2 select-none">Single User</p>
                         )}
+                        <div className={`mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold w-full ${
+                            plan.style === 'enterprise' ? 'bg-white/10 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                        }`}>
+                            <Zap size={14} className={plan.style === 'enterprise' ? 'text-yellow-400' : 'text-[#0500e2]'} />
+                            {plan.volume}
+                        </div>
                     </div>
 
-                    <div className="flex-1 space-y-4 mb-8">
-                        <div className={`flex items-center gap-3 p-3 rounded-xl ${plan.highlight ? 'bg-white/10' : 'bg-blue-50 dark:bg-blue-900/20'}`}>
-                            <Zap size={18} className={plan.highlight ? 'text-yellow-400' : 'text-[#0500e2]'} fill="currentColor" />
-                            <span className="font-bold text-sm">{plan.credits} Credits</span>
-                        </div>
-
+                    <div className="flex-1 space-y-3 mb-8">
+                        <p className={`text-[10px] font-bold uppercase tracking-wider mb-3 ${plan.style === 'enterprise' ? 'text-slate-500' : 'text-slate-400'}`}>
+                            Includes:
+                        </p>
                         {plan.features.map((feature, i) => (
                             <div key={i} className="flex items-start gap-3">
-                                <Check size={18} className={`shrink-0 mt-0.5 ${plan.highlight ? 'text-green-400' : 'text-green-600 dark:text-green-500'}`} />
-                                <span className="text-sm font-medium">{feature}</span>
-                            </div>
-                        ))}
-                        
-                        {plan.notIncluded.map((feature, i) => (
-                            <div key={i} className="flex items-start gap-3 opacity-50">
-                                <X size={18} className="shrink-0 mt-0.5" />
-                                <span className="text-sm">{feature}</span>
+                                <Check size={16} className={`shrink-0 mt-0.5 ${
+                                    plan.style === 'enterprise' ? 'text-emerald-400' : 
+                                    plan.style === 'popular' ? 'text-[#0500e2]' : 
+                                    'text-slate-400'
+                                }`} />
+                                <span className={`text-xs font-medium ${plan.style === 'enterprise' ? 'text-slate-300' : 'text-slate-600 dark:text-slate-300'}`}>{feature}</span>
                             </div>
                         ))}
                     </div>
 
                     <button
                         onClick={() => onPlanSelect && onPlanSelect(plan.id)}
-                        className={`w-full py-4 rounded-xl font-bold text-sm transition-all ${
-                            plan.highlight
+                        className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all ${
+                            plan.style === 'enterprise'
+                            ? 'bg-white text-slate-900 hover:bg-slate-100'
+                            : plan.style === 'popular'
                             ? 'bg-[#0500e2] hover:bg-[#0400c0] text-white shadow-lg shadow-blue-600/30'
+                            : plan.style === 'trial' 
+                            ? 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200'
                             : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white'
                         }`}
                     >
@@ -205,38 +250,82 @@ export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = fal
         </div>
 
         {/* Comparison Table */}
-        <div className="max-w-5xl mx-auto px-6 mb-24 hidden md:block">
-            <h3 className="text-2xl font-bold text-center mb-10 text-slate-900 dark:text-white">Feature Comparison</h3>
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+        <div className="max-w-6xl mx-auto px-6 mb-24 hidden lg:block">
+            <h3 className="text-2xl font-bold text-center mb-10 text-slate-900 dark:text-white">Detailed Capability Matrix</h3>
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
                 <table className="w-full">
                     <thead className="bg-slate-50 dark:bg-slate-950">
                         <tr>
-                            <th className="p-6 text-left text-sm font-semibold text-slate-500 dark:text-slate-400">Features</th>
-                            <th className="p-6 text-center text-sm font-bold text-slate-900 dark:text-white">Starter</th>
-                            <th className="p-6 text-center text-sm font-bold text-[#0500e2]">Pro</th>
-                            <th className="p-6 text-center text-sm font-bold text-slate-900 dark:text-white">Scale</th>
+                            <th className="p-6 text-left text-sm font-bold text-slate-900 dark:text-white w-1/4">Features</th>
+                            <th className="p-6 text-center text-sm font-semibold text-slate-600 dark:text-slate-400 w-1/5">Starter</th>
+                            <th className="p-6 text-center text-sm font-bold text-[#0500e2] w-1/5 bg-blue-50/50 dark:bg-blue-900/10">Pro Team</th>
+                            <th className="p-6 text-center text-sm font-bold text-slate-900 dark:text-white w-1/5">Enterprise</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+                        {/* Usage & Limits */}
+                        <tr className="bg-slate-50/50 dark:bg-slate-900/50">
+                            <td colSpan={4} className="p-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-wider">Usage & Capacity</td>
+                        </tr>
                         {[
-                            { name: 'Analysis Credits', s: '1,000', p: '10,000', e: '50,000+' },
-                            { name: 'Team Members', s: '3', p: 'Unlimited', e: 'Unlimited' },
-                            { name: 'History Retention', s: '7 Days', p: '90 Days', e: 'Unlimited' },
-                            { name: 'Data Export', s: false, p: true, e: true },
-                            { name: 'Custom AI Criteria', s: false, p: true, e: true },
-                            { name: 'API Access', s: false, p: false, e: true },
-                            { name: 'SSO (SAML)', s: false, p: false, e: true },
-                            { name: 'Support', s: 'Email', p: 'Priority Email', e: 'Dedicated Slack' },
+                            { name: 'Training Sessions', s: '80 / mo', p: '300 / mo', e: 'Unlimited' },
+                            { name: 'Active Scenarios', s: '15 Max', p: '80 Max', e: '250 Max' },
+                            { name: 'Seat Minimum', s: '1 Seat', p: '3 Seats', e: '5 Seats' },
+                            { name: 'History Retention', s: '30 Days', p: '1 Year', e: 'Unlimited' },
                         ].map((row, i) => (
-                            <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                                <td className="p-6 text-sm font-medium text-slate-700 dark:text-slate-300">{row.name}</td>
-                                <td className="p-6 text-center text-sm text-slate-600 dark:text-slate-400">
+                            <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                                <td className="p-5 px-6 font-medium text-slate-700 dark:text-slate-300">{row.name}</td>
+                                <td className="p-5 text-center text-slate-500 dark:text-slate-400">{row.s}</td>
+                                <td className="p-5 text-center font-bold text-slate-900 dark:text-white bg-blue-50/30 dark:bg-blue-900/5">{row.p}</td>
+                                <td className="p-5 text-center font-bold text-slate-900 dark:text-white">{row.e}</td>
+                            </tr>
+                        ))}
+
+                        {/* AI Intelligence */}
+                        <tr className="bg-slate-50/50 dark:bg-slate-900/50">
+                            <td colSpan={4} className="p-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-wider">AI Intelligence</td>
+                        </tr>
+                        {[
+                            { name: 'Scenario Creation', s: 'Manual Builder', p: 'Manual Builder', e: 'AI Auto-Generation' },
+                            { name: 'Voice Reality', s: 'Standard Neural', p: 'Standard Neural', e: 'Local Dialects & Accents' },
+                            { name: 'Analytics Depth', s: 'Pass/Fail', p: 'Deep Scorecards', e: 'Macro Trend Analysis' },
+                            { name: 'BYOK (Own LLM Key)', s: false, p: false, e: true },
+                        ].map((row, i) => (
+                            <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                                <td className="p-5 px-6 font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                    {row.name} {row.name === 'BYOK (Own LLM Key)' && <Info size={14} className="text-slate-400" />}
+                                </td>
+                                <td className="p-5 text-center text-slate-500 dark:text-slate-400">
                                     {typeof row.s === 'boolean' ? (row.s ? <Check size={18} className="mx-auto text-green-500"/> : <X size={18} className="mx-auto text-slate-300"/>) : row.s}
                                 </td>
-                                <td className="p-6 text-center text-sm font-bold text-[#0500e2] bg-blue-50/30 dark:bg-blue-900/10">
+                                <td className="p-5 text-center font-bold text-slate-900 dark:text-white bg-blue-50/30 dark:bg-blue-900/5">
                                     {typeof row.p === 'boolean' ? (row.p ? <Check size={18} className="mx-auto text-green-500"/> : <X size={18} className="mx-auto text-slate-300"/>) : row.p}
                                 </td>
-                                <td className="p-6 text-center text-sm text-slate-600 dark:text-slate-400">
+                                <td className="p-5 text-center font-bold text-slate-900 dark:text-white">
+                                    {typeof row.e === 'boolean' ? (row.e ? <Check size={18} className="mx-auto text-green-500"/> : <X size={18} className="mx-auto text-slate-300"/>) : row.e}
+                                </td>
+                            </tr>
+                        ))}
+
+                        {/* Admin & Security */}
+                        <tr className="bg-slate-50/50 dark:bg-slate-900/50">
+                            <td colSpan={4} className="p-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-wider">Workspace & Control</td>
+                        </tr>
+                        {[
+                            { name: 'Collaboration', s: 'Single Player', p: 'Shared Workspace', e: 'Shared Workspace' },
+                            { name: 'Role Management', s: false, p: true, e: true },
+                            { name: 'White-Label Reports', s: false, p: false, e: true },
+                            { name: 'SSO & SAML', s: false, p: false, e: true },
+                        ].map((row, i) => (
+                            <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                                <td className="p-5 px-6 font-medium text-slate-700 dark:text-slate-300">{row.name}</td>
+                                <td className="p-5 text-center text-slate-500 dark:text-slate-400">
+                                    {typeof row.s === 'boolean' ? (row.s ? <Check size={18} className="mx-auto text-green-500"/> : <X size={18} className="mx-auto text-slate-300"/>) : row.s}
+                                </td>
+                                <td className="p-5 text-center font-bold text-slate-900 dark:text-white bg-blue-50/30 dark:bg-blue-900/5">
+                                    {typeof row.p === 'boolean' ? (row.p ? <Check size={18} className="mx-auto text-green-500"/> : <X size={18} className="mx-auto text-slate-300"/>) : row.p}
+                                </td>
+                                <td className="p-5 text-center font-bold text-slate-900 dark:text-white">
                                     {typeof row.e === 'boolean' ? (row.e ? <Check size={18} className="mx-auto text-green-500"/> : <X size={18} className="mx-auto text-slate-300"/>) : row.e}
                                 </td>
                             </tr>

@@ -39,7 +39,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
   const lowScores = history.filter(h => h.overallScore < 75).length;
   const highScores = history.filter(h => h.overallScore >= 90).length;
 
-  const recentTrendData = [...history].reverse().slice(-10).map((h, i) => ({
+  // Updated to show last 50 evaluations
+  const recentTrendData = [...history].reverse().slice(-50).map((h, i) => ({
     name: `Eval ${i + 1}`,
     score: h.overallScore,
     agent: h.agentName,
@@ -192,6 +193,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
                     tickLine={false} 
                     tick={{ fill: '#94a3b8', fontSize: 12 }} 
                     dy={10}
+                    interval="preserveStartEnd"
                 />
                 <YAxis 
                     domain={[0, 100]} 
