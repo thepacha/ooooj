@@ -1,8 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { TrainingScenario, TrainingResult, User, AnalysisResult, CriteriaResult } from '../types';
-import { createTrainingSession, evaluateTrainingSession, connectLiveTraining, generateAIScenario, generateTrainingTopic, generateTrainingBatch, GenerateScenarioParams } from '../services/geminiService';
-import { Shield, TrendingUp, Wrench, ArrowRight, RefreshCw, CheckCircle, Loader2, Send, Phone, PhoneOff, MessageSquare, Copy, Check, Plus, Sparkles, X, Calendar, Trash2, AlertTriangle, Shuffle, HelpCircle, Heart, Zap, Trophy, Target, Frown, Meh, Smile } from 'lucide-react';
+import { createTrainingSession, evaluateTrainingSession, connectLiveTraining, generateAIScenario, generateTrainingTopic, GenerateScenarioParams } from '../services/geminiService';
+import { Shield, TrendingUp, Wrench, ArrowRight, RefreshCw, CheckCircle, Loader2, Send, Phone, PhoneOff, MessageSquare, Copy, Check, Plus, Sparkles, X, Calendar, Trash2, AlertTriangle, Shuffle, HelpCircle, Heart, Zap, Trophy, Target, Frown, Meh, Smile, MinusCircle } from 'lucide-react';
 import { incrementUsage, COSTS, checkLimit } from '../lib/usageService';
 import { generateId } from '../lib/utils';
 import { supabase } from '../lib/supabase';
@@ -289,11 +289,12 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     const [result, setResult] = useState<TrainingResult | null>(null);
     const [mode, setMode] = useState<'text' | 'voice'>('text');
     const [isCopied, setIsCopied] = useState(false);
-    const [customScenarios, setCustomScenarios] = useState<TrainingScenario[]>([]);
-    const [staticScenarios, setStaticScenarios] = useState<TrainingScenario[]>([]);
+    
+    // Combined Scenario State
+    const [scenarios, setScenarios] = useState<TrainingScenario[]>([]);
+    
     const [isLoadingScenarios, setIsLoadingScenarios] = useState(false);
     const [connectionError, setConnectionError] = useState<string | null>(null);
-    const [isRefreshing, setIsRefreshing] = useState(false);
     const [regeneratingIds, setRegeneratingIds] = useState<Set<string>>(new Set());
 
     // Creation State
@@ -329,28 +330,28 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     const wordCount = input.trim() === '' ? 0 : input.trim().split(/\s+/).length;
     const isOverLimit = wordCount > 24;
 
-    // Load dynamic scenarios on mount
+    // Load Scenarios Logic
     useEffect(() => {
-        setStaticScenarios(generateDynamicScenarios());
-    }, []);
+        if (!user) {
+            // Guest mode: Generate local scenarios each time (no persistence)
+            setScenarios(generateDynamicScenarios());
+            return;
+        }
 
-    // Fetch custom scenarios from Supabase
-    useEffect(() => {
-        if (!user) return;
-
-        const fetchScenarios = async () => {
+        const fetchAndSeedScenarios = async () => {
             setIsLoadingScenarios(true);
             try {
+                // 1. Fetch existing scenarios from DB
                 const { data, error } = await supabase
                     .from('scenarios')
                     .select('*')
                     .eq('user_id', user.id)
                     .order('created_at', { ascending: false });
 
-                // Ignore if table doesn't exist yet
+                // Ignore if table doesn't exist yet (handled gracefully)
                 if (error && error.code !== '42P01') throw error;
 
-                if (data) {
+                if (data && data.length > 0) {
                     const mapped: TrainingScenario[] = data.map(s => ({
                         id: s.id,
                         title: s.title,
@@ -360,23 +361,52 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         icon: s.icon as any,
                         initialMessage: s.initial_message,
                         systemInstruction: s.system_instruction,
-                        // Attempt to load voice/openers if columns exist (graceful degradation)
                         voice: (s.voice || getRandom(VOICES)) as any, 
                         objectives: s.objectives || [],
                         talkTracks: s.talk_tracks || [],
                         openers: s.openers || []
                     }));
-                    setCustomScenarios(mapped);
+                    setScenarios(mapped);
+                } else {
+                    // 2. If empty, generate seed scenarios and save to DB
+                    console.log("Seeding initial scenarios for user...");
+                    const seedBatch = generateDynamicScenarios();
+                    await saveScenariosToDb(seedBatch, user.id);
+                    setScenarios(seedBatch);
                 }
             } catch (e) {
-                console.error("Error loading scenarios:", e);
+                console.error("Error loading/seeding scenarios:", e);
+                // Fallback to local if DB fails
+                setScenarios(generateDynamicScenarios());
             } finally {
                 setIsLoadingScenarios(false);
             }
         };
 
-        fetchScenarios();
+        fetchAndSeedScenarios();
     }, [user]);
+
+    // Helper to bulk save scenarios
+    const saveScenariosToDb = async (newScenarios: TrainingScenario[], userId: string) => {
+        const records = newScenarios.map(s => ({
+            id: s.id,
+            user_id: userId,
+            title: s.title,
+            description: s.description,
+            difficulty: s.difficulty,
+            category: s.category,
+            icon: s.icon,
+            initial_message: s.initialMessage,
+            system_instruction: s.systemInstruction,
+            objectives: s.objectives,
+            talk_tracks: s.talkTracks,
+            openers: s.openers,
+            voice: s.voice
+        }));
+        
+        const { error } = await supabase.from('scenarios').insert(records);
+        if (error) console.error("Failed to save scenarios to DB:", error);
+    };
 
     // Scroll to bottom of chat
     useEffect(() => {
@@ -390,34 +420,6 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         }
     }, []);
 
-    const handleRefreshScenarios = async () => {
-        setIsRefreshing(true);
-        // Small delay for visual feedback of the spin animation
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        try {
-            // Attempt AI Generation first for better variety
-            const newBatch = await generateTrainingBatch();
-            
-            // Map generic icon if missing, add IDs
-            const withIds = newBatch.map(s => ({
-                ...s, 
-                id: generateId(), 
-                icon: (s.category === 'Sales' ? 'TrendingUp' : s.category === 'Technical' ? 'Wrench' : 'Shield') as any
-            }));
-            
-            setStaticScenarios(withIds as any);
-        } catch (e) {
-            console.warn("AI generation failed, falling back to procedural", e);
-            // Fallback to procedural generation if AI fails or quota limits hit
-            // Force a new set of scenarios by calling generator again which uses fresh math.random
-            const newProcedural = generateDynamicScenarios();
-            setStaticScenarios(newProcedural);
-        } finally {
-            setIsRefreshing(false);
-        }
-    };
-
     const handleRegenerateCustomScenario = async (scenario: TrainingScenario, e: React.MouseEvent) => {
         e.stopPropagation();
         if (regeneratingIds.has(scenario.id)) return;
@@ -426,7 +428,6 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
 
         try {
             // Use the title as the topic context to keep the theme but change the persona details
-            // We default to existing props if available in scenario object, otherwise defaults
             const newVersion = await generateAIScenario({
                 topic: scenario.title,
                 category: scenario.category,
@@ -436,7 +437,6 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                 mood: ''
             });
             
-            // Map back to DB structure
             const updates = {
                 description: newVersion.description,
                 initial_message: newVersion.initialMessage,
@@ -456,7 +456,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                 if (error) throw error;
             }
 
-            setCustomScenarios(prev => prev.map(s => 
+            setScenarios(prev => prev.map(s => 
                 s.id === scenario.id 
                 ? { ...s, ...newVersion } 
                 : s
@@ -473,13 +473,10 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
             });
         }
     };
-
-    const allScenarios = [...customScenarios, ...staticScenarios];
     
     // Gamification Calculations
     const trainingHistory = history.filter(h => h.customerName?.startsWith('Roleplay:') || h.summary?.startsWith('Training Session'));
     const totalAttempts = trainingHistory.length;
-    // Calculate XP: Base score * 10 + 50 bonus per session completed
     const totalXP = trainingHistory.reduce((acc, curr) => acc + (curr.overallScore * 10) + 50, 0);
 
     // 1. Initial selection: Shows the briefing
@@ -785,30 +782,10 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
             };
 
             if (user) {
-                // Try/Catch for robustness if columns don't exist yet
-                try {
-                    const { error } = await supabase.from('scenarios').insert({
-                        id: newScenario.id,
-                        user_id: user.id,
-                        title: newScenario.title,
-                        description: newScenario.description,
-                        difficulty: newScenario.difficulty,
-                        category: newScenario.category,
-                        icon: newScenario.icon,
-                        initial_message: newScenario.initialMessage,
-                        system_instruction: newScenario.systemInstruction,
-                        objectives: newScenario.objectives,
-                        talk_tracks: newScenario.talkTracks,
-                        openers: newScenario.openers, 
-                        voice: newScenario.voice
-                    });
-                    if (error) throw error;
-                } catch (dbError) {
-                    // Fallback handled silently
-                }
+                await saveScenariosToDb([newScenario], user.id);
             }
 
-            setCustomScenarios(prev => [newScenario, ...prev]); 
+            setScenarios(prev => [newScenario, ...prev]); 
             setView('list');
         } catch (e) {
             console.error(e);
@@ -877,24 +854,10 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         };
 
         if (user) {
-            await supabase.from('scenarios').insert({
-                id: newScenario.id,
-                user_id: user.id,
-                title: newScenario.title,
-                description: newScenario.description,
-                difficulty: newScenario.difficulty,
-                category: newScenario.category,
-                icon: newScenario.icon,
-                initial_message: newScenario.initialMessage,
-                system_instruction: newScenario.systemInstruction,
-                objectives: newScenario.objectives,
-                talk_tracks: newScenario.talkTracks,
-                openers: newScenario.openers,
-                voice: newScenario.voice
-            });
+            await saveScenariosToDb([newScenario], user.id);
         }
 
-        setCustomScenarios(prev => [newScenario, ...prev]);
+        setScenarios(prev => [newScenario, ...prev]);
         setView('list');
     }
 
@@ -903,7 +866,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         if (!user) return;
         if (!window.confirm("Delete this scenario?")) return;
 
-        setCustomScenarios(prev => prev.filter(s => s.id !== id));
+        setScenarios(prev => prev.filter(s => s.id !== id));
 
         const { error } = await supabase.from('scenarios').delete().eq('id', id);
         if (error) {
@@ -1391,14 +1354,6 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                             >
                                 <Plus size={18} /> Create Custom Scenario
                             </button>
-                            <button 
-                                onClick={handleRefreshScenarios}
-                                disabled={isRefreshing}
-                                className="px-6 py-3.5 bg-white/10 border border-white/20 text-white rounded-xl font-bold hover:bg-white/20 transition-all flex items-center gap-2 backdrop-blur-sm"
-                            >
-                                <RefreshCw size={18} className={isRefreshing ? "animate-spin" : ""} />
-                                {isRefreshing ? "Generating..." : "Regenerate Personas"}
-                            </button>
                         </div>
                     </div>
 
@@ -1469,10 +1424,9 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         </div>
                     )}
 
-                    {!isLoadingScenarios && allScenarios.map((scenario) => {
+                    {!isLoadingScenarios && scenarios.map((scenario) => {
                         const Icon = scenario.icon === 'TrendingUp' ? TrendingUp : scenario.icon === 'Wrench' ? Wrench : Shield;
-                        const isCustom = customScenarios.some(s => s.id === scenario.id);
-
+                        
                         return (
                             <div key={scenario.id} className="group relative flex flex-col h-full bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-blue-100 dark:hover:border-blue-900/30 transition-all duration-300 overflow-hidden">
                                 
@@ -1494,26 +1448,24 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                             <Icon size={26} strokeWidth={2} />
                                         </div>
 
-                                        {/* Actions (Custom) */}
-                                        {isCustom && (
-                                            <div className="flex items-center gap-1">
-                                                <button 
-                                                    onClick={(e) => handleRegenerateCustomScenario(scenario, e)}
-                                                    disabled={regeneratingIds.has(scenario.id)}
-                                                    className="p-2.5 text-slate-400 hover:text-[#0500e2] hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all"
-                                                    title="Regenerate Persona Details"
-                                                >
-                                                    <RefreshCw size={18} className={regeneratingIds.has(scenario.id) ? "animate-spin text-[#0500e2]" : ""} />
-                                                </button>
-                                                <button 
-                                                    onClick={(e) => handleDeleteScenario(scenario.id, e)}
-                                                    className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
-                                                    title="Delete Scenario"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            </div>
-                                        )}
+                                        {/* Actions */}
+                                        <div className="flex items-center gap-1">
+                                            <button 
+                                                onClick={(e) => handleRegenerateCustomScenario(scenario, e)}
+                                                disabled={regeneratingIds.has(scenario.id)}
+                                                className="p-2.5 text-slate-400 hover:text-[#0500e2] hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all group/regen relative"
+                                                title="Regenerate this specific scenario (keeps topic, changes details)"
+                                            >
+                                                <RefreshCw size={18} className={regeneratingIds.has(scenario.id) ? "animate-spin text-[#0500e2]" : ""} />
+                                            </button>
+                                            <button 
+                                                onClick={(e) => handleDeleteScenario(scenario.id, e)}
+                                                className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
+                                                title="Delete Scenario"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-[#0500e2] transition-colors line-clamp-1">
@@ -1618,4 +1570,3 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         </div>
     );
 };
-import { MinusCircle } from 'lucide-react';
