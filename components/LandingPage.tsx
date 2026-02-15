@@ -55,11 +55,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                     <span className="text-xs font-bold text-[#0500e2] uppercase tracking-widest">{t('landing.hero.badge')}</span>
                 </div>
 
-                <h1 className="text-3xl sm:text-4xl lg:text-4xl xl:text-5xl font-bold text-slate-900 dark:text-white tracking-tight mb-6 leading-tight">
+                <h1 className="text-2xl sm:text-4xl lg:text-4xl xl:text-5xl font-bold text-slate-900 dark:text-white tracking-tight mb-6 leading-tight">
                     {t('landing.hero.prefix' as any)} <br />
                     <span 
                       key={wordIndex} 
-                      className="text-[#0500e2] inline-block animate-slide-up-fade text-3xl sm:text-4xl lg:text-4xl xl:text-5xl font-extrabold whitespace-nowrap"
+                      className="text-[#0500e2] inline-block animate-slide-up-fade text-2xl sm:text-4xl lg:text-4xl xl:text-5xl font-extrabold sm:whitespace-nowrap"
                     >
                       {rotatingWords[wordIndex]}
                     </span>
