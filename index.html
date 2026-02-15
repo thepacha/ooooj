@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -32,6 +33,7 @@
             animation: {
               'fade-in': 'fade-in 0.3s ease-out forwards',
               'fade-in-up': 'fade-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+              'slide-up-fade': 'slide-up-fade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
             }
           }
         }
@@ -97,6 +99,11 @@
       }
       .animate-fade-in-up {
         animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      @keyframes slide-up-fade {
+        0% { opacity: 0; transform: translateY(20px); }
+        100% { opacity: 1; transform: translateY(0); }
       }
 
       /* Star Border Animation */

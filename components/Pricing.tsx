@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Check, X, Zap, ChevronDown, ChevronUp, Users, Sparkles, Shield, Globe, Brain, Info, CreditCard, Star, ArrowRight, Crown } from 'lucide-react';
 import { PublicNavigation } from './PublicNavigation';
 import { Footer } from './Footer';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface PricingProps {
   onPlanSelect?: (plan: string) => void;
@@ -18,6 +19,7 @@ interface PricingProps {
 export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = false, onBack, onLogin, onSignup, onTermsClick, onPrivacyClick, onRefundClick }) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const { t, isRTL } = useLanguage();
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -30,98 +32,101 @@ export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = fal
   const plans = [
     {
       id: 'trial',
-      name: '7-Day Access',
-      subtitle: 'Test Drive',
-      description: 'Full access to Pro features to test the AI capabilities.',
+      name: t('pricing.plans.trial.name'),
+      subtitle: t('pricing.plans.trial.subtitle'),
+      description: t('pricing.plans.trial.desc'),
       price: 1,
       period: 'one-time',
-      seats: 'Single User',
-      volume: '20 Sessions Total',
+      seats: t('pricing.plans.trial.seats'),
+      volume: t('pricing.plans.trial.volume'),
       features: [
-        'Full Pro Feature Access',
-        '20 AI Roleplay Sessions',
-        'Advanced Analytics',
-        'Priority Support Included',
-        '8 Days Access'
+        t('pricing.plans.trial.features.0'),
+        t('pricing.plans.trial.features.1'),
+        t('pricing.plans.trial.features.2'),
+        t('pricing.plans.trial.features.3'),
+        t('pricing.plans.trial.features.4')
       ],
-      cta: 'Start Trial for $1',
+      cta: t('pricing.plans.trial.cta'),
       style: 'trial',
       minSeats: 1
     },
     {
       id: 'starter',
-      name: 'Starter',
-      subtitle: 'For Individuals',
-      description: 'Perfect for solo founders and individual rep practice.',
+      name: t('pricing.plans.starter.name'),
+      subtitle: t('pricing.plans.starter.subtitle'),
+      description: t('pricing.plans.starter.desc'),
       price: calculatePrice(20),
       period: '/mo',
-      seats: '1 Seat',
-      volume: '80 Sessions / mo',
+      seats: t('pricing.plans.starter.seats'),
+      volume: t('pricing.plans.starter.volume'),
       features: [
-        '80 Training Sessions/mo',
-        '15 Active Scenarios',
-        'Manual Scenario Creation',
-        'Basic Pass/Fail Analytics',
-        'Priority Support Included'
+        t('pricing.plans.starter.features.0'),
+        t('pricing.plans.starter.features.1'),
+        t('pricing.plans.starter.features.2'),
+        t('pricing.plans.starter.features.3'),
+        t('pricing.plans.starter.features.4')
       ],
-      cta: isLoggedIn ? 'Switch to Starter' : 'Choose Starter',
+      cta: isLoggedIn ? t('pricing.plans.starter.cta_logged_in') : t('pricing.plans.starter.cta_logged_out'),
       style: 'standard',
       minSeats: 1
     },
     {
       id: 'pro',
-      name: 'Pro Team',
-      subtitle: 'Most Popular',
-      description: 'For growing sales teams and support departments.',
+      name: t('pricing.plans.pro.name'),
+      subtitle: t('pricing.plans.pro.subtitle'),
+      description: t('pricing.plans.pro.desc'),
       price: calculatePrice(59),
       period: '/seat/mo',
-      seats: 'Min 3 Seats',
-      volume: '300 Sessions / mo',
+      seats: t('pricing.plans.pro.seats'),
+      volume: t('pricing.plans.pro.volume'),
       features: [
-        '300 Sessions/mo (per agent)',
-        '80 Active Scenarios',
-        'Shared Team Workspace',
-        'Deep Scorecards & Sentiment',
-        'Manager Oversight Dashboard',
-        'Priority Support Included'
+        t('pricing.plans.pro.features.0'),
+        t('pricing.plans.pro.features.1'),
+        t('pricing.plans.pro.features.2'),
+        t('pricing.plans.pro.features.3'),
+        t('pricing.plans.pro.features.4'),
+        t('pricing.plans.pro.features.5')
       ],
-      cta: isLoggedIn ? 'Upgrade to Pro' : 'Start Scaling',
+      cta: isLoggedIn ? t('pricing.plans.pro.cta_logged_in') : t('pricing.plans.pro.cta_logged_out'),
       style: 'popular',
       highlight: true,
       minSeats: 3
     },
     {
       id: 'enterprise',
-      name: 'Enterprise',
-      subtitle: 'For Organizations',
-      description: 'Maximum power for large contact centers.',
+      name: t('pricing.plans.enterprise.name'),
+      subtitle: t('pricing.plans.enterprise.subtitle'),
+      description: t('pricing.plans.enterprise.desc'),
       price: calculatePrice(199),
       period: '/seat/mo',
-      seats: 'Min 5 Seats',
-      volume: 'Unlimited',
+      seats: t('pricing.plans.enterprise.seats'),
+      volume: t('pricing.plans.enterprise.volume'),
       features: [
-        'Unlimited Training Sessions',
-        '250+ Active Scenarios',
-        'AI Auto-Generated Scenarios',
-        'Local Dialects (Khaleeji, etc)',
-        'White-Labeled Reporting',
-        'Priority + Dedicated Manager'
+        t('pricing.plans.enterprise.features.0'),
+        t('pricing.plans.enterprise.features.1'),
+        t('pricing.plans.enterprise.features.2'),
+        t('pricing.plans.enterprise.features.3'),
+        t('pricing.plans.enterprise.features.4'),
+        t('pricing.plans.enterprise.features.5')
       ],
-      cta: 'Contact Sales',
+      cta: t('pricing.plans.enterprise.cta'),
       style: 'enterprise',
       minSeats: 5
     }
   ];
 
   const faqs = [
-    { q: "How do the seat minimums work?", a: "To ensure proper team collaboration features, Pro Team requires a minimum of 3 seats ($177/mo base), and Enterprise requires 5 seats. You can add more seats at the per-agent rate anytime." },
-    { q: "What happens if I run out of training sessions?", a: "No problem. All plans allow for Credit Top-Ups. You can purchase bundles of 25 additional training sessions for just $10, which never expire." },
-    { q: "Can I upgrade from Starter to Pro later?", a: "Absolutely. All your custom scenarios and training history will migrate seamlessly to the Team Workspace when you upgrade." },
-    { q: "How does the $1 Trial work?", a: "You get 8 days of access with a specific allowance of 20 training sessions. This gives you enough runway to test the AI realism and see the analytics engine in action." },
+    { q: t('pricing.faq.1.q'), a: t('pricing.faq.1.a') },
+    { q: t('pricing.faq.2.q'), a: t('pricing.faq.2.a') },
+    { q: t('pricing.faq.3.q'), a: t('pricing.faq.3.a') },
+    { q: t('pricing.faq.4.q'), a: t('pricing.faq.4.a') },
   ];
 
   return (
-    <div className={`animate-fade-in ${onBack ? 'min-h-screen bg-white dark:bg-slate-950' : ''}`}>
+    <div 
+        className={`animate-fade-in ${onBack ? 'min-h-screen bg-white dark:bg-slate-950' : ''} ${isRTL ? 'rtl' : ''}`}
+        dir={isRTL ? 'rtl' : 'ltr'}
+    >
       
       {onBack && (
         <PublicNavigation 
@@ -138,45 +143,51 @@ export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = fal
         {/* Header Content */}
         <div className="max-w-4xl mx-auto text-center mb-20 px-6">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-sm font-bold mb-8 border border-emerald-100 dark:border-emerald-900/50 shadow-sm">
-                <Star size={14} fill="currentColor" /> Enterprise-grade security included in all plans
+                <Star size={14} fill="currentColor" /> {t('pricing.priority_support')}
             </div>
             
             <h2 className="text-5xl md:text-7xl font-serif font-bold text-slate-900 dark:text-white mb-6 tracking-tight">
-                Simple, transparent pricing.
+                {t('pricing.title')}
             </h2>
             <p className="text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto mb-12 font-light">
-                Choose the plan that fits your team's stage. No hidden fees. Cancel anytime.
+                {t('pricing.subtitle')}
             </p>
 
             {/* Toggle */}
-            <div className="relative inline-flex bg-slate-100 dark:bg-slate-900 rounded-full border border-slate-200 dark:border-slate-800 p-1.5 cursor-pointer" onClick={() => setBillingCycle(prev => prev === 'monthly' ? 'yearly' : 'monthly')}>
+            <div 
+                className="relative inline-flex bg-slate-100 dark:bg-slate-900 rounded-full border border-slate-200 dark:border-slate-800 p-1.5 cursor-pointer" 
+                onClick={() => setBillingCycle(prev => prev === 'monthly' ? 'yearly' : 'monthly')}
+            >
                 <div 
-                    className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white dark:bg-slate-800 rounded-full shadow-sm transition-all duration-300 ease-out ${
-                        billingCycle === 'monthly' ? 'translate-x-0' : 'translate-x-full'
+                    className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white dark:bg-slate-800 rounded-full shadow-sm transition-transform duration-300 ease-out 
+                    start-1.5 
+                    ${billingCycle === 'monthly' 
+                        ? 'translate-x-0' 
+                        : (isRTL ? '-translate-x-[calc(100%+4px)]' : 'translate-x-[calc(100%+4px)]')
                     }`}
                 ></div>
                 <button 
                     onClick={(e) => { e.stopPropagation(); setBillingCycle('monthly'); }}
                     className={`relative z-10 w-36 py-2.5 rounded-full text-sm font-bold transition-colors text-center ${billingCycle === 'monthly' ? 'text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                    Monthly
+                    {t('pricing.monthly')}
                 </button>
                 <button 
                     onClick={(e) => { e.stopPropagation(); setBillingCycle('yearly'); }}
                     className={`relative z-10 w-36 py-2.5 rounded-full text-sm font-bold transition-colors flex items-center justify-center gap-2 ${billingCycle === 'yearly' ? 'text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                    Yearly <span className="text-[10px] text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-md">-25%</span>
+                    {t('pricing.yearly')} <span className="text-[10px] text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-md">{t('pricing.save_text')}</span>
                 </button>
             </div>
         </div>
 
         {/* New Card Layout */}
         <div className="max-w-[1400px] mx-auto px-6 mb-32">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 xl:gap-8 items-stretch">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 xl:gap-8 items-stretch justify-center">
                 {plans.map((plan) => (
                     <div 
                         key={plan.id}
-                        className={`relative flex flex-col p-8 rounded-[2.5rem] transition-all duration-300 group ${
+                        className={`relative flex flex-col p-8 rounded-[2.5rem] transition-all duration-300 group text-center ${
                             plan.style === 'enterprise'
                             ? 'bg-slate-900 text-white shadow-2xl shadow-slate-900/20' 
                             : plan.style === 'popular'
@@ -188,7 +199,7 @@ export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = fal
                     >
                         {plan.highlight && (
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0500e2] text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
-                                Most Popular
+                                {t('pricing.most_popular')}
                             </div>
                         )}
 
@@ -204,8 +215,8 @@ export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = fal
                             </p>
                         </div>
 
-                        <div className="mb-8">
-                            <div className="flex items-baseline gap-1">
+                        <div className="mb-8 flex flex-col items-center">
+                            <div className="flex items-baseline gap-1" dir="ltr">
                                 <span className={`text-5xl font-bold tracking-tight ${plan.style === 'enterprise' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
                                     ${plan.price}
                                 </span>
@@ -217,18 +228,18 @@ export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = fal
                             </div>
                             
                             {plan.minSeats > 1 ? (
-                                <div className={`mt-4 p-3 rounded-xl text-xs font-medium text-center ${
+                                <div className={`mt-4 p-3 rounded-xl text-xs font-medium text-center w-full ${
                                     plan.style === 'enterprise' ? 'bg-slate-800 text-slate-300' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
                                 }`}>
-                                    Starts at <strong>${plan.price * plan.minSeats}/mo</strong>
-                                    <br/>(includes {plan.minSeats} seats)
+                                    {t('pricing.starts_at')} <strong dir="ltr">${plan.price * plan.minSeats}/mo</strong>
+                                    <br/>({t('pricing.includes_seats').replace('{n}', plan.minSeats.toString())})
                                 </div>
                             ) : (
                                 <div className="mt-4 h-[42px]"></div> // Spacer
                             )}
                         </div>
 
-                        <div className="flex-1 space-y-4 mb-8">
+                        <div className="flex-1 space-y-4 mb-8 text-start">
                             {plan.features.map((feature, i) => (
                                 <div key={i} className="flex items-start gap-3">
                                     <div className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
@@ -253,7 +264,7 @@ export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = fal
                                 : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90'
                             }`}
                         >
-                            {plan.cta} <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                            {plan.cta} <ArrowRight size={16} className={`transition-transform ${isRTL ? 'rotate-180 group-hover:-translate-x-1' : 'group-hover:translate-x-1'}`} />
                         </button>
                     </div>
                 ))}
@@ -262,30 +273,30 @@ export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = fal
 
         {/* Feature Table (Desktop) */}
         <div className="max-w-7xl mx-auto px-6 mb-32 hidden lg:block">
-            <h3 className="text-3xl font-serif font-bold text-center mb-16 text-slate-900 dark:text-white">Compare Features</h3>
+            <h3 className="text-3xl font-serif font-bold text-center mb-16 text-slate-900 dark:text-white">{t('pricing.compare.title')}</h3>
             
             <div className="overflow-hidden">
                 <table className="w-full border-collapse">
                     <thead>
                         <tr>
-                            <th className="text-left p-6 w-1/3"></th>
-                            <th className="p-6 text-center text-lg font-bold text-slate-900 dark:text-white">Starter</th>
-                            <th className="p-6 text-center text-lg font-bold text-[#0500e2]">Pro Team</th>
-                            <th className="p-6 text-center text-lg font-bold text-slate-900 dark:text-white">Enterprise</th>
+                            <th className="text-start p-6 w-1/3"></th>
+                            <th className="p-6 text-center text-lg font-bold text-slate-900 dark:text-white">{t('pricing.plans.starter.name')}</th>
+                            <th className="p-6 text-center text-lg font-bold text-[#0500e2]">{t('pricing.plans.pro.name')}</th>
+                            <th className="p-6 text-center text-lg font-bold text-slate-900 dark:text-white">{t('pricing.plans.enterprise.name')}</th>
                         </tr>
                     </thead>
                     <tbody className="text-sm">
                         {/* Section Header */}
-                        <tr><td colSpan={4} className="p-6 bg-slate-50 dark:bg-slate-900/50 font-bold text-slate-500 uppercase tracking-wider rounded-xl">Core Usage</td></tr>
+                        <tr><td colSpan={4} className="p-6 bg-slate-50 dark:bg-slate-900/50 font-bold text-slate-500 uppercase tracking-wider rounded-xl text-start">{t('pricing.compare.core_usage')}</td></tr>
                         
                         <tr className="border-b border-slate-100 dark:border-slate-800">
-                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300">Training Sessions</td>
+                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300 text-start">{t('pricing.compare.training_sessions')}</td>
                             <td className="p-6 text-center text-slate-600 dark:text-slate-400">80 / mo</td>
                             <td className="p-6 text-center font-bold text-[#0500e2]">300 / mo</td>
-                            <td className="p-6 text-center font-bold text-slate-900 dark:text-white">Unlimited</td>
+                            <td className="p-6 text-center font-bold text-slate-900 dark:text-white">{t('pricing.val.unlimited')}</td>
                         </tr>
                         <tr className="border-b border-slate-100 dark:border-slate-800">
-                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300">Active Scenarios</td>
+                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300 text-start">{t('pricing.compare.active_scenarios')}</td>
                             <td className="p-6 text-center text-slate-600 dark:text-slate-400">15</td>
                             <td className="p-6 text-center font-bold text-[#0500e2]">80</td>
                             <td className="p-6 text-center font-bold text-slate-900 dark:text-white">250+</td>
@@ -295,41 +306,41 @@ export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = fal
                         <tr><td className="h-8"></td></tr>
 
                         {/* Section Header */}
-                        <tr><td colSpan={4} className="p-6 bg-slate-50 dark:bg-slate-900/50 font-bold text-slate-500 uppercase tracking-wider rounded-xl">AI Capabilities</td></tr>
+                        <tr><td colSpan={4} className="p-6 bg-slate-50 dark:bg-slate-900/50 font-bold text-slate-500 uppercase tracking-wider rounded-xl text-start">{t('pricing.compare.ai_capabilities')}</td></tr>
 
                         <tr className="border-b border-slate-100 dark:border-slate-800">
-                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300">Scenario Builder</td>
-                            <td className="p-6 text-center text-slate-600 dark:text-slate-400">Manual Only</td>
-                            <td className="p-6 text-center text-slate-600 dark:text-slate-400">Manual Only</td>
-                            <td className="p-6 text-center font-bold text-slate-900 dark:text-white flex items-center justify-center gap-2"><Sparkles size={14} className="text-[#0500e2]"/> AI Auto-Gen</td>
+                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300 text-start">{t('pricing.compare.scenario_builder')}</td>
+                            <td className="p-6 text-center text-slate-600 dark:text-slate-400">{t('pricing.val.manual_only')}</td>
+                            <td className="p-6 text-center text-slate-600 dark:text-slate-400">{t('pricing.val.manual_only')}</td>
+                            <td className="p-6 text-center font-bold text-slate-900 dark:text-white flex items-center justify-center gap-2"><Sparkles size={14} className="text-[#0500e2]"/> {t('pricing.val.ai_auto_gen')}</td>
                         </tr>
                         <tr className="border-b border-slate-100 dark:border-slate-800">
-                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300">Voice Dialects</td>
-                            <td className="p-6 text-center text-slate-600 dark:text-slate-400">Standard Neural</td>
-                            <td className="p-6 text-center text-slate-600 dark:text-slate-400">Standard Neural</td>
-                            <td className="p-6 text-center font-bold text-slate-900 dark:text-white">Local Accents</td>
+                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300 text-start">{t('pricing.compare.voice_dialects')}</td>
+                            <td className="p-6 text-center text-slate-600 dark:text-slate-400">{t('pricing.val.standard_neural')}</td>
+                            <td className="p-6 text-center text-slate-600 dark:text-slate-400">{t('pricing.val.standard_neural')}</td>
+                            <td className="p-6 text-center font-bold text-slate-900 dark:text-white">{t('pricing.val.local_accents')}</td>
                         </tr>
                         
                         {/* Spacer */}
                         <tr><td className="h-8"></td></tr>
 
                         {/* Section Header */}
-                        <tr><td colSpan={4} className="p-6 bg-slate-50 dark:bg-slate-900/50 font-bold text-slate-500 uppercase tracking-wider rounded-xl">Admin & Support</td></tr>
+                        <tr><td colSpan={4} className="p-6 bg-slate-50 dark:bg-slate-900/50 font-bold text-slate-500 uppercase tracking-wider rounded-xl text-start">{t('pricing.compare.admin_support')}</td></tr>
 
                         <tr className="border-b border-slate-100 dark:border-slate-800">
-                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300">Customer Support</td>
+                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300 text-start">{t('pricing.compare.customer_support')}</td>
                             <td className="p-6 text-center font-bold text-slate-700 dark:text-slate-300">
-                                <div className="flex items-center justify-center gap-2"><Star size={14} className="text-emerald-500" fill="currentColor" /> Priority</div>
+                                <div className="flex items-center justify-center gap-2"><Star size={14} className="text-emerald-500" fill="currentColor" /> {t('pricing.val.priority')}</div>
                             </td>
                             <td className="p-6 text-center text-[#0500e2] font-bold">
-                                <div className="flex items-center justify-center gap-2"><Star size={14} fill="currentColor" /> Priority</div>
+                                <div className="flex items-center justify-center gap-2"><Star size={14} fill="currentColor" /> {t('pricing.val.priority')}</div>
                             </td>
                             <td className="p-6 text-center text-slate-900 dark:text-white font-bold">
-                                <div className="flex items-center justify-center gap-2"><Crown size={14} className="text-yellow-500" fill="currentColor"/> Priority + Dedicated Mgr</div>
+                                <div className="flex items-center justify-center gap-2"><Crown size={14} className="text-yellow-500" fill="currentColor"/> {t('pricing.val.priority_dedicated')}</div>
                             </td>
                         </tr>
                         <tr className="border-b border-slate-100 dark:border-slate-800">
-                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300">SSO & SAML</td>
+                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300 text-start">{t('pricing.compare.sso')}</td>
                             <td className="p-6 text-center"><div className="w-1 h-1 bg-slate-300 rounded-full mx-auto"></div></td>
                             <td className="p-6 text-center"><div className="w-1 h-1 bg-slate-300 rounded-full mx-auto"></div></td>
                             <td className="p-6 text-center"><div className="flex justify-center"><Check size={20} className="text-emerald-500"/></div></td>
@@ -341,19 +352,19 @@ export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = fal
 
         {/* FAQ */}
         <div className="max-w-3xl mx-auto px-6">
-            <h3 className="text-3xl font-serif font-bold text-center mb-12 text-slate-900 dark:text-white">Frequently Asked Questions</h3>
+            <h3 className="text-3xl font-serif font-bold text-center mb-12 text-slate-900 dark:text-white">{t('pricing.faq.title')}</h3>
             <div className="space-y-4">
                 {faqs.map((faq, i) => (
                     <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-300 hover:shadow-md">
                         <button 
                             onClick={() => toggleFaq(i)}
-                            className="w-full flex items-center justify-between p-6 text-left focus:outline-none"
+                            className="w-full flex items-center justify-between p-6 text-start focus:outline-none"
                         >
                             <span className="font-bold text-lg text-slate-800 dark:text-slate-200">{faq.q}</span>
                             {openFaq === i ? <ChevronUp size={20} className="text-[#0500e2]"/> : <ChevronDown size={20} className="text-slate-400"/>}
                         </button>
                         <div className={`overflow-hidden transition-all duration-300 ease-in-out ${openFaq === i ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'}`}>
-                            <div className="p-6 pt-0 text-slate-600 dark:text-slate-400 leading-relaxed">
+                            <div className="p-6 pt-0 text-slate-600 dark:text-slate-400 leading-relaxed text-start">
                                 {faq.a}
                             </div>
                         </div>
