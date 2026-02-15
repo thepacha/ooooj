@@ -4,7 +4,6 @@ import { LayoutDashboard, FileText, History, Settings, X, Sun, Moon, LogOut, Pie
 import { ViewState, User } from '../types';
 import { RevuLogo } from './RevuLogo';
 import { useLanguage } from '../contexts/LanguageContext';
-import { hasPermission } from '../lib/permissions';
 
 interface SidebarProps {
   currentView: ViewState;
@@ -20,30 +19,14 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, onClose, theme, toggleTheme, onLogout, user }) => {
   const { t, language, setLanguage, isRTL } = useLanguage();
 
-  // Filter items based on permissions
-  const navItems: { id: ViewState; label: string; icon: React.ReactNode; hidden?: boolean }[] = [
+  const navItems: { id: ViewState; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: t('nav.dashboard'), icon: <LayoutDashboard size={20} /> },
     { id: 'analyze', label: t('nav.analyze'), icon: <FileText size={20} /> },
     { id: 'training', label: t('nav.training'), icon: <GraduationCap size={20} /> },
     { id: 'history', label: t('nav.history'), icon: <History size={20} /> },
-    { 
-      id: 'roster', 
-      label: t('nav.roster'), 
-      icon: <Users size={20} />,
-      hidden: !hasPermission(user, 'manage_team') && !hasPermission(user, 'view_all_history')
-    },
-    { 
-      id: 'usage', 
-      label: t('nav.usage'), 
-      icon: <PieChart size={20} />,
-      hidden: !hasPermission(user, 'manage_billing')
-    },
-    { 
-      id: 'settings', 
-      label: t('nav.settings'), 
-      icon: <Settings size={20} />,
-      hidden: !hasPermission(user, 'configure_qa')
-    },
+    { id: 'roster', label: t('nav.roster'), icon: <Users size={20} /> },
+    { id: 'usage', label: t('nav.usage'), icon: <PieChart size={20} /> },
+    { id: 'settings', label: t('nav.settings'), icon: <Settings size={20} /> },
     { id: 'account', label: t('nav.account'), icon: <UserIcon size={20} /> },
   ];
 
@@ -86,7 +69,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
         </div>
 
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          {navItems.filter(item => !item.hidden).map((item) => (
+          {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => {
@@ -106,8 +89,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
             </button>
           ))}
 
-          {/* Admin Link - Restricted to Admin Role (Founder) */}
-          {hasPermission(user, 'view_admin_console') && (
+          {/* Admin Link - Restricted to Admin Role */}
+          {user?.role === 'admin' && (
             <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
                <button
                 onClick={() => {
@@ -154,6 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
               </span>
               <div className={`w-8 h-4 rounded-full relative transition-colors ${theme === 'light' ? 'bg-slate-300' : 'bg-[#0500e2]'}`}>
                   <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${
+                      // RTL aware toggle logic or simple transform
                       theme === 'light' ? 'start-0.5' : 'translate-x-4 start-0.5 rtl:-translate-x-4'
                   }`}></div>
               </div>
@@ -176,7 +160,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
                         {user?.name || t('nav.guest')}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[100px]">
-                        {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'User'}
+                        {user?.email || 'guest@example.com'}
                     </p>
                 </div>
             </button>
