@@ -73,8 +73,18 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
       }
   };
 
-  const handleSocialLogin = () => {
-      alert("Social login integration coming soon!");
+  const handleSocialLogin = async () => {
+      try {
+          const { error } = await supabase.auth.signInWithOAuth({
+              provider: 'google',
+              options: {
+                  redirectTo: window.location.origin
+              }
+          });
+          if (error) throw error;
+      } catch (err: any) {
+          setError(err.message || "Failed to initiate Google Login");
+      }
   }
 
   return (

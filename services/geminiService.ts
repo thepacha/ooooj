@@ -215,19 +215,21 @@ export interface GenerateScenarioParams {
     funnelStage?: string;
     persona?: string;
     mood?: string;
+    industry?: string;
 }
 
 export const generateAIScenario = async (params: GenerateScenarioParams): Promise<Omit<TrainingScenario, 'id' | 'icon'>> => {
     const ai = getAI();
     const seed = Date.now().toString();
     
-    const { topic, category, difficulty, funnelStage, persona, mood } = params;
+    const { topic, category, difficulty, funnelStage, persona, mood, industry } = params;
 
     const prompt = `
         Create a rich, complex training roleplay scenario for a ${category} agent.
         Random Seed: ${seed}
         
         CORE CONTEXT: ${topic}
+        ${industry ? `INDUSTRY: ${industry} (Ensure terminology and context is specific to this industry)` : ''}
         DIFFICULTY: ${difficulty}
         
         ${funnelStage ? `SALES STAGE: ${funnelStage} (Ensure the customer behavior reflects this specific stage of the funnel)` : ''}

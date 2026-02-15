@@ -1,8 +1,7 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { TrainingScenario, TrainingResult, User, AnalysisResult, CriteriaResult } from '../types';
 import { createTrainingSession, evaluateTrainingSession, connectLiveTraining, generateAIScenario, generateTrainingTopic, GenerateScenarioParams } from '../services/geminiService';
-import { Shield, TrendingUp, Wrench, ArrowRight, RefreshCw, CheckCircle, Loader2, Send, Phone, PhoneOff, MessageSquare, Copy, Check, Plus, Sparkles, X, Calendar, Trash2, AlertTriangle, Shuffle, HelpCircle, Heart, Zap, Trophy, Target, Frown, Meh, Smile, MinusCircle } from 'lucide-react';
+import { Shield, TrendingUp, Wrench, ArrowRight, RefreshCw, CheckCircle, Loader2, Send, Phone, PhoneOff, MessageSquare, Copy, Check, Plus, Sparkles, X, Calendar, Trash2, AlertTriangle, HelpCircle, Heart, Zap, Trophy, Target, Frown, Meh, Smile, MinusCircle, Clock, FileText, BarChart3, Timer, Mic, Building2 } from 'lucide-react';
 import { incrementUsage, COSTS, checkLimit } from '../lib/usageService';
 import { generateId } from '../lib/utils';
 import { supabase } from '../lib/supabase';
@@ -20,7 +19,7 @@ interface TrainingProps {
     onAnalysisComplete: (result: AnalysisResult) => void;
 }
 
-// --- Procedural Generation Data ---
+// --- Procedural Generation Data (Kept same as before for variety) ---
 const NAMES_MALE = ["James", "Robert", "John", "Michael", "David", "William", "Richard", "Joseph", "Thomas", "Charles", "Daniel", "Matthew", "Anthony", "Mark", "Donald", "Steven", "Paul", "Andrew", "Joshua", "Kenneth", "Kevin", "Brian", "George", "Edward", "Ronald", "Ryan", "Gary", "Jacob", "Eric", "Stephen"];
 const NAMES_FEMALE = ["Mary", "Patricia", "Jennifer", "Linda", "Elizabeth", "Barbara", "Susan", "Jessica", "Sarah", "Karen", "Nancy", "Lisa", "Betty", "Margaret", "Sandra", "Ashley", "Kimberly", "Emily", "Donna", "Michelle", "Carol", "Amanda", "Melissa", "Deborah", "Stephanie", "Rebecca", "Sharon", "Laura"];
 const LAST_NAMES = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin"];
@@ -277,6 +276,7 @@ interface AIParamsState {
     funnelStage: string;
     persona: string;
     mood: string;
+    industry: string;
 }
 
 export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisComplete }) => {
@@ -285,10 +285,11 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     const [activeScenario, setActiveScenario] = useState<TrainingScenario | null>(null);
     const [messages, setMessages] = useState<{role: 'user' | 'model', text: string}[]>([]);
     const [input, setInput] = useState('');
-    const [isProcessing, setIsProcessing] = useState(false);
+    const [isAnalyzing, setIsAnalyzing] = useState(false); // New explicit analysis state
     const [result, setResult] = useState<TrainingResult | null>(null);
     const [mode, setMode] = useState<'text' | 'voice'>('text');
     const [isCopied, setIsCopied] = useState(false);
+    const [sessionDuration, setSessionDuration] = useState(0); // Timer State
     
     // Combined Scenario State
     const [scenarios, setScenarios] = useState<TrainingScenario[]>([]);
@@ -302,10 +303,11 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     const [aiParams, setAiParams] = useState<AIParamsState>({ 
         topic: '', 
         difficulty: 'Intermediate', 
-        category: 'Sales', // Default to Sales to show funnel features
+        category: 'Sales', 
         funnelStage: 'Discovery',
         persona: '',
-        mood: 'Neutral'
+        mood: 'Neutral',
+        industry: ''
     });
     const [isGenerating, setIsGenerating] = useState(false);
     const [isGeneratingTopic, setIsGeneratingTopic] = useState(false);
@@ -333,7 +335,6 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     // Load Scenarios Logic
     useEffect(() => {
         if (!user) {
-            // Guest mode: Generate local scenarios each time (no persistence)
             setScenarios(generateDynamicScenarios());
             return;
         }
@@ -341,14 +342,12 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         const fetchAndSeedScenarios = async () => {
             setIsLoadingScenarios(true);
             try {
-                // 1. Fetch existing scenarios from DB
                 const { data, error } = await supabase
                     .from('scenarios')
                     .select('*')
                     .eq('user_id', user.id)
                     .order('created_at', { ascending: false });
 
-                // Ignore if table doesn't exist yet (handled gracefully)
                 if (error && error.code !== '42P01') throw error;
 
                 if (data && data.length > 0) {
@@ -368,15 +367,12 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                     }));
                     setScenarios(mapped);
                 } else {
-                    // 2. If empty, generate seed scenarios and save to DB
-                    console.log("Seeding initial scenarios for user...");
                     const seedBatch = generateDynamicScenarios();
                     await saveScenariosToDb(seedBatch, user.id);
                     setScenarios(seedBatch);
                 }
             } catch (e) {
                 console.error("Error loading/seeding scenarios:", e);
-                // Fallback to local if DB fails
                 setScenarios(generateDynamicScenarios());
             } finally {
                 setIsLoadingScenarios(false);
@@ -385,6 +381,19 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
 
         fetchAndSeedScenarios();
     }, [user]);
+
+    // Timer Logic
+    useEffect(() => {
+        let interval: any;
+        if (view === 'active' && !isAnalyzing) {
+            interval = setInterval(() => {
+                setSessionDuration(prev => prev + 1);
+            }, 1000);
+        } else {
+            clearInterval(interval);
+        }
+        return () => clearInterval(interval);
+    }, [view, isAnalyzing]);
 
     // Helper to bulk save scenarios
     const saveScenariosToDb = async (newScenarios: TrainingScenario[], userId: string) => {
@@ -420,6 +429,12 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         }
     }, []);
 
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
     const handleRegenerateCustomScenario = async (scenario: TrainingScenario, e: React.MouseEvent) => {
         e.stopPropagation();
         if (regeneratingIds.has(scenario.id)) return;
@@ -427,7 +442,6 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         setRegeneratingIds(prev => new Set(prev).add(scenario.id));
 
         try {
-            // Use the title as the topic context to keep the theme but change the persona details
             const newVersion = await generateAIScenario({
                 topic: scenario.title,
                 category: scenario.category,
@@ -474,19 +488,16 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         }
     };
     
-    // Gamification Calculations
     const trainingHistory = history.filter(h => h.customerName?.startsWith('Roleplay:') || h.summary?.startsWith('Training Session'));
     const totalAttempts = trainingHistory.length;
     const totalXP = trainingHistory.reduce((acc, curr) => acc + (curr.overallScore * 10) + 50, 0);
 
-    // 1. Initial selection: Shows the briefing
     const selectScenario = (scenario: TrainingScenario, sessionMode: 'text' | 'voice') => {
         setActiveScenario(scenario);
         setMode(sessionMode);
         setView('briefing');
     };
 
-    // 2. Actually starts the API connection
     const confirmStartSession = async () => {
         if (!activeScenario) return;
         
@@ -503,9 +514,12 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
              }
         }
 
-        setMessages([{ role: 'model', text: activeScenario.initialMessage }]); 
+        // MODIFIED: Start with empty messages so the user can greet first.
+        setMessages([]); 
         setResult(null);
         setConnectionError(null);
+        setIsAnalyzing(false);
+        setSessionDuration(0);
         
         chatSession.current = null;
 
@@ -539,6 +553,10 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
             inputAudioContext.current = new AudioContextClass({sampleRate: 16000});
             outputAudioContext.current = new AudioContextClass({sampleRate: 24000});
             
+            // MODIFIED: Explicitly resume audio context to prevent start delay on some browsers
+            await inputAudioContext.current.resume();
+            await outputAudioContext.current.resume();
+            
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 audio: {
                     channelCount: 1, 
@@ -554,7 +572,8 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                     if (!inputAudioContext.current) return;
                     
                     const source = inputAudioContext.current.createMediaStreamSource(stream);
-                    const scriptProcessor = inputAudioContext.current.createScriptProcessor(4096, 1, 1);
+                    // MODIFIED: Reduced buffer size to 2048 for lower latency (approx 128ms @ 16kHz)
+                    const scriptProcessor = inputAudioContext.current.createScriptProcessor(2048, 1, 1);
                     
                     scriptProcessor.onaudioprocess = (e) => {
                         const inputData = e.inputBuffer.getChannelData(0);
@@ -582,8 +601,18 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         const userText = currentInputTranscription.current;
                         const modelText = currentOutputTranscription.current;
                         
-                        if (userText) setMessages(prev => [...prev, {role: 'user', text: userText}]);
-                        if (modelText) setMessages(prev => [...prev, {role: 'model', text: modelText}]);
+                        // IMPORTANT: Only update if we have meaningful text to avoid empty bubbles or repetition
+                        if (userText.trim()) {
+                            setMessages(prev => {
+                                // De-duplicate: Don't add if it's identical to the last user message (fixes stutter)
+                                const lastUserMsg = [...prev].reverse().find(m => m.role === 'user');
+                                if (lastUserMsg && lastUserMsg.text === userText) return prev;
+                                return [...prev, {role: 'user', text: userText}];
+                            });
+                        }
+                        if (modelText.trim()) {
+                            setMessages(prev => [...prev, {role: 'model', text: modelText}]);
+                        }
 
                         currentInputTranscription.current = '';
                         currentOutputTranscription.current = '';
@@ -592,6 +621,11 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                     const base64Audio = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
                     if (base64Audio && outputAudioContext.current) {
                         const ctx = outputAudioContext.current;
+                        // Ensure playback context is running
+                        if (ctx.state === 'suspended') {
+                            await ctx.resume();
+                        }
+
                         nextStartTime.current = Math.max(nextStartTime.current, ctx.currentTime);
                         
                         try {
@@ -676,8 +710,6 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
             { role: 'model', text: '' } 
         ]);
         
-        setIsProcessing(true);
-
         try {
             const result = await chatSession.current.sendMessageStream({ message: userMsg });
             
@@ -710,22 +742,24 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                 }
                 return newHistory;
             });
-        } finally {
-            setIsProcessing(false);
         }
     };
 
     const endSession = async () => {
         if (!activeScenario) return;
         
+        // 1. Immediately Stop Audio/Chat
         if (mode === 'voice') {
             stopVoiceSession();
         }
         
-        setIsProcessing(true);
+        // 2. Set Analysis State (Shows Loading Screen immediately)
+        setIsAnalyzing(true);
+        
         const transcript = messages.map(m => `${m.role === 'user' ? 'Agent' : 'Customer'}: ${m.text}`).join('\n');
         
         try {
+            // 3. Process Result
             const evalResult = await evaluateTrainingSession(transcript, activeScenario);
             setResult(evalResult);
             
@@ -761,12 +795,13 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
             if (user) {
                 await incrementUsage(user.id, COSTS.ANALYSIS, 'analysis'); 
             }
+            
+            // 4. Switch to Result View
             setView('result');
         } catch (e) {
             console.error(e);
             alert("Failed to evaluate session.");
-        } finally {
-            setIsProcessing(false);
+            setIsAnalyzing(false); // Only reset if error, otherwise view change handles it
         }
     };
 
@@ -813,7 +848,6 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
             return;
         }
         
-        // Generate generic objectives/tracks for manual creation
         const genericObjectives = [
             "Resolve the issue efficiently.",
             "Maintain a professional and empathetic tone.",
@@ -941,6 +975,36 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                                 {cat}
                                             </button>
                                         ))}
+                                    </div>
+                                </div>
+
+                                {/* Industry Selection - NEW */}
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Industry / Sector</label>
+                                    <div className="flex flex-wrap gap-2 mb-2">
+                                        {['SaaS', 'E-commerce', 'Healthcare', 'Retail', 'Fintech', 'Real Estate', 'Hospitality'].map(ind => (
+                                            <button
+                                                key={ind}
+                                                onClick={() => setAiParams({...aiParams, industry: ind})}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                                                    aiParams.industry === ind
+                                                    ? 'bg-slate-800 text-white border-slate-800 dark:bg-white dark:text-slate-900'
+                                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300'
+                                                }`}
+                                            >
+                                                {ind}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="relative group">
+                                        <Building2 size={16} className="absolute start-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                        <input 
+                                            type="text"
+                                            value={aiParams.industry}
+                                            onChange={(e) => setAiParams({...aiParams, industry: e.target.value})}
+                                            placeholder="Or type custom industry (e.g. Solar Energy)"
+                                            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2] text-sm"
+                                        />
                                     </div>
                                 </div>
 
@@ -1154,32 +1218,60 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
             return null;
         }
 
+        // Dedicated Loading Screen when analysis is running
+        if (isAnalyzing) {
+            return (
+                <div className="h-[calc(100vh-140px)] flex flex-col items-center justify-center bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-lg">
+                    <div className="text-center p-8 max-w-md">
+                        <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <BarChart3 size={40} className="text-[#0500e2] animate-pulse" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Generating Performance Report</h2>
+                        <p className="text-slate-500 dark:text-slate-400">
+                            Our AI is analyzing your conversation for tone, empathy, and solution accuracy. This typically takes 5-10 seconds.
+                        </p>
+                    </div>
+                </div>
+            )
+        }
+
         return (
             <div className="h-[calc(100dvh-100px)] md:h-[calc(100vh-140px)] flex flex-col bg-white dark:bg-slate-900 rounded-xl md:rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-                <div className="p-3 md:p-6 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex flex-row justify-between items-center shrink-0 gap-2">
-                    <div className="flex items-center gap-3 overflow-hidden">
-                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center text-white shadow-md shrink-0 ${
-                            activeScenario.category === 'Sales' ? 'bg-green-500' : 
-                            activeScenario.category === 'Technical' ? 'bg-slate-700' : 'bg-red-500'
+                {/* Clean Header */}
+                <div className="p-4 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex flex-row justify-between items-center shrink-0 shadow-sm z-10">
+                    <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 ${
+                            activeScenario.category === 'Sales' ? 'bg-green-600' : 
+                            activeScenario.category === 'Technical' ? 'bg-slate-700' : 'bg-red-600'
                         }`}>
-                            {activeScenario.icon === 'TrendingUp' ? <TrendingUp size={18} className="md:w-5 md:h-5" /> : activeScenario.icon === 'Wrench' ? <Wrench size={18} className="md:w-5 md:h-5" /> : <Shield size={18} className="md:w-5 md:h-5" />}
+                            {activeScenario.icon === 'TrendingUp' ? <TrendingUp size={20} /> : activeScenario.icon === 'Wrench' ? <Wrench size={20} /> : <Shield size={20} />}
                         </div>
-                        <div className="min-w-0">
-                            <h3 className="font-bold text-sm md:text-base text-slate-900 dark:text-white leading-tight truncate">{activeScenario.title}</h3>
-                            <div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-500 truncate">
-                                <span className={`px-1.5 rounded-md border ${mode === 'voice' ? 'border-red-200 bg-red-50 text-red-600 animate-pulse' : 'border-slate-200 bg-slate-100'}`}>
-                                    {mode === 'voice' ? '● Live' : 'Text'}
-                                </span>
-                                <span>• {activeScenario.difficulty}</span>
-                            </div>
+                        <div>
+                            <h3 className="font-bold text-slate-900 dark:text-white leading-tight truncate max-w-[200px] md:max-w-md">{activeScenario.title}</h3>
+                            <div className="text-xs text-slate-500">{activeScenario.category} • {activeScenario.difficulty}</div>
                         </div>
                     </div>
-                    <button 
-                        onClick={endSession}
-                        className="px-3 py-1.5 md:px-4 md:py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg font-bold text-xs md:text-sm hover:opacity-90 transition-opacity whitespace-nowrap shrink-0"
-                    >
-                        End Session
-                    </button>
+                    
+                    <div className="flex items-center gap-4">
+                        {/* Timer */}
+                        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg font-mono text-sm font-medium text-slate-600 dark:text-slate-300">
+                            <Clock size={14} />
+                            {formatTime(sessionDuration)}
+                        </div>
+
+                        {mode === 'voice' && (
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-full text-xs font-bold uppercase tracking-wider animate-pulse border border-red-100 dark:border-red-900/50">
+                                <span className="w-2 h-2 bg-red-500 rounded-full"></span> Live
+                            </div>
+                        )}
+
+                        <button 
+                            onClick={endSession}
+                            className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg font-bold text-sm hover:opacity-90 transition-opacity whitespace-nowrap shadow-sm"
+                        >
+                            End Session
+                        </button>
+                    </div>
                 </div>
 
                 {connectionError && (
@@ -1195,32 +1287,35 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                     </div>
                 )}
 
-                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6 bg-slate-50/50 dark:bg-slate-900/50 scroll-smooth">
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-slate-50 dark:bg-slate-900 scroll-smooth">
+                    {messages.length === 0 && (
+                        <div className="flex flex-col items-center justify-center h-full text-center text-slate-400">
+                            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                                {mode === 'voice' ? <Mic size={24} /> : <MessageSquare size={24} />}
+                            </div>
+                            <p className="text-sm font-medium">Session Started</p>
+                            <p className="text-xs mt-1">
+                                {mode === 'voice' ? "Speak to greet the customer..." : "Type a message to start..."}
+                            </p>
+                        </div>
+                    )}
                     {messages.map((msg, idx) => (
                         <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[85%] md:max-w-[80%] rounded-2xl px-4 py-3 md:px-5 md:py-4 text-sm md:text-base shadow-sm whitespace-pre-wrap ${
+                            <div className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-5 py-4 text-sm md:text-base shadow-sm whitespace-pre-wrap leading-relaxed ${
                                 msg.role === 'user' 
                                 ? 'bg-[#0500e2] text-white rounded-br-sm' 
-                                : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-bl-sm'
+                                : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-bl-sm'
                             }`}>
                                 {msg.text}
                             </div>
                         </div>
                     ))}
-                    {isProcessing && (
-                        <div className="flex justify-start">
-                            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-bl-sm px-5 py-4 shadow-sm flex items-center gap-3">
-                                <Loader2 size={18} className="animate-spin text-[#0500e2]" />
-                                <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">Customer is thinking...</span>
-                            </div>
-                        </div>
-                    )}
                     <div ref={messagesEndRef} />
                 </div>
 
-                <div className="p-3 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0 safe-area-bottom">
+                <div className="p-4 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0 safe-area-bottom">
                     {mode === 'text' ? (
-                        <div className="relative flex gap-2 md:gap-3 items-end">
+                        <div className="relative flex gap-2 md:gap-3 items-end max-w-4xl mx-auto">
                             <div className="flex-1 relative">
                                 <input 
                                     type="text" 
@@ -1228,34 +1323,28 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyDown={handleKeyDown}
                                     placeholder={isOverLimit ? "Message too long!" : "Type your response..."}
-                                    className={`w-full pl-4 md:pl-5 pr-12 py-3 md:py-4 text-sm md:text-base rounded-xl bg-slate-50 dark:bg-slate-950 border outline-none focus:ring-2 focus:ring-[#0500e2] transition-all shadow-sm ${
-                                        isOverLimit ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : 'border-slate-200 dark:border-slate-800'
+                                    className={`w-full pl-5 pr-14 py-4 text-base rounded-2xl bg-slate-100 dark:bg-slate-950 border outline-none focus:ring-2 focus:ring-[#0500e2] transition-all ${
+                                        isOverLimit ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : 'border-transparent focus:bg-white dark:focus:bg-slate-900'
                                     }`}
                                 />
-                                <div className={`absolute -bottom-5 right-1 text-[10px] font-bold transition-colors ${isOverLimit ? 'text-red-500' : 'text-slate-400'}`}>
-                                    {wordCount}/24 words
+                                <div className={`absolute top-1/2 -translate-y-1/2 right-4 text-[10px] font-bold transition-colors ${isOverLimit ? 'text-red-500' : 'text-slate-400'}`}>
+                                    {wordCount}/24
                                 </div>
                             </div>
                             <button 
                                 onClick={sendMessage}
-                                disabled={!input.trim() || isProcessing || isOverLimit}
-                                className="p-3 md:p-4 bg-[#0500e2] text-white rounded-xl hover:bg-[#0400c0] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-600/20 h-[46px] w-[46px] md:h-[58px] md:w-[58px] flex items-center justify-center shrink-0"
+                                disabled={!input.trim() || isOverLimit}
+                                className="p-4 bg-[#0500e2] text-white rounded-2xl hover:bg-[#0400c0] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md h-[58px] w-[58px] flex items-center justify-center shrink-0"
                             >
-                                <Send size={18} className="md:w-5 md:h-5" />
+                                <Send size={20} />
                             </button>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-2 md:py-4 gap-3 md:gap-4">
-                            <div className="flex items-center gap-2 text-red-500 font-bold animate-pulse text-sm md:text-base">
-                                <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-red-500 rounded-full"></div>
-                                Live Voice Active
+                        <div className="flex flex-col items-center justify-center py-4 gap-2">
+                            <div className="text-center">
+                                <p className="text-slate-900 dark:text-white font-bold text-lg mb-1 animate-pulse">Listening...</p>
+                                <p className="text-slate-500 text-sm">Use "End Session" above when finished.</p>
                             </div>
-                            <button 
-                                onClick={stopVoiceSession}
-                                className="px-6 py-2.5 md:px-8 md:py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full text-slate-700 dark:text-slate-200 font-bold flex items-center gap-2 transition-all text-sm md:text-base"
-                            >
-                                <PhoneOff size={16} className="md:w-[18px] md:h-[18px]" /> Stop Speaking
-                            </button>
                         </div>
                     )}
                 </div>
@@ -1265,59 +1354,108 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
 
     if (view === 'result' && result) {
         return (
-            <div className="max-w-4xl mx-auto pb-20 md:pb-12 animate-fade-in px-4 md:px-0">
-                <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
-                    <div className="bg-slate-900 text-white p-8 md:p-12 text-center relative overflow-hidden">
-                        <div className="relative z-10">
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-bold uppercase tracking-wider mb-4 border border-white/20">
-                                Session Complete
+            <div className="max-w-5xl mx-auto pb-20 md:pb-12 animate-fade-in px-4 md:px-0">
+                
+                {/* Header */}
+                <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Session Analysis</h2>
+                    <button onClick={() => setView('list')} className="text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+                        Close Report
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    
+                    {/* Left Column: Score & Summary */}
+                    <div className="space-y-6">
+                        {/* Score Card */}
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 text-center shadow-sm">
+                            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Performance Score</p>
+                            <div className={`text-6xl font-bold mb-2 ${result.score >= 90 ? 'text-emerald-600' : result.score >= 75 ? 'text-[#0500e2]' : 'text-amber-500'}`}>
+                                {result.score}
                             </div>
-                            <h2 className="text-4xl md:text-5xl font-serif font-bold mb-4">{result.score}%</h2>
-                            <p className="text-blue-200 text-base md:text-lg max-w-xl mx-auto">{result.feedback}</p>
+                            <p className="text-slate-400 text-sm">out of 100</p>
                         </div>
-                        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/50 via-slate-900 to-slate-900"></div>
-                    </div>
 
-                    <div className="p-6 md:p-12 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-                        <div>
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                                <CheckCircle className="text-emerald-500" size={20} /> Strengths
-                            </h3>
-                            <ul className="space-y-3">
-                                {result.strengths.map((s, i) => (
-                                    <li key={i} className="flex gap-3 text-sm text-slate-600 dark:text-slate-300 bg-emerald-50 dark:bg-emerald-900/10 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/20">
-                                        <Check size={16} className="text-emerald-500 mt-0.5 shrink-0" />
-                                        {s}
-                                    </li>
-                                ))}
-                            </ul>
+                        {/* Session Duration Box - NEW */}
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 flex items-center justify-between shadow-sm">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-500">
+                                    <Timer size={20} />
+                                </div>
+                                <span className="font-bold text-slate-700 dark:text-slate-300">Session Duration</span>
+                            </div>
+                            <span className="font-mono font-bold text-lg text-slate-900 dark:text-white">{formatTime(sessionDuration)}</span>
                         </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                                <TrendingUp className="text-amber-500" size={20} /> Improvements
-                            </h3>
-                            <ul className="space-y-3">
-                                {result.improvements.map((s, i) => (
-                                    <li key={i} className="flex gap-3 text-sm text-slate-600 dark:text-slate-300 bg-amber-50 dark:bg-amber-900/10 p-3 rounded-lg border border-amber-100 dark:border-amber-900/20">
-                                        <Sparkles size={16} className="text-amber-500 mt-0.5 shrink-0" />
-                                        {s}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    </div>
 
-                    <div className="p-6 md:p-8 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-200 dark:border-slate-800 flex flex-col-reverse sm:flex-row justify-between items-center gap-4">
-                        <button onClick={() => setView('list')} className="w-full sm:w-auto font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors py-2">
-                            Back to Scenarios
-                        </button>
-                        <div className="flex w-full sm:w-auto gap-3">
-                            <button onClick={handleCopyTranscript} className="flex-1 sm:flex-none justify-center px-4 py-3 md:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl md:rounded-lg font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2">
-                                {isCopied ? <Check size={16} /> : <Copy size={16} />} Transcript
+                        {/* Executive Summary */}
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                            <h3 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                <FileText size={18} className="text-slate-400" /> Executive Summary
+                            </h3>
+                            <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+                                {result.feedback}
+                            </p>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button onClick={handleCopyTranscript} className="flex-1 justify-center px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2">
+                                {isCopied ? <Check size={16} /> : <Copy size={16} />} Copy Transcript
                             </button>
-                            <button onClick={() => activeScenario && selectScenario(activeScenario, mode)} className="flex-1 sm:flex-none justify-center px-6 py-3 md:py-2 bg-[#0500e2] text-white rounded-xl md:rounded-lg font-bold text-sm hover:bg-[#0400c0] transition-colors flex items-center gap-2">
+                            <button onClick={() => activeScenario && selectScenario(activeScenario, mode)} className="flex-1 justify-center px-4 py-3 bg-[#0500e2] text-white rounded-xl font-bold text-sm hover:bg-[#0400c0] transition-colors flex items-center gap-2">
                                 <RefreshCw size={16} /> Retry
                             </button>
+                        </div>
+                    </div>
+
+                    {/* Middle Column: Details */}
+                    <div className="lg:col-span-2 space-y-6">
+                        
+                        {/* Strengths & Weaknesses Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div className="bg-emerald-50/50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-900/20 p-6">
+                                <h3 className="font-bold text-emerald-800 dark:text-emerald-400 mb-4 flex items-center gap-2">
+                                    <CheckCircle size={18} /> Key Strengths
+                                </h3>
+                                <ul className="space-y-3">
+                                    {result.strengths.map((s, i) => (
+                                        <li key={i} className="flex gap-3 text-sm text-slate-700 dark:text-slate-300">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0"></div>
+                                            {s}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            <div className="bg-amber-50/50 dark:bg-amber-900/10 rounded-2xl border border-amber-100 dark:border-amber-900/20 p-6">
+                                <h3 className="font-bold text-amber-800 dark:text-amber-400 mb-4 flex items-center gap-2">
+                                    <TrendingUp size={18} /> Areas to Improve
+                                </h3>
+                                <ul className="space-y-3">
+                                    {result.improvements.map((s, i) => (
+                                        <li key={i} className="flex gap-3 text-sm text-slate-700 dark:text-slate-300">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0"></div>
+                                            {s}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+
+                        {/* Transcript Preview */}
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+                            <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 font-bold text-sm text-slate-500">
+                                Session Transcript
+                            </div>
+                            <div className="p-6 max-h-[300px] overflow-y-auto bg-white dark:bg-slate-900 font-mono text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                                {activeScenario && messages.map((m, i) => (
+                                    <div key={i} className="mb-3">
+                                        <span className={`font-bold ${m.role === 'user' ? 'text-[#0500e2]' : 'text-slate-800 dark:text-slate-200'}`}>
+                                            {m.role === 'user' ? 'Agent' : 'Customer'}:
+                                        </span> {m.text}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>

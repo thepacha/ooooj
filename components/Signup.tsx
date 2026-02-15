@@ -146,8 +146,18 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
     }
   };
 
-  const handleSocialSignup = () => {
-      alert("Social signup integration coming soon!");
+  const handleSocialSignup = async () => {
+      try {
+          const { error } = await supabase.auth.signInWithOAuth({
+              provider: 'google',
+              options: {
+                  redirectTo: window.location.origin
+              }
+          });
+          if (error) throw error;
+      } catch (err: any) {
+          setError(err.message || "Failed to initiate Google Signup");
+      }
   }
 
   if (successMessage) {
