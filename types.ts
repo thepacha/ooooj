@@ -49,13 +49,15 @@ export interface TrainingResult {
   sentiment: 'Positive' | 'Neutral' | 'Negative';
 }
 
+export type UserRole = 'admin' | 'manager' | 'analyst' | 'agent';
+
 export interface User {
   id: string;
   name: string;
   email: string;
   company?: string;
   website?: string;
-  role?: 'user' | 'admin';
+  role?: UserRole;
   avatar_url?: string;
 }
 

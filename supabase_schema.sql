@@ -8,13 +8,10 @@ create table if not exists profiles (
   email text,
   name text,
   company text,
-  website text
+  website text,
+  role text default 'agent', -- Default to agent, requiring promotion
+  avatar_url text
 );
-
--- MIGRATIONS: Add columns if they were missed during initial table creation
-alter table profiles add column if not exists role text default 'user';
-alter table profiles add column if not exists website text;
-alter table profiles add column if not exists avatar_url text;
 
 -- USER USAGE
 create table if not exists user_usage (
@@ -59,11 +56,9 @@ create table if not exists evaluations (
   overall_score numeric,
   sentiment text,
   criteria_results jsonb,
-  raw_transcript text
+  raw_transcript text,
+  is_deleted boolean default false
 );
-
--- Add is_deleted column for Soft Delete functionality (Migration)
-alter table evaluations add column if not exists is_deleted boolean default false;
 
 -- SCENARIOS
 create table if not exists scenarios (
@@ -76,21 +71,19 @@ create table if not exists scenarios (
   icon text,
   initial_message text,
   system_instruction text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  objectives text[],
+  talk_tracks text[],
+  openers text[],
+  voice text
 );
-
--- Add new columns for enhanced scenarios (Migration)
-alter table scenarios add column if not exists objectives text[];
-alter table scenarios add column if not exists talk_tracks text[];
-alter table scenarios add column if not exists openers text[];
-alter table scenarios add column if not exists voice text;
 
 -- ==========================================
 -- SECURITY HELPER FUNCTIONS
 -- ==========================================
 
--- Function to check if the current user is an admin
--- SECURITY DEFINER allows this to run with higher privileges, bypassing RLS on 'profiles'
+-- Function to check if the current user is a FOUNDER (Admin)
+-- Only 'admin' role can control the app globally
 create or replace function public.is_admin()
 returns boolean as $$
 begin
@@ -98,6 +91,25 @@ begin
     select 1 from profiles
     where id = auth.uid() and role = 'admin'
   );
+end;
+$$ language plpgsql security definer;
+
+-- Function to check if the current user is a MANAGER
+create or replace function public.is_manager()
+returns boolean as $$
+begin
+  return exists (
+    select 1 from profiles
+    where id = auth.uid() and (role = 'manager' or role = 'admin')
+  );
+end;
+$$ language plpgsql security definer;
+
+-- Function to get the current user's company
+create or replace function public.get_my_company()
+returns text as $$
+begin
+  return (select company from profiles where id = auth.uid());
 end;
 $$ language plpgsql security definer;
 
@@ -114,89 +126,110 @@ alter table evaluations enable row level security;
 alter table scenarios enable row level security;
 
 -- 1. PROFILES POLICIES
+-- Everyone can see their own profile
 drop policy if exists "Users can see own profile" on profiles;
 create policy "Users can see own profile" on profiles for select using (auth.uid() = id);
 
+-- Admins can see ALL profiles
+drop policy if exists "Admins can see all profiles" on profiles;
+create policy "Admins can see all profiles" on profiles for select using (is_admin());
+
+-- Managers can see profiles of people in THEIR company
+drop policy if exists "Managers can see company profiles" on profiles;
+create policy "Managers can see company profiles" on profiles for select using (
+  is_manager() and company = get_my_company()
+);
+
+-- Self update
 drop policy if exists "Users can update own profile" on profiles;
 create policy "Users can update own profile" on profiles for update using (auth.uid() = id);
 
-drop policy if exists "Admins can read all profiles" on profiles;
-create policy "Admins can read all profiles" on profiles for select using (is_admin());
-
+-- Admins update all
 drop policy if exists "Admins can update all profiles" on profiles;
 create policy "Admins can update all profiles" on profiles for update using (is_admin());
 
--- 2. USER USAGE POLICIES
-drop policy if exists "Users can read own usage" on user_usage;
-create policy "Users can read own usage" on user_usage for select using (auth.uid() = user_id);
+-- Managers can update roles of users in their company (except other admins)
+drop policy if exists "Managers can update company profiles" on profiles;
+create policy "Managers can update company profiles" on profiles for update using (
+  is_manager() and company = get_my_company()
+);
 
-drop policy if exists "Users can update own usage" on user_usage;
-create policy "Users can update own usage" on user_usage for update using (auth.uid() = user_id);
+-- 2. EVALUATIONS POLICIES (Data Isolation)
+-- Admins can see everything
+drop policy if exists "Admins see all evaluations" on evaluations;
+create policy "Admins see all evaluations" on evaluations for select using (is_admin());
 
-drop policy if exists "Admins can read all usage" on user_usage;
-create policy "Admins can read all usage" on user_usage for select using (is_admin());
+-- Managers/Analysts can see all evaluations from their COMPANY
+drop policy if exists "Managers and Analysts see company evaluations" on evaluations;
+create policy "Managers and Analysts see company evaluations" on evaluations for select using (
+  exists (
+    select 1 from profiles viewer
+    where viewer.id = auth.uid()
+    and (viewer.role = 'manager' or viewer.role = 'analyst' or viewer.role = 'admin')
+    and viewer.company = (
+        select owner.company from profiles owner where owner.id = evaluations.user_id
+    )
+  )
+);
 
-drop policy if exists "Admins can update all usage" on user_usage;
-create policy "Admins can update all usage" on user_usage for update using (is_admin());
+-- Agents can ONLY see their own evaluations
+drop policy if exists "Agents see own evaluations" on evaluations;
+create policy "Agents see own evaluations" on evaluations for select using (auth.uid() = user_id);
 
-drop policy if exists "Admins can insert usage" on user_usage;
-create policy "Admins can insert usage" on user_usage for insert with check (is_admin());
-
--- 3. USAGE HISTORY POLICIES
-drop policy if exists "Users can read own usage history" on usage_history;
-create policy "Users can read own usage history" on usage_history for select using (auth.uid() = user_id);
-
-drop policy if exists "Users can insert own usage history" on usage_history;
-create policy "Users can insert own usage history" on usage_history for insert with check (auth.uid() = user_id);
-
--- ALLOW ADMINS TO READ ALL HISTORY (Required for Lifetime Usage Calculation)
-drop policy if exists "Admins can read all usage history" on usage_history;
-create policy "Admins can read all usage history" on usage_history for select using (is_admin());
-
--- 4. SCENARIOS POLICIES
-drop policy if exists "Users can view their own scenarios" on scenarios;
-create policy "Users can view their own scenarios" on scenarios for select using (auth.uid() = user_id);
-
-drop policy if exists "Users can insert their own scenarios" on scenarios;
-create policy "Users can insert their own scenarios" on scenarios for insert with check (auth.uid() = user_id);
-
-drop policy if exists "Users can delete their own scenarios" on scenarios;
-create policy "Users can delete their own scenarios" on scenarios for delete using (auth.uid() = user_id);
-
--- 5. CRITERIA & EVALUATIONS
-drop policy if exists "Users view own criteria" on criteria;
-create policy "Users view own criteria" on criteria for select using (auth.uid() = user_id);
-
-drop policy if exists "Users insert own criteria" on criteria;
-create policy "Users insert own criteria" on criteria for insert with check (auth.uid() = user_id);
-
-drop policy if exists "Users delete own criteria" on criteria;
-create policy "Users delete own criteria" on criteria for delete using (auth.uid() = user_id);
-
-drop policy if exists "Users view own evaluations" on evaluations;
-create policy "Users view own evaluations" on evaluations for select using (auth.uid() = user_id);
-
-drop policy if exists "Users update own evaluations" on evaluations;
-create policy "Users update own evaluations" on evaluations for update using (auth.uid() = user_id);
-
+-- Insert: Users insert their own
 drop policy if exists "Users insert own evaluations" on evaluations;
 create policy "Users insert own evaluations" on evaluations for insert with check (auth.uid() = user_id);
 
--- ==========================================
--- DATA SEEDING (Run once)
--- ==========================================
-
--- Insert the requested 51 evaluations history record for all current users
--- This makes the 'Billing History' table populate with data immediately.
-INSERT INTO usage_history (user_id, period_end, credits_used, analyses_count, transcriptions_count, chat_messages_count)
-SELECT 
-  id as user_id,
-  NOW() - INTERVAL '1 month' as period_end,
-  5350 as credits_used, 
-  51 as analyses_count,
-  12 as transcriptions_count,
-  50 as chat_messages_count
-FROM auth.users
-WHERE NOT EXISTS (
-    SELECT 1 FROM usage_history WHERE user_id = auth.users.id AND analyses_count = 51
+-- Update/Delete: Admins & Managers can delete (Soft delete usually)
+drop policy if exists "Admins and Managers update evaluations" on evaluations;
+create policy "Admins and Managers update evaluations" on evaluations for update using (
+  is_manager() or auth.uid() = user_id
 );
+
+-- 3. USER USAGE (Billing)
+-- Admins see all
+drop policy if exists "Admins see all usage" on user_usage;
+create policy "Admins see all usage" on user_usage for select using (is_admin());
+
+-- Managers see their own company usage (assuming usage is tied to user_id, Managers usually pay)
+drop policy if exists "Managers see own usage" on user_usage;
+create policy "Managers see own usage" on user_usage for select using (auth.uid() = user_id);
+
+-- Agents see own usage
+drop policy if exists "Agents see own usage" on user_usage;
+create policy "Agents see own usage" on user_usage for select using (auth.uid() = user_id);
+
+-- 4. SCENARIOS (Training)
+-- Admins see all
+drop policy if exists "Admins see all scenarios" on scenarios;
+create policy "Admins see all scenarios" on scenarios for select using (is_admin());
+
+-- Managers/Analysts see scenarios created by anyone in their company
+drop policy if exists "Company shared scenarios" on scenarios;
+create policy "Company shared scenarios" on scenarios for select using (
+  exists (
+    select 1 from profiles viewer
+    where viewer.id = auth.uid()
+    and viewer.company = (
+        select owner.company from profiles owner where owner.id = scenarios.user_id
+    )
+  )
+);
+
+-- Basic agents see scenarios created by them or public ones (if we had a public flag)
+drop policy if exists "Agents see own scenarios" on scenarios;
+create policy "Agents see own scenarios" on scenarios for select using (auth.uid() = user_id);
+
+-- Insert/Update/Delete Scenarios: Managers, Analysts
+drop policy if exists "Managers/Analysts manage scenarios" on scenarios;
+create policy "Managers/Analysts manage scenarios" on scenarios for all using (
+  (is_manager() or exists (select 1 from profiles where id = auth.uid() and role = 'analyst'))
+  and 
+  (auth.uid() = user_id) -- Or logic to allow editing team scenarios
+);
+
+-- ==========================================
+-- DATA SEEDING (Ensure at least one admin exists if table is empty)
+-- ==========================================
+-- NOTE: You must manually run this in Supabase SQL Editor to promote yourself to admin
+-- UPDATE profiles SET role = 'admin' WHERE email = 'your_email@example.com';
