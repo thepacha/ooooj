@@ -216,14 +216,17 @@ create policy "Company shared scenarios" on scenarios for select using (
   )
 );
 
--- Basic agents see scenarios created by them
+-- Basic agents see scenarios created by them or public ones (if we had a public flag)
 drop policy if exists "Agents see own scenarios" on scenarios;
 create policy "Agents see own scenarios" on scenarios for select using (auth.uid() = user_id);
 
--- UPDATED: Allow ALL users to Insert/Update/Delete their OWN scenarios
--- This fixes the issue where Agents couldn't save created scenarios
-drop policy if exists "Users manage own scenarios" on scenarios;
-create policy "Users manage own scenarios" on scenarios for all using (auth.uid() = user_id);
+-- Insert/Update/Delete Scenarios: Managers, Analysts
+drop policy if exists "Managers/Analysts manage scenarios" on scenarios;
+create policy "Managers/Analysts manage scenarios" on scenarios for all using (
+  (is_manager() or exists (select 1 from profiles where id = auth.uid() and role = 'analyst'))
+  and 
+  (auth.uid() = user_id) -- Or logic to allow editing team scenarios
+);
 
 -- ==========================================
 -- DATA SEEDING (Ensure at least one admin exists if table is empty)

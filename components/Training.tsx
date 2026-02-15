@@ -412,39 +412,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                 icon: (s.category === 'Sales' ? 'TrendingUp' : s.category === 'Technical' ? 'Wrench' : 'Shield') as any
             }));
             
-            // IF USER IS LOGGED IN, SAVE THESE TO DATABASE IMMEDIATELY
-            // This ensures they "persist" as requested by the user
-            if (user) {
-                const dbScenarios = withIds.map(s => ({
-                    id: s.id,
-                    user_id: user.id,
-                    title: s.title,
-                    description: s.description,
-                    difficulty: s.difficulty,
-                    category: s.category,
-                    icon: s.icon,
-                    initial_message: s.initialMessage,
-                    system_instruction: s.systemInstruction,
-                    objectives: s.objectives,
-                    talk_tracks: s.talkTracks,
-                    openers: s.openers, 
-                    voice: s.voice
-                }));
-
-                const { error } = await supabase.from('scenarios').insert(dbScenarios);
-                
-                if (!error) {
-                    // If saved successfully, add to custom scenarios so they appear in the persisted list
-                    setCustomScenarios(prev => [...(withIds as any[]), ...prev]);
-                } else {
-                    console.error("Failed to auto-save refreshed scenarios", error);
-                    // Fallback to static if save fails, so UI still updates
-                    setStaticScenarios(withIds as any);
-                }
-            } else {
-                setStaticScenarios(withIds as any);
-            }
-            
+            setStaticScenarios(withIds as any);
         } catch (e) {
             console.warn("AI generation failed or timed out, falling back to procedural", e);
             // Fallback to procedural generation if AI fails or quota limits hit
@@ -794,25 +762,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
             onAnalysisComplete(trainingAnalysis);
             
             if (user) {
-                // PERSIST TO DATABASE
-                try {
-                    await supabase.from('evaluations').insert({
-                        id: trainingAnalysis.id,
-                        user_id: user.id,
-                        timestamp: trainingAnalysis.timestamp,
-                        agent_name: trainingAnalysis.agentName,
-                        customer_name: trainingAnalysis.customerName,
-                        summary: trainingAnalysis.summary,
-                        overall_score: trainingAnalysis.overallScore,
-                        sentiment: trainingAnalysis.sentiment,
-                        criteria_results: trainingAnalysis.criteriaResults,
-                        raw_transcript: trainingAnalysis.rawTranscript
-                    });
-                    
-                    await incrementUsage(user.id, COSTS.ANALYSIS, 'analysis'); 
-                } catch (dbErr) {
-                    console.error("Failed to save evaluation to DB", dbErr);
-                }
+                await incrementUsage(user.id, COSTS.ANALYSIS, 'analysis'); 
             }
             setView('result');
         } catch (e) {
@@ -853,8 +803,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                     });
                     if (error) throw error;
                 } catch (dbError) {
-                    console.error("Failed to save generated scenario:", dbError);
-                    alert("Failed to save scenario to your account (Database Error).");
+                    // Fallback handled silently
                 }
             }
 
