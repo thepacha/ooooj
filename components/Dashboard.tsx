@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { AnalysisResult, ViewState } from '../types';
 import { 
@@ -172,7 +173,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
             </div>
             <div className="flex gap-2">
                 <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                    <div className="w-2 h-2 rounded-full bg-[#0500e2]"></div> Avg Score
+                    <div className="w-2 h-2 rounded-full bg-[#0500e2]"></div> {t('dash.chart_avg')}
                 </span>
             </div>
           </div>
@@ -255,7 +256,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
                                 </div>
                                 <div>
                                     <p className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-none">{agent.name}</p>
-                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">{agent.count} evaluations</p>
+                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">{agent.count} {t('dash.leaderboard_evals')}</p>
                                 </div>
                             </div>
                             <span className={`text-sm font-bold ${getScoreColor(agent.avg)}`}>{agent.avg}%</span>
