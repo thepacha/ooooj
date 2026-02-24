@@ -7,6 +7,7 @@ import { incrementUsage, COSTS, checkLimit } from '../lib/usageService';
 import { generateId } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { PreSessionBriefing } from './PreSessionBriefing';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Define local interface for Audio Data to avoid SDK import conflicts
 interface AudioDataPart {
@@ -281,6 +282,7 @@ interface AIParamsState {
 }
 
 export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisComplete }) => {
+    const { t, isRTL } = useLanguage();
     const [view, setView] = useState<'list' | 'briefing' | 'active' | 'result' | 'create'>('list');
     const [activeTab, setActiveTab] = useState<'scenarios' | 'history'>('scenarios');
     const [activeScenario, setActiveScenario] = useState<TrainingScenario | null>(null);
@@ -937,13 +939,13 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         return (
             <div className="max-w-2xl mx-auto pb-24 md:pb-12 animate-fade-in">
                 <button onClick={() => setView('list')} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors font-bold">
-                    <ArrowRight size={20} className="rotate-180" /> Back to List
+                    <ArrowRight size={20} className="rotate-180" /> {t('training.briefing.back')}
                 </button>
 
                 <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
                     <div className="p-8 md:p-10 border-b border-slate-100 dark:border-slate-800">
-                        <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-2">Create New Scenario</h2>
-                        <p className="text-slate-500 dark:text-slate-400">Design a custom training roleplay manually or let AI generate one for you.</p>
+                        <h2 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mb-2">{t('training.create.title')}</h2>
+                        <p className="text-slate-500 dark:text-slate-400">{t('training.create.subtitle')}</p>
                     </div>
                     
                     <div className="p-2 bg-slate-50 dark:bg-slate-950 flex">
@@ -951,13 +953,13 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                             onClick={() => setCreationType('ai')}
                             className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${creationType === 'ai' ? 'bg-white dark:bg-slate-800 shadow-sm text-[#0500e2] dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'}`}
                         >
-                            <Sparkles size={16} /> AI Generator
+                            <Sparkles size={16} /> {t('training.create.ai')}
                         </button>
                         <button 
                             onClick={() => setCreationType('manual')}
                             className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${creationType === 'manual' ? 'bg-white dark:bg-slate-800 shadow-sm text-[#0500e2] dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'}`}
                         >
-                            <Wrench size={16} /> Manual Builder
+                            <Wrench size={16} /> {t('training.create.manual')}
                         </button>
                     </div>
 
@@ -966,7 +968,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                             <div className="space-y-6">
                                 {/* Category Selection First */}
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Category</label>
+                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t('training.form.category')}</label>
                                     <div className="flex gap-2">
                                         {(['Sales', 'Support', 'Technical'] as const).map(cat => (
                                             <button
@@ -986,7 +988,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
 
                                 {/* Industry Selection - NEW */}
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Industry / Sector</label>
+                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t('training.form.industry')}</label>
                                     <div className="flex flex-wrap gap-2 mb-2">
                                         {['SaaS', 'E-commerce', 'Healthcare', 'Retail', 'Fintech', 'Real Estate', 'Hospitality'].map(ind => (
                                             <button
@@ -1017,7 +1019,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                 {/* Sales Funnel Stage (Conditional) */}
                                 {aiParams.category === 'Sales' && (
                                     <div className="animate-in fade-in slide-in-from-top-1">
-                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Sales Funnel Stage</label>
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t('training.form.funnel')}</label>
                                         <select 
                                             value={aiParams.funnelStage}
                                             onChange={(e) => setAiParams({...aiParams, funnelStage: e.target.value})}
@@ -1037,7 +1039,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                 {/* Persona & Difficulty Row */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Buyer Persona</label>
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t('training.form.persona')}</label>
                                         <input 
                                             type="text"
                                             value={aiParams.persona}
@@ -1047,7 +1049,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Difficulty</label>
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t('training.card.difficulty')}</label>
                                         <select 
                                             value={aiParams.difficulty}
                                             onChange={(e) => setAiParams({...aiParams, difficulty: e.target.value})}
@@ -1062,7 +1064,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
 
                                 {/* Mood Selection */}
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Buyer Mood</label>
+                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t('training.form.mood')}</label>
                                     <div className="grid grid-cols-3 gap-2">
                                         {['Curious', 'Skeptical', 'Urgent', 'Frustrated', 'Happy', 'Indifferent'].map(m => (
                                             <button
@@ -1089,7 +1091,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                 {/* Topic Description */}
                                 <div>
                                     <div className="flex justify-between items-center mb-2">
-                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Topic Context</label>
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">{t('training.form.topic')}</label>
                                         <button 
                                             onClick={handleAutoGenerateTopic}
                                             disabled={isGeneratingTopic}
@@ -1113,7 +1115,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                     className="w-full py-4 bg-[#0500e2] text-white rounded-xl font-bold shadow-lg shadow-blue-600/20 hover:bg-[#0400c0] disabled:opacity-50 disabled:shadow-none transition-all flex items-center justify-center gap-2"
                                 >
                                     {isGenerating ? <Loader2 className="animate-spin" /> : <Sparkles size={20} />}
-                                    {isGenerating ? 'Generating Scenario...' : 'Generate with AI'}
+                                    {isGenerating ? t('training.form.generating') : t('training.form.generate')}
                                 </button>
                             </div>
                         ) : (
@@ -1232,9 +1234,9 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
                             <BarChart3 size={40} className="text-[#0500e2] animate-pulse" />
                         </div>
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Generating Performance Report</h2>
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{t('training.active.generating')}</h2>
                         <p className="text-slate-500 dark:text-slate-400">
-                            Our AI is analyzing your conversation for tone, empathy, and solution accuracy. This typically takes 5-10 seconds.
+                            {t('training.active.generating_desc')}
                         </p>
                     </div>
                 </div>
@@ -1275,8 +1277,8 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                             onClick={endSession}
                             className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg font-bold text-sm hover:opacity-90 transition-opacity whitespace-nowrap shadow-sm"
                         >
-                            <span className="hidden sm:inline">End Session</span>
-                            <span className="sm:hidden">End</span>
+                            <span className="hidden sm:inline">{t('training.active.end')}</span>
+                            <span className="sm:hidden">{t('training.active.end')}</span>
                         </button>
                     </div>
                 </div>
@@ -1365,9 +1367,9 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                 
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Session Analysis</h2>
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t('training.result.title')}</h2>
                     <button onClick={() => setView('list')} className="text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
-                        Close Report
+                        {t('training.result.close')}
                     </button>
                 </div>
 
@@ -1377,7 +1379,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                     <div className="space-y-6">
                         {/* Score Card */}
                         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 text-center shadow-sm">
-                            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Performance Score</p>
+                            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">{t('training.result.score')}</p>
                             <div className={`text-6xl font-bold mb-2 ${result.score >= 90 ? 'text-emerald-600' : result.score >= 75 ? 'text-[#0500e2]' : 'text-amber-500'}`}>
                                 {result.score}
                             </div>
@@ -1390,7 +1392,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                 <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-500">
                                     <Timer size={20} />
                                 </div>
-                                <span className="font-bold text-slate-700 dark:text-slate-300">Session Duration</span>
+                                <span className="font-bold text-slate-700 dark:text-slate-300">{t('training.result.duration')}</span>
                             </div>
                             <span className="font-mono font-bold text-lg text-slate-900 dark:text-white">{formatTime(sessionDuration)}</span>
                         </div>
@@ -1398,7 +1400,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         {/* Executive Summary */}
                         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
                             <h3 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                                <FileText size={18} className="text-slate-400" /> Executive Summary
+                                <FileText size={18} className="text-slate-400" /> {t('training.result.summary')}
                             </h3>
                             <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
                                 {result.feedback}
@@ -1407,10 +1409,10 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
 
                         <div className="flex gap-3">
                             <button onClick={handleCopyTranscript} className="flex-1 justify-center px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2">
-                                {isCopied ? <Check size={16} /> : <Copy size={16} />} Copy Transcript
+                                {isCopied ? <Check size={16} /> : <Copy size={16} />} {t('eval.copy')}
                             </button>
                             <button onClick={() => activeScenario && selectScenario(activeScenario, mode)} className="flex-1 justify-center px-4 py-3 bg-[#0500e2] text-white rounded-xl font-bold text-sm hover:bg-[#0400c0] transition-colors flex items-center gap-2">
-                                <RefreshCw size={16} /> Retry
+                                <RefreshCw size={16} /> {t('training.result.retry')}
                             </button>
                         </div>
                     </div>
@@ -1422,7 +1424,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="bg-emerald-50/50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-900/20 p-6">
                                 <h3 className="font-bold text-emerald-800 dark:text-emerald-400 mb-4 flex items-center gap-2">
-                                    <CheckCircle size={18} /> Key Strengths
+                                    <CheckCircle size={18} /> {t('training.result.strengths')}
                                 </h3>
                                 <ul className="space-y-3">
                                     {result.strengths.map((s, i) => (
@@ -1436,7 +1438,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
 
                             <div className="bg-amber-50/50 dark:bg-amber-900/10 rounded-2xl border border-amber-100 dark:border-amber-900/20 p-6">
                                 <h3 className="font-bold text-amber-800 dark:text-amber-400 mb-4 flex items-center gap-2">
-                                    <TrendingUp size={18} /> Areas to Improve
+                                    <TrendingUp size={18} /> {t('training.result.improvements')}
                                 </h3>
                                 <ul className="space-y-3">
                                     {result.improvements.map((s, i) => (
@@ -1452,7 +1454,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         {/* Transcript Preview */}
                         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
                             <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 font-bold text-sm text-slate-500">
-                                Session Transcript
+                                {t('training.result.transcript')}
                             </div>
                             <div className="p-6 max-h-[300px] overflow-y-auto bg-white dark:bg-slate-900 font-mono text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                                 {activeScenario && messages.map((m, i) => (
@@ -1483,13 +1485,13 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                 <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                     <div>
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-wider mb-6">
-                            <Sparkles size={12} className="text-yellow-300" /> AI-Powered Simulation
+                            <Sparkles size={12} className="text-yellow-300" /> {t('training.header.badge')}
                         </div>
                         <h2 className="text-3xl md:text-5xl font-serif font-bold mb-4 leading-tight">
-                            Master Every Conversation.
+                            {t('training.header.title')}
                         </h2>
                         <p className="text-blue-100 text-lg mb-8 max-w-md leading-relaxed">
-                            Practice with realistic, adaptive AI personas that challenge your skills in Sales, Support, and Technical scenarios.
+                            {t('training.header.subtitle')}
                         </p>
                         
                         <div className="flex flex-wrap gap-4">
@@ -1497,7 +1499,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                 onClick={() => setView('create')}
                                 className="px-6 py-3.5 bg-white text-[#0500e2] rounded-xl font-bold hover:bg-blue-50 transition-all shadow-lg flex items-center gap-2"
                             >
-                                <Plus size={18} /> Create Custom Scenario
+                                <Plus size={18} /> {t('training.create')}
                             </button>
                         </div>
                     </div>
@@ -1509,7 +1511,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                 <div className="p-2 bg-yellow-400/20 rounded-lg text-yellow-300">
                                     <Trophy size={24} />
                                 </div>
-                                <span className="text-xs font-bold uppercase tracking-wider text-white/60">Total XP</span>
+                                <span className="text-xs font-bold uppercase tracking-wider text-white/60">{t('training.stats.xp')}</span>
                             </div>
                             <div>
                                 <span className="text-4xl font-bold text-white">{trainingHistory.reduce((acc, curr) => acc + (curr.overallScore * 10) + 50, 0).toLocaleString()}</span>
@@ -1528,7 +1530,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                             ? Math.round(trainingHistory.reduce((acc, curr) => acc + curr.overallScore, 0) / trainingHistory.length) 
                                             : 0}%
                                     </p>
-                                    <p className="text-xs text-blue-200 font-bold uppercase tracking-wide">Avg Performance</p>
+                                    <p className="text-xs text-blue-200 font-bold uppercase tracking-wide">{t('training.stats.avg')}</p>
                                 </div>
                             </div>
                             
@@ -1538,7 +1540,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                 </div>
                                 <div>
                                     <p className="text-2xl font-bold text-white">{trainingHistory.length}</p>
-                                    <p className="text-xs text-blue-200 font-bold uppercase tracking-wide">Total Attempts</p>
+                                    <p className="text-xs text-blue-200 font-bold uppercase tracking-wide">{t('training.stats.attempts')}</p>
                                 </div>
                             </div>
                         </div>
@@ -1551,13 +1553,13 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                     onClick={() => setActiveTab('scenarios')}
                     className={`pb-4 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'scenarios' ? 'text-[#0500e2] border-[#0500e2]' : 'text-slate-500 border-transparent hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'}`}
                 >
-                    Active Scenarios
+                    {t('training.tab.active')}
                 </button>
                 <button 
                     onClick={() => setActiveTab('history')}
                     className={`pb-4 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${activeTab === 'history' ? 'text-[#0500e2] border-[#0500e2]' : 'text-slate-500 border-transparent hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'}`}
                 >
-                    Training History
+                    {t('training.tab.history')}
                 </button>
              </div>
 
@@ -1645,13 +1647,13 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                             onClick={() => selectScenario(scenario, 'text')}
                                             className="py-3 px-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-sm flex items-center justify-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all"
                                         >
-                                            <MessageSquare size={16} className="text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300" /> Chat
+                                            <MessageSquare size={16} className="text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300" /> {t('training.card.chat')}
                                         </button>
                                         <button 
                                             onClick={() => selectScenario(scenario, 'voice')}
                                             className="py-3 px-4 rounded-xl bg-[#0500e2] text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#0400c0] shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-0.5 active:translate-y-0 transition-all"
                                         >
-                                            <Phone size={16} /> Voice
+                                            <Phone size={16} /> {t('training.card.voice')}
                                         </button>
                                     </div>
                                 </div>
@@ -1664,18 +1666,18 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                     {trainingHistory.length === 0 ? (
                         <div className="p-12 text-center">
                             <Shield size={48} className="mx-auto text-slate-200 mb-4" />
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">No Training History</h3>
-                            <p className="text-slate-500 dark:text-slate-400">Complete a scenario to see your results here.</p>
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('training.empty.title')}</h3>
+                            <p className="text-slate-500 dark:text-slate-400">{t('training.empty.desc')}</p>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse min-w-[600px]">
                                 <thead className="bg-slate-50 dark:bg-slate-900/50">
                                     <tr>
-                                        <th className="p-4 pl-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
-                                        <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Scenario</th>
-                                        <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Feedback</th>
-                                        <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Score</th>
+                                        <th className="p-4 pl-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('history.table.date')}</th>
+                                        <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('history.table.agent')}</th>
+                                        <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('eval.summary')}</th>
+                                        <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('eval.score')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">

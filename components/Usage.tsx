@@ -3,12 +3,14 @@ import React, { useEffect, useState } from 'react';
 import { User, UsageMetrics, UsageHistory } from '../types';
 import { getUsage, getUsageHistory, purchaseCredits, COSTS } from '../lib/usageService';
 import { Loader2, Zap, AlertTriangle, FileText, Mic, MessageSquare, CreditCard, Plus, History, Calendar } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface UsageProps {
   user: User | null;
 }
 
 export const Usage: React.FC<UsageProps> = ({ user }) => {
+  const { t } = useLanguage();
   const [metrics, setMetrics] = useState<UsageMetrics | null>(null);
   const [history, setHistory] = useState<UsageHistory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,7 +107,7 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-900 dark:text-white">
                     <span className={`text-4xl font-bold font-serif ${color}`}>{percentage}%</span>
-                    <span className="text-xs text-slate-400 uppercase tracking-widest font-bold mt-1">Used</span>
+                    <span className="text-xs text-slate-400 uppercase tracking-widest font-bold mt-1">{t('usage.used')}</span>
                 </div>
              </div>
 
@@ -113,28 +115,28 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
                 <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
                     <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide flex items-center gap-1 ${bgColor} ${color}`}>
                         {isCritical ? <AlertTriangle size={12} /> : <Zap size={12} />}
-                        {isCritical ? 'Limit Reached' : 'Active Plan'}
+                        {isCritical ? t('usage.limit_reached') : t('usage.active_plan')}
                     </div>
                 </div>
                 <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-white mb-2">
-                    {metrics.credits_used.toLocaleString()} <span className="text-slate-400">/ {metrics.monthly_limit.toLocaleString()} Credits</span>
+                    {metrics.credits_used.toLocaleString()} <span className="text-slate-400">/ {metrics.monthly_limit.toLocaleString()} {t('usage.credits')}</span>
                 </h2>
                 <p className="text-slate-500 dark:text-slate-400 mb-6">
-                    Resets on {new Date(metrics.reset_date).toLocaleDateString()}. Usage is calculated based on analysis complexity and audio duration.
+                    {t('usage.resets_on')} {new Date(metrics.reset_date).toLocaleDateString()}.
                 </p>
                 
                 <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                     <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700">
                         <FileText size={14} className="text-slate-400"/>
-                        <strong>{metrics.analyses_count}</strong> Analyses
+                        <strong>{metrics.analyses_count}</strong> {t('usage.analyses')}
                     </div>
                     <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700">
                          <Mic size={14} className="text-slate-400"/>
-                        <strong>{metrics.transcriptions_count}</strong> Audio
+                        <strong>{metrics.transcriptions_count}</strong> {t('usage.audio')}
                     </div>
                      <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700">
                          <MessageSquare size={14} className="text-slate-400"/>
-                        <strong>{metrics.chat_messages_count}</strong> Chats
+                        <strong>{metrics.chat_messages_count}</strong> {t('usage.chats')}
                     </div>
                 </div>
              </div>
@@ -148,9 +150,9 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
                     <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white backdrop-blur-sm">
                         <CreditCard size={20} />
                     </div>
-                    <h3 className="text-xl font-serif font-bold">Top Up Credits</h3>
+                    <h3 className="text-xl font-serif font-bold">{t('usage.top_up')}</h3>
                 </div>
-                <p className="text-blue-100 text-sm mb-6">Running low? Add more credits instantly to continue analyzing.</p>
+                <p className="text-blue-100 text-sm mb-6">{t('usage.top_up_desc')}</p>
                 
                 <div className="space-y-3">
                     <button 
@@ -158,7 +160,7 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
                         disabled={purchasing}
                         className="w-full flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all border border-white/10 text-sm group"
                     >
-                        <span className="font-bold flex items-center gap-2"><Plus size={14} className="text-blue-200" /> 1,000 Credits</span>
+                        <span className="font-bold flex items-center gap-2"><Plus size={14} className="text-blue-200" /> 1,000 {t('usage.credits')}</span>
                         <span className="font-mono bg-white/20 px-2 py-1 rounded text-xs group-hover:bg-white group-hover:text-[#0500e2] transition-colors">$5</span>
                     </button>
                     <button 
@@ -166,7 +168,7 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
                         disabled={purchasing}
                         className="w-full flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all border border-white/10 text-sm group"
                     >
-                        <span className="font-bold flex items-center gap-2"><Plus size={14} className="text-blue-200" /> 5,000 Credits</span>
+                        <span className="font-bold flex items-center gap-2"><Plus size={14} className="text-blue-200" /> 5,000 {t('usage.credits')}</span>
                         <span className="font-mono bg-white/20 px-2 py-1 rounded text-xs group-hover:bg-white group-hover:text-[#0500e2] transition-colors">$20</span>
                     </button>
                     <button 
@@ -174,7 +176,7 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
                         disabled={purchasing}
                         className="w-full flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all border border-white/10 text-sm group"
                     >
-                        <span className="font-bold flex items-center gap-2"><Plus size={14} className="text-blue-200" /> 10,000 Credits</span>
+                        <span className="font-bold flex items-center gap-2"><Plus size={14} className="text-blue-200" /> 10,000 {t('usage.credits')}</span>
                         <span className="font-mono bg-white/20 px-2 py-1 rounded text-xs group-hover:bg-white group-hover:text-[#0500e2] transition-colors">$35</span>
                     </button>
                 </div>
@@ -187,7 +189,7 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
             {purchasing && (
                 <div className="absolute inset-0 bg-[#0500e2]/80 backdrop-blur-sm z-20 flex items-center justify-center flex-col gap-2 animate-fade-in">
                     <Loader2 className="animate-spin text-white" size={32} />
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">Processing...</span>
+                    <span className="text-xs font-bold text-white uppercase tracking-wider">{t('usage.processing')}</span>
                 </div>
             )}
         </div>
@@ -195,28 +197,25 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
 
       {/* Cost Breakdown Info */}
       <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800">
-         <h3 className="font-bold text-slate-900 dark:text-white mb-4">Credit Cost Breakdown</h3>
+         <h3 className="font-bold text-slate-900 dark:text-white mb-4">{t('usage.breakdown')}</h3>
          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
              <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
                 <div className="flex justify-between items-center mb-1">
-                    <span className="font-medium text-slate-700 dark:text-slate-200">Transcript Analysis</span>
-                    <span className="font-bold text-[#0500e2]">{COSTS.ANALYSIS} Credits</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-200">{t('usage.cost.analysis')}</span>
+                    <span className="font-bold text-[#0500e2]">{COSTS.ANALYSIS} {t('usage.credits')}</span>
                 </div>
-                <p className="text-xs text-slate-500">Per interaction analyzed.</p>
              </div>
              <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
                 <div className="flex justify-between items-center mb-1">
-                    <span className="font-medium text-slate-700 dark:text-slate-200">Audio Transcription</span>
-                    <span className="font-bold text-[#0500e2]">{COSTS.TRANSCRIPTION} Credits</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-200">{t('usage.cost.audio')}</span>
+                    <span className="font-bold text-[#0500e2]">{COSTS.TRANSCRIPTION} {t('usage.credits')}</span>
                 </div>
-                <p className="text-xs text-slate-500">Per file uploaded and transcribed.</p>
              </div>
              <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
                 <div className="flex justify-between items-center mb-1">
-                    <span className="font-medium text-slate-700 dark:text-slate-200">AI Chat Assistant</span>
-                    <span className="font-bold text-[#0500e2]">{COSTS.CHAT} Credit</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-200">{t('usage.cost.chat')}</span>
+                    <span className="font-bold text-[#0500e2]">{COSTS.CHAT} {t('usage.credits')}</span>
                 </div>
-                <p className="text-xs text-slate-500">Per message sent to RevuBot.</p>
              </div>
          </div>
       </div>
@@ -227,19 +226,19 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
               <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300">
                   <History size={20} />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Billing History</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t('usage.history.title')}</h3>
           </div>
           
           <div className="overflow-x-auto">
               <table className="w-full text-left">
                   <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">
                       <tr>
-                          <th className="p-5">Period Ending</th>
-                          <th className="p-5">Total Credits</th>
-                          <th className="p-5">Audio Credits</th>
-                          <th className="p-5">Analyses</th>
-                          <th className="p-5">Transcripts</th>
-                          <th className="p-5">Chat Messages</th>
+                          <th className="p-5">{t('usage.history.period')}</th>
+                          <th className="p-5">{t('usage.history.total')}</th>
+                          <th className="p-5">{t('usage.history.audio')}</th>
+                          <th className="p-5">{t('usage.history.transcripts')}</th>
+                          <th className="p-5">{t('usage.history.transcripts')}</th>
+                          <th className="p-5">{t('usage.history.messages')}</th>
                       </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -252,8 +251,8 @@ export const Usage: React.FC<UsageProps> = ({ user }) => {
                                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
                                   </span>
                                   <div>
-                                      <div className="font-bold text-[#0500e2] dark:text-[#4b53fa]">Current Period</div>
-                                      <div className="text-[10px] uppercase tracking-wide text-slate-400 font-bold">Ends {new Date(metrics.reset_date).toLocaleDateString()}</div>
+                                      <div className="font-bold text-[#0500e2] dark:text-[#4b53fa]">{t('usage.history.current')}</div>
+                                      <div className="text-[10px] uppercase tracking-wide text-slate-400 font-bold">{t('usage.history.ends')} {new Date(metrics.reset_date).toLocaleDateString()}</div>
                                   </div>
                               </div>
                           </td>

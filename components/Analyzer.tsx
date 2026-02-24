@@ -1,9 +1,11 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Mic, FileText, Loader2, AlertCircle, Square, Sparkles, Check, X, ArrowRight, Zap } from 'lucide-react';
 import { analyzeTranscript, generateMockTranscript, transcribeMedia } from '../services/geminiService';
 import { AnalysisResult, Criteria, User } from '../types';
 import { EvaluationView } from './EvaluationView';
 import { generateId } from '../lib/utils';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface AnalyzerProps {
   criteria: Criteria[];
@@ -79,6 +81,7 @@ const optimizeAudio = async (file: File): Promise<Blob> => {
 
 
 export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete, user }) => {
+  const { t, isRTL } = useLanguage();
   const [transcript, setTranscript] = useState('');
   const [processingStatus, setProcessingStatus] = useState<ProcessingStep>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -400,28 +403,28 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
                 </div>
                 
                 <h2 className="text-2xl font-bold text-center text-slate-900 dark:text-white">
-                    Processing Interaction
+                    {t('analyzer.process.title')}
                 </h2>
                 
                 <div className="space-y-3">
                     <ProcessingStep 
-                        label="Optimizing audio"
+                        label={t('analyzer.process.optimizing')}
                         active={processingStatus === 'optimizing'}
                         complete={processingStatus !== 'optimizing'}
                         icon={Zap}
                     />
                     <ProcessingStep 
-                        label="Transcribing audio"
+                        label={t('analyzer.process.transcribing')}
                         active={processingStatus === 'transcribing'}
                         complete={processingStatus === 'analyzing' || processingStatus === 'finalizing'}
                     />
                     <ProcessingStep 
-                        label="Analyzing conversation"
+                        label={t('analyzer.process.analyzing')}
                         active={processingStatus === 'analyzing'}
                         complete={processingStatus === 'finalizing'}
                     />
                     <ProcessingStep 
-                        label="Generating insights"
+                        label={t('analyzer.process.generating')}
                         active={processingStatus === 'finalizing'}
                         complete={false}
                     />
@@ -450,13 +453,13 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                 </span>
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">System Ready</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('analyzer.ready')}</span>
             </div>
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 dark:text-white mb-3">
-                Intelligence Engine
+                {t('analyzer.title')}
             </h2>
             <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base">
-                Select your input method to begin automated analysis.
+                {t('analyzer.subtitle')}
             </p>
         </div>
 
@@ -467,9 +470,9 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
         <div className="border-b border-slate-200 dark:border-slate-700 p-4 sm:p-6 bg-slate-50/50 dark:bg-slate-900/50">
             <div className="flex gap-1.5 sm:gap-2 bg-slate-200/50 dark:bg-slate-950 p-1.5 rounded-xl sm:rounded-2xl max-w-md mx-auto">
                 {[
-                    { id: 'text', icon: FileText, label: 'Transcript' },
-                    { id: 'upload', icon: Upload, label: 'Upload File' },
-                    { id: 'mic', icon: Mic, label: 'Live Audio' },
+                    { id: 'text', icon: FileText, label: t('analyzer.mode.transcript') },
+                    { id: 'upload', icon: Upload, label: t('analyzer.mode.upload') },
+                    { id: 'mic', icon: Mic, label: t('analyzer.mode.mic') },
                 ].map((mode) => (
                     <button
                         key={mode.id}
@@ -496,7 +499,7 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
                         <textarea
                             value={transcript}
                             onChange={(e) => setTranscript(e.target.value)}
-                            placeholder="Paste conversation transcript here..."
+                            placeholder={t('analyzer.text.placeholder')}
                             className="w-full h-[400px] p-6 rounded-2xl sm:rounded-3xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-[#0500e2] focus:ring-4 focus:ring-[#0500e2]/10 outline-none transition-all resize-none text-base leading-relaxed"
                         />
                         
@@ -505,12 +508,12 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                 <div className="text-center px-4">
                                     <FileText className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
-                                    <p className="text-sm sm:text-base text-slate-400 dark:text-slate-500 font-medium mb-3">No transcript yet</p>
+                                    <p className="text-sm sm:text-base text-slate-400 dark:text-slate-500 font-medium mb-3">{t('analyzer.text.empty')}</p>
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); loadDemoData(); }}
                                         className="text-sm sm:text-base text-[#0500e2] font-bold hover:underline pointer-events-auto transition-all"
                                     >
-                                        Load demo conversation
+                                        {t('analyzer.text.load_demo')}
                                     </button>
                                 </div>
                              </div>
@@ -533,7 +536,7 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
                             disabled={!transcript.trim()}
                             className="w-full sm:w-auto px-8 py-4 bg-[#0500e2] hover:bg-[#0400c0] disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white text-base font-bold rounded-xl sm:rounded-2xl shadow-xl shadow-blue-600/20 hover:shadow-blue-600/30 disabled:shadow-none hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:transform-none"
                         >
-                            Analyze Conversation <ArrowRight size={20} />
+                            {t('analyzer.btn.analyze')} <ArrowRight size={20} className={isRTL ? "rotate-180" : ""} />
                         </button>
                     </div>
                 </div>
@@ -564,10 +567,10 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
                             <Upload size={32} className="sm:w-10 sm:h-10" />
                         </div>
                         <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                            {dragActive ? "Drop files here" : "Drop file or tap to upload"}
+                            {dragActive ? "Drop files here" : t('analyzer.upload.drop')}
                         </h3>
                         <p className="text-slate-500 dark:text-slate-400 mb-6 text-center max-w-sm px-4">
-                            Support for MP3, WAV, M4A, MP4, and TXT files.<br className="hidden sm:block"/> Max file size {MAX_SIZE_MB}MB.
+                            {t('analyzer.upload.support')}<br className="hidden sm:block"/> Max file size {MAX_SIZE_MB}MB.
                         </p>
                     </div>
                 </div>
@@ -605,7 +608,7 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
                                     <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-20"></span>
                                     <Square size={24} className="sm:w-8 sm:h-8" fill="currentColor" />
                                 </button>
-                                <p className="text-xs sm:text-sm font-bold text-red-500 uppercase tracking-widest animate-pulse">Recording Active</p>
+                                <p className="text-xs sm:text-sm font-bold text-red-500 uppercase tracking-widest animate-pulse">{t('analyzer.mic.recording')}</p>
                             </div>
                         ) : (
                             <div className="flex flex-col items-center gap-4">
@@ -615,7 +618,7 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
                                 >
                                     <Mic size={28} className="sm:w-8 sm:h-8 group-hover:scale-110 transition-transform" />
                                 </button>
-                                <p className="text-xs sm:text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Tap to Record</p>
+                                <p className="text-xs sm:text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t('analyzer.mic.tap')}</p>
                             </div>
                         )}
                     </div>

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { AnalysisResult } from '../types';
 import { Search, ChevronRight, Filter, X, Trash2, RefreshCcw, AlertTriangle } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface HistoryProps {
   history: AnalysisResult[];
@@ -20,6 +21,7 @@ export const History: React.FC<HistoryProps> = ({
     onPermanentDelete,
     filter = 'all' 
 }) => {
+  const { t, isRTL } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'high' | 'low' | 'trash'>(filter);
 
@@ -80,7 +82,7 @@ export const History: React.FC<HistoryProps> = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
-                {activeFilter === 'trash' ? 'Deleted Evaluations' : 'Evaluation History'}
+                {activeFilter === 'trash' ? t('history.trash') : t('history.title')}
             </h2>
             
             {/* Filter Tabs */}
@@ -89,28 +91,28 @@ export const History: React.FC<HistoryProps> = ({
                     onClick={() => setActiveFilter('all')}
                     className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${activeFilter === 'all' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-300'}`}
                 >
-                    All
+                    {t('history.filter.all')}
                 </button>
                 <button 
                     onClick={() => setActiveFilter('high')}
                     className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1.5 ${activeFilter === 'high' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 hover:text-emerald-600'}`}
                 >
                     <div className={`w-1.5 h-1.5 rounded-full ${activeFilter === 'high' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
-                    High Scores
+                    {t('history.filter.high')}
                 </button>
                 <button 
                     onClick={() => setActiveFilter('low')}
                     className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1.5 ${activeFilter === 'low' ? 'bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 shadow-sm' : 'text-slate-500 hover:text-red-600'}`}
                 >
                     <div className={`w-1.5 h-1.5 rounded-full ${activeFilter === 'low' ? 'bg-red-500' : 'bg-slate-300'}`}></div>
-                    Critical
+                    {t('history.filter.low')}
                 </button>
                 <div className="w-px bg-slate-300 dark:bg-slate-700 mx-1 my-1"></div>
                 <button 
                     onClick={() => setActiveFilter('trash')}
                     className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1.5 ${activeFilter === 'trash' ? 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
                 >
-                    <Trash2 size={12} /> Trash
+                    <Trash2 size={12} /> {t('history.filter.trash')}
                 </button>
             </div>
         </div>
@@ -119,7 +121,7 @@ export const History: React.FC<HistoryProps> = ({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input
             type="text"
-            placeholder="Search agent or content..."
+            placeholder={t('history.search')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0500e2] w-full md:w-64 transition-colors"
@@ -139,10 +141,10 @@ export const History: React.FC<HistoryProps> = ({
               <div className="flex items-center gap-2 text-sm font-medium">
                   {activeFilter === 'trash' ? <Trash2 size={16} /> : <Filter size={16} />}
                   {activeFilter === 'high' 
-                    ? 'Showing High Performers (Score ≥ 90%)' 
+                    ? t('history.banner.high') 
                     : activeFilter === 'low' 
-                        ? 'Showing Critical Reviews (Score < 75%)' 
-                        : 'Viewing Deleted Items'}
+                        ? t('history.banner.low')
+                        : t('history.banner.trash')}
               </div>
               <button 
                 onClick={() => setActiveFilter('all')}
@@ -158,12 +160,12 @@ export const History: React.FC<HistoryProps> = ({
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
               <tr>
-                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Date</th>
-                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Agent</th>
-                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Customer</th>
-                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Sentiment</th>
-                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">Score</th>
-                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 text-right">Actions</th>
+                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">{t('history.table.date')}</th>
+                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">{t('history.table.agent')}</th>
+                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">{t('history.table.customer')}</th>
+                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">{t('history.table.sentiment')}</th>
+                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">{t('history.table.score')}</th>
+                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 text-right">{t('history.table.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -172,9 +174,9 @@ export const History: React.FC<HistoryProps> = ({
                       <td colSpan={6} className="p-16 text-center text-slate-400 dark:text-slate-500">
                           <div className="flex flex-col items-center gap-2">
                              {activeFilter === 'trash' ? <Trash2 size={24} className="opacity-50 mb-2"/> : <Filter size={24} className="opacity-50 mb-2"/>}
-                             <p>{activeFilter === 'trash' ? "Trash is empty." : "No evaluations match the current filters."}</p>
+                             <p>{activeFilter === 'trash' ? t('history.empty_trash') : t('history.empty')}</p>
                              {activeFilter !== 'all' && activeFilter !== 'trash' && (
-                                 <button onClick={() => setActiveFilter('all')} className="text-[#0500e2] font-bold text-sm hover:underline">Clear Filters</button>
+                                 <button onClick={() => setActiveFilter('all')} className="text-[#0500e2] font-bold text-sm hover:underline">{t('history.clear_filters')}</button>
                              )}
                           </div>
                       </td>
@@ -241,7 +243,7 @@ export const History: React.FC<HistoryProps> = ({
                                             <Trash2 size={16} />
                                         </button>
                                     )}
-                                    <ChevronRight size={18} className="text-slate-300 group-hover:text-[#0500e2] dark:group-hover:text-[#4b53fa]" />
+                                    <ChevronRight size={18} className={`text-slate-300 group-hover:text-[#0500e2] dark:group-hover:text-[#4b53fa] ${isRTL ? 'rotate-180' : ''}`} />
                                 </>
                             )}
                           </div>

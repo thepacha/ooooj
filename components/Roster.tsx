@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { AnalysisResult, ViewState } from '../types';
 import { Search, ArrowUpDown, Award, TrendingUp, Users, BarChart2, Calendar, X, ChevronDown, ChevronRight } from 'lucide-react';
 import { AgentProfile } from './AgentProfile';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface RosterProps {
   history: AnalysisResult[];
@@ -25,6 +26,7 @@ interface AgentStats {
 }
 
 export const Roster: React.FC<RosterProps> = ({ history, setView, onSelectEvaluation }) => {
+  const { t, isRTL } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<keyof AgentStats | 'score'>('score');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -173,7 +175,7 @@ export const Roster: React.FC<RosterProps> = ({ history, setView, onSelectEvalua
                 <Users size={32} />
              </div>
              <div>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Active Agents</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('roster.active_agents')}</p>
                 <h3 className="text-4xl font-serif font-bold text-slate-900 dark:text-white mt-1">{agents.length}</h3>
              </div>
         </div>
@@ -183,7 +185,7 @@ export const Roster: React.FC<RosterProps> = ({ history, setView, onSelectEvalua
                 <BarChart2 size={32} />
              </div>
              <div>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Team Average</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('roster.team_avg')}</p>
                 <div className="flex items-baseline gap-2 mt-1">
                     <h3 className={`text-4xl font-serif font-bold ${getScoreColor(teamAvg)}`}>{teamAvg}%</h3>
                 </div>
@@ -195,7 +197,7 @@ export const Roster: React.FC<RosterProps> = ({ history, setView, onSelectEvalua
                 <Award size={32} />
              </div>
              <div>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Top Performer</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('roster.top_performer')}</p>
                 <h3 className="text-2xl font-serif font-bold text-slate-900 dark:text-white mt-1 truncate max-w-[180px]">
                     {topAgent ? topAgent.name : '-'}
                 </h3>
@@ -209,10 +211,10 @@ export const Roster: React.FC<RosterProps> = ({ history, setView, onSelectEvalua
         {/* Controls */}
         <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
              <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Full Team Roster</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('roster.title')}</h2>
                 {(startDate || endDate) && (
                     <p className="text-xs text-slate-400 mt-1">
-                        Filtering from <span className="font-medium text-slate-600 dark:text-slate-300">{startDate || 'Start'}</span> to <span className="font-medium text-slate-600 dark:text-slate-300">{endDate || 'Now'}</span>
+                        {t('roster.filter.dates')} <span className="font-medium text-slate-600 dark:text-slate-300">{startDate || 'Start'}</span> {t('roster.filter.to')} <span className="font-medium text-slate-600 dark:text-slate-300">{endDate || 'Now'}</span>
                     </p>
                 )}
              </div>
@@ -248,7 +250,7 @@ export const Roster: React.FC<RosterProps> = ({ history, setView, onSelectEvalua
                         onChange={(e) => setSelectedAgentFilter(e.target.value)}
                         className="w-full sm:w-48 appearance-none pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-[#0500e2] outline-none cursor-pointer"
                     >
-                        <option value="">All Agents</option>
+                        <option value="">{t('roster.filter.all')}</option>
                         {allAgentNames.map(name => (
                             <option key={name} value={name}>{name}</option>
                         ))}
@@ -262,7 +264,7 @@ export const Roster: React.FC<RosterProps> = ({ history, setView, onSelectEvalua
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input
                         type="text"
-                        placeholder="Search agents..."
+                        placeholder={t('roster.search')}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0500e2] outline-none"
@@ -279,25 +281,25 @@ export const Roster: React.FC<RosterProps> = ({ history, setView, onSelectEvalua
                             className="p-5 font-semibold text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:text-[#0500e2] transition-colors"
                             onClick={() => handleSort('name')}
                         >
-                            <div className="flex items-center gap-2">Agent <ArrowUpDown size={14} /></div>
+                            <div className="flex items-center gap-2">{t('roster.table.agent')} <ArrowUpDown size={14} /></div>
                         </th>
                         <th 
                             className="p-5 font-semibold text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:text-[#0500e2] transition-colors text-center"
                             onClick={() => handleSort('evaluations')}
                         >
-                             <div className="flex items-center gap-2 justify-center">Evaluations <ArrowUpDown size={14} /></div>
+                             <div className="flex items-center gap-2 justify-center">{t('roster.table.evals')} <ArrowUpDown size={14} /></div>
                         </th>
                         <th 
                             className="p-5 font-semibold text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:text-[#0500e2] transition-colors"
                             onClick={() => handleSort('score')}
                         >
-                             <div className="flex items-center gap-2">Avg. Score <ArrowUpDown size={14} /></div>
+                             <div className="flex items-center gap-2">{t('roster.table.avg_score')} <ArrowUpDown size={14} /></div>
                         </th>
                         <th className="p-5 font-semibold text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                            Sentiment Breakdown
+                            {t('roster.table.sentiment')}
                         </th>
                         <th className="p-5 font-semibold text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">
-                            Last Active
+                            {t('roster.table.last_active')}
                         </th>
                         <th className="p-5"></th>
                     </tr>
@@ -331,7 +333,7 @@ export const Roster: React.FC<RosterProps> = ({ history, setView, onSelectEvalua
                                             </div>
                                             <div>
                                                 <div className="font-bold text-slate-900 dark:text-white group-hover:text-[#0500e2] transition-colors">{agent.name}</div>
-                                                <div className="text-xs text-slate-400 dark:text-slate-500">Rank #{idx + 1}</div>
+                                                <div className="text-xs text-slate-400 dark:text-slate-500">{t('roster.rank')} #{idx + 1}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -375,7 +377,7 @@ export const Roster: React.FC<RosterProps> = ({ history, setView, onSelectEvalua
                                         </div>
                                     </td>
                                     <td className="p-5">
-                                        <ChevronRight size={18} className="text-slate-300 group-hover:text-[#0500e2] dark:group-hover:text-[#4b53fa]" />
+                                        <ChevronRight size={18} className={`text-slate-300 group-hover:text-[#0500e2] dark:group-hover:text-[#4b53fa] ${isRTL ? 'rotate-180' : ''}`} />
                                     </td>
                                 </tr>
                             );
