@@ -248,7 +248,7 @@ export const PreSessionBriefing: React.FC<PreSessionBriefingProps> = ({ scenario
     <div className="max-w-7xl mx-auto pb-20 animate-fade-in px-4 md:px-8">
         
         {/* Top Navigation */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 md:mb-8">
             <button 
                 onClick={onBack} 
                 className="flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors font-bold group text-sm"
@@ -269,17 +269,17 @@ export const PreSessionBriefing: React.FC<PreSessionBriefingProps> = ({ scenario
             <div className="lg:col-span-2 space-y-8">
                 
                 {/* 1. Hero Scenario Card */}
-                <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 md:p-8 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
                     <div className="relative z-10 flex items-start gap-6">
-                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg shrink-0 ${
+                        <div className={`w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-white shadow-lg shrink-0 ${
                             scenario.category === 'Sales' ? 'bg-gradient-to-br from-green-500 to-emerald-700' : 
                             scenario.category === 'Technical' ? 'bg-gradient-to-br from-slate-600 to-slate-800' : 
                             'bg-gradient-to-br from-red-500 to-pink-700'
                         }`}>
-                            <Icon size={32} />
+                            <Icon size={24} className="md:w-8 md:h-8" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-serif font-bold text-slate-900 dark:text-white leading-tight mb-2">
+                            <h1 className="text-2xl md:text-3xl font-serif font-bold text-slate-900 dark:text-white leading-tight mb-2">
                                 {scenario.title}
                             </h1>
                             <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -292,7 +292,7 @@ export const PreSessionBriefing: React.FC<PreSessionBriefingProps> = ({ scenario
                         </div>
                     </div>
                     <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
-                        <p className="text-slate-600 dark:text-slate-300 text-lg leading-relaxed">
+                        <p className="text-slate-600 dark:text-slate-300 text-base md:text-lg leading-relaxed">
                             {scenario.description}
                         </p>
                     </div>

@@ -1,7 +1,8 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { TrainingScenario, TrainingResult, User, AnalysisResult, CriteriaResult } from '../types';
 import { createTrainingSession, evaluateTrainingSession, connectLiveTraining, generateAIScenario, generateTrainingTopic, GenerateScenarioParams } from '../services/geminiService';
-import { Shield, TrendingUp, Wrench, ArrowRight, RefreshCw, CheckCircle, Loader2, Send, Phone, PhoneOff, MessageSquare, Copy, Check, Plus, Sparkles, X, Calendar, Trash2, AlertTriangle, HelpCircle, Heart, Zap, Trophy, Target, Frown, Meh, Smile, MinusCircle, Clock, FileText, BarChart3, Timer, Mic, Building2 } from 'lucide-react';
+import { Shield, TrendingUp, Wrench, ArrowRight, RefreshCw, CheckCircle, Loader2, Send, Phone, PhoneOff, MessageSquare, Copy, Check, Plus, Sparkles, X, Calendar, Trash2, AlertTriangle, HelpCircle, Heart, Zap, Trophy, Target, Frown, Meh, Smile, MinusCircle, Clock, FileText, BarChart3, Timer, Mic, Building2, ChevronRight } from 'lucide-react';
 import { incrementUsage, COSTS, checkLimit } from '../lib/usageService';
 import { generateId } from '../lib/utils';
 import { supabase } from '../lib/supabase';
@@ -442,16 +443,21 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         setRegeneratingIds(prev => new Set(prev).add(scenario.id));
 
         try {
+            // Use description as context if available for better continuity, otherwise title
+            const context = scenario.description || scenario.title;
+
             const newVersion = await generateAIScenario({
-                topic: scenario.title,
+                topic: context,
                 category: scenario.category,
                 difficulty: scenario.difficulty,
                 funnelStage: '',
                 persona: '',
-                mood: ''
+                mood: '',
+                industry: ''
             });
             
             const updates = {
+                title: newVersion.title, // Update title too as name changes
                 description: newVersion.description,
                 initial_message: newVersion.initialMessage,
                 system_instruction: newVersion.systemInstruction,
@@ -476,9 +482,9 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                 : s
             ));
 
-        } catch (e) {
+        } catch (e: any) {
             console.error("Failed to regenerate custom scenario", e);
-            alert("Failed to regenerate scenario details.");
+            alert(`Failed to regenerate scenario: ${e.message || 'Unknown error'}`);
         } finally {
             setRegeneratingIds(prev => {
                 const next = new Set(prev);
@@ -1236,23 +1242,23 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         }
 
         return (
-            <div className="h-[calc(100dvh-100px)] md:h-[calc(100vh-140px)] flex flex-col bg-white dark:bg-slate-900 rounded-xl md:rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="h-[calc(100dvh-130px)] md:h-[calc(100vh-140px)] flex flex-col bg-white dark:bg-slate-900 rounded-xl md:rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
                 {/* Clean Header */}
                 <div className="p-4 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex flex-row justify-between items-center shrink-0 shadow-sm z-10">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 ${
                             activeScenario.category === 'Sales' ? 'bg-green-600' : 
                             activeScenario.category === 'Technical' ? 'bg-slate-700' : 'bg-red-600'
                         }`}>
                             {activeScenario.icon === 'TrendingUp' ? <TrendingUp size={20} /> : activeScenario.icon === 'Wrench' ? <Wrench size={20} /> : <Shield size={20} />}
                         </div>
-                        <div>
+                        <div className="min-w-0">
                             <h3 className="font-bold text-slate-900 dark:text-white leading-tight truncate max-w-[200px] md:max-w-md">{activeScenario.title}</h3>
-                            <div className="text-xs text-slate-500">{activeScenario.category} • {activeScenario.difficulty}</div>
+                            <div className="text-xs text-slate-500 truncate">{activeScenario.category} • {activeScenario.difficulty}</div>
                         </div>
                     </div>
                     
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 md:gap-4 shrink-0">
                         {/* Timer */}
                         <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg font-mono text-sm font-medium text-slate-600 dark:text-slate-300">
                             <Clock size={14} />
@@ -1269,7 +1275,8 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                             onClick={endSession}
                             className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg font-bold text-sm hover:opacity-90 transition-opacity whitespace-nowrap shadow-sm"
                         >
-                            End Session
+                            <span className="hidden sm:inline">End Session</span>
+                            <span className="sm:hidden">End</span>
                         </button>
                     </div>
                 </div>
@@ -1287,7 +1294,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                     </div>
                 )}
 
-                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-slate-50 dark:bg-slate-900 scroll-smooth">
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-slate-50 dark:bg-slate-900 scroll-smooth pb-2">
                     {messages.length === 0 && (
                         <div className="flex flex-col items-center justify-center h-full text-center text-slate-400">
                             <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
@@ -1323,7 +1330,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyDown={handleKeyDown}
                                     placeholder={isOverLimit ? "Message too long!" : "Type your response..."}
-                                    className={`w-full pl-5 pr-14 py-4 text-base rounded-2xl bg-slate-100 dark:bg-slate-950 border outline-none focus:ring-2 focus:ring-[#0500e2] transition-all ${
+                                    className={`w-full pl-5 pr-14 py-3 md:py-4 text-base rounded-2xl bg-slate-100 dark:bg-slate-950 border outline-none focus:ring-2 focus:ring-[#0500e2] transition-all ${
                                         isOverLimit ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : 'border-transparent focus:bg-white dark:focus:bg-slate-900'
                                     }`}
                                 />
@@ -1334,7 +1341,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                             <button 
                                 onClick={sendMessage}
                                 disabled={!input.trim() || isOverLimit}
-                                className="p-4 bg-[#0500e2] text-white rounded-2xl hover:bg-[#0400c0] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md h-[58px] w-[58px] flex items-center justify-center shrink-0"
+                                className="p-4 bg-[#0500e2] text-white rounded-2xl hover:bg-[#0400c0] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md h-[50px] md:h-[58px] w-[50px] md:w-[58px] flex items-center justify-center shrink-0"
                             >
                                 <Send size={20} />
                             </button>
@@ -1468,7 +1475,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         <div className="space-y-6 md:space-y-8 animate-fade-in pb-20 md:pb-12">
              
              {/* New "AI Training Companion" Header */}
-             <div className="bg-[#0500e2] rounded-[2.5rem] p-8 md:p-12 text-white relative overflow-hidden shadow-2xl">
+             <div className="bg-[#0500e2] rounded-[2.5rem] p-6 md:p-12 text-white relative overflow-hidden shadow-2xl">
                 {/* Background Decoration */}
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
                 <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-black/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4"></div>
@@ -1555,7 +1562,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
              </div>
 
              {activeTab === 'scenarios' ? (
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-2">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 animate-in fade-in slide-in-from-bottom-2">
                     {isLoadingScenarios && (
                         <div className="col-span-full py-12 flex justify-center text-slate-400">
                             <Loader2 className="animate-spin" size={24} />

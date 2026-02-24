@@ -160,6 +160,9 @@ create policy "Users can view their own scenarios" on scenarios for select using
 drop policy if exists "Users can insert their own scenarios" on scenarios;
 create policy "Users can insert their own scenarios" on scenarios for insert with check (auth.uid() = user_id);
 
+drop policy if exists "Users can update their own scenarios" on scenarios;
+create policy "Users can update their own scenarios" on scenarios for update using (auth.uid() = user_id);
+
 drop policy if exists "Users can delete their own scenarios" on scenarios;
 create policy "Users can delete their own scenarios" on scenarios for delete using (auth.uid() = user_id);
 
