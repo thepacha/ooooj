@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo } from 'react';
 import { AnalysisResult, ViewState } from '../types';
 import { Search, ArrowUpDown, Award, TrendingUp, Users, BarChart2, Calendar, X, ChevronDown, ChevronRight } from 'lucide-react';
@@ -310,8 +309,8 @@ export const Roster: React.FC<RosterProps> = ({ history, setView, onSelectEvalua
                          <tr>
                             <td colSpan={6} className="p-10 text-center text-slate-400 dark:text-slate-500">
                                 {history.length === 0 
-                                    ? t('roster.empty_evals') 
-                                    : t('roster.empty_filtered')}
+                                    ? "No evaluations recorded yet." 
+                                    : "No agents found matching current filters."}
                             </td>
                          </tr>
                     ) : (

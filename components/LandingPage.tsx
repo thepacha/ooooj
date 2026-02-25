@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Play, Mic, Shield, Zap, TrendingUp, Phone, Check, MessageSquare, AlertCircle, BarChart3, Star } from 'lucide-react';
 import { PublicNavigation } from './PublicNavigation';
@@ -96,7 +95,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                     </div>
                     <div className="h-4 w-px bg-slate-300 dark:bg-slate-700"></div>
                     <p>
-                        <span className="font-bold text-slate-900 dark:text-white">4.9/5</span> {t('landing.rating')}
+                        <span className="font-bold text-slate-900 dark:text-white">4.9/5</span> rating from 500+ teams
                     </p>
                 </div>
             </div>
@@ -115,7 +114,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                                 <TrendingUp size={20} />
                             </div>
                             <div>
-                                <p className="text-xs text-slate-500 font-bold uppercase">{t('landing.demo.performance')}</p>
+                                <p className="text-xs text-slate-500 font-bold uppercase">Performance</p>
                                 <p className="text-lg font-bold text-slate-900 dark:text-white">+32%</p>
                             </div>
                         </div>
@@ -133,7 +132,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                             <div>
                                 <h3 className="font-bold text-slate-900 dark:text-white text-lg">{t('landing.demo.customer_name')}</h3>
                                 <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                                    <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800">{t('landing.demo.support')}</span>
+                                    <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800">Support</span>
                                     <span>•</span>
                                     <span>00:42</span>
                                 </div>
@@ -168,7 +167,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                                 <Check size={16} strokeWidth={3} />
                             </div>
                             <div>
-                                <p className="text-xs font-bold text-slate-400 uppercase mb-1">{t('landing.demo.ai_coach')}</p>
+                                <p className="text-xs font-bold text-slate-400 uppercase mb-1">AI Coach</p>
                                 <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{t('landing.demo.feedback_good')}</p>
                             </div>
                         </div>
@@ -178,7 +177,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                                 <AlertCircle size={16} strokeWidth={3} />
                             </div>
                             <div>
-                                <p className="text-xs font-bold text-slate-400 uppercase mb-1">{t('landing.demo.ai_coach')}</p>
+                                <p className="text-xs font-bold text-slate-400 uppercase mb-1">AI Coach</p>
                                 <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{t('landing.demo.feedback_bad')}</p>
                             </div>
                         </div>

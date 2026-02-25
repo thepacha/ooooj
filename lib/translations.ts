@@ -33,8 +33,6 @@ export const translations = {
     'dash.based_on_avg': 'Based on avg. performance',
     'dash.view_roster': 'View Full Roster',
     'dash.no_data': 'No data available yet',
-    'dash.chart_avg': 'Avg Score',
-    'dash.leaderboard_evals': 'evaluations',
 
     // Analyzer
     'analyzer.title': 'Intelligence Engine',
@@ -93,8 +91,6 @@ export const translations = {
     'roster.table.sentiment': 'Sentiment Breakdown',
     'roster.table.last_active': 'Last Active',
     'roster.rank': 'Rank',
-    'roster.empty_evals': 'No evaluations recorded yet.',
-    'roster.empty_filtered': 'No agents found matching current filters.',
 
     // Usage
     'usage.used': 'Used',
@@ -284,16 +280,12 @@ export const translations = {
     'landing.cta.start': 'Start Simulation',
     'landing.cta.demo': 'Listen to Demo',
     'landing.social_proof_text': 'Used by 500+ forward-thinking teams',
-    'landing.rating': 'rating from 500+ teams',
     
     'landing.demo.customer_name': 'Angry Customer (AI)',
     'landing.demo.scenario': 'Scenario: Billing Dispute',
     'landing.demo.recording': 'Live Recording',
     'landing.demo.feedback_good': 'Good empathy statement used.',
     'landing.demo.feedback_bad': 'Warning: Interrupting customer.',
-    'landing.demo.performance': 'Performance',
-    'landing.demo.support': 'Support',
-    'landing.demo.ai_coach': 'AI Coach',
 
     'landing.comparison.title_start': 'Manager roleplay is',
     'landing.comparison.title_awkward': 'awkward',
@@ -522,8 +514,6 @@ export const translations = {
     'dash.based_on_avg': 'بناءً على متوسط الأداء',
     'dash.view_roster': 'عرض القائمة الكاملة',
     'dash.no_data': 'لا توجد بيانات متاحة بعد',
-    'dash.chart_avg': 'متوسط النتيجة',
-    'dash.leaderboard_evals': 'تقييمات',
 
     // Analyzer
     'analyzer.title': 'محرك الذكاء',
@@ -582,8 +572,6 @@ export const translations = {
     'roster.table.sentiment': 'تحليل المشاعر',
     'roster.table.last_active': 'آخر نشاط',
     'roster.rank': 'الترتيب',
-    'roster.empty_evals': 'لم يتم تسجيل أي تقييمات بعد.',
-    'roster.empty_filtered': 'لم يتم العثور على وكلاء مطابقين.',
 
     // Usage
     'usage.used': 'مستخدم',
@@ -769,20 +757,16 @@ export const translations = {
     'landing.hero.words.2': 'لزيادة متوسط حجم الصفقات.',
     'landing.hero.words.3': 'لتوفير أكثر من 10 ساعات.',
     'landing.hero.words.4': 'لتحقيق الهدف في أول 90 يوماً.',
-    'landing.hero.subtitle': 'المكالمات السيئة تهدر الإيرادات. درب وكلاءك بالذكاء الاصطناعي قبل أن تخسر العملاء. محاكاة مكالمات واقعية للغاية تقضي على التخمين وتبني الثقة بسرعة.',
+    'landing.hero.subtitle': 'لا تتدرب على عملاء حقيقيين. درب وكلاءك باستخدام سيناريوهات ذكاء اصطناعي واقعية للغاية تحاكي أصعب مكالماتك - قبل أن يرفعوا سماعة الهاتف.',
     'landing.cta.start': 'بدء المحاكاة',
     'landing.cta.demo': 'استمع للعرض',
     'landing.social_proof_text': 'يستخدمه أكثر من 500 فريق ريادي',
-    'landing.rating': 'تقييم من أكثر من 500 فريق',
 
     'landing.demo.customer_name': 'عميل غاضب (AI)',
     'landing.demo.scenario': 'السيناريو: نزاع الفواتير',
     'landing.demo.recording': 'تسجيل مباشر',
     'landing.demo.feedback_good': 'استخدام جيد لعبارات التعاطف.',
     'landing.demo.feedback_bad': 'تحذير: مقاطعة العميل.',
-    'landing.demo.performance': 'الأداء',
-    'landing.demo.support': 'دعم',
-    'landing.demo.ai_coach': 'مدرب AI',
 
     'landing.comparison.title_start': 'لعب الأدوار مع المديرين هو',
     'landing.comparison.title_awkward': 'أمر محرج',
