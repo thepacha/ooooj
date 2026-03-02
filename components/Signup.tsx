@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { DEFAULT_CRITERIA } from '../types';
 import { PublicNavigation } from './PublicNavigation';
 import { useLanguage } from '../contexts/LanguageContext';
+import mixpanel from '../lib/mixpanel';
 
 interface SignupProps {
   onSignup: (user: User) => void;
@@ -135,7 +136,19 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
             }));
             
             await supabase.from('criteria').insert(criteriaRecords);
+
+            mixpanel.track('Sign Up', {
+                signup_method: 'email',
+                user_id: authData.user.id,
+                email: email
+            });
         } else if (authData.user && !authData.session) {
+            mixpanel.track('Sign Up', {
+                signup_method: 'email',
+                user_id: authData.user.id,
+                email: email,
+                status: 'pending_verification'
+            });
             setSuccessMessage("Account created successfully! Please check your email to confirm registration.");
             setIsLoading(false);
             return; 
@@ -143,11 +156,17 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
     } catch (err: any) {
         setError(err.message || 'Failed to sign up.');
         setIsLoading(false);
+        mixpanel.track('Sign Up Failed', {
+            error: err.message
+        });
     }
   };
 
   const handleSocialSignup = async () => {
       try {
+          mixpanel.track('Sign Up Attempt', {
+              signup_method: 'google'
+          });
           const { error } = await supabase.auth.signInWithOAuth({
               provider: 'google',
               options: {

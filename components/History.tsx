@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { AnalysisResult } from '../types';
 import { Search, ChevronRight, Filter, X, Trash2, RefreshCcw, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import mixpanel from '../lib/mixpanel';
 
 interface HistoryProps {
   history: AnalysisResult[];
@@ -29,6 +30,19 @@ export const History: React.FC<HistoryProps> = ({
   useEffect(() => {
     setActiveFilter(filter);
   }, [filter]);
+
+  // Track Search with Debounce
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchTerm) {
+        mixpanel.track('Search', {
+          search_term: searchTerm
+        });
+      }
+    }, 1000);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
 
   const filteredHistory = history.filter(
     (item) => {

@@ -6,6 +6,7 @@ import { BackgroundGradientAnimation } from './ui/background-gradient-animation'
 import { supabase } from '../lib/supabase';
 import { PublicNavigation } from './PublicNavigation';
 import { useLanguage } from '../contexts/LanguageContext';
+import mixpanel from '../lib/mixpanel';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -45,10 +46,23 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
 
         if (error) throw error;
         
+        if (data.user) {
+            mixpanel.track('Sign In', {
+                login_method: 'email',
+                user_id: data.user.id,
+                success: true
+            });
+        }
+        
         // App.tsx auth state listener will handle redirection
     } catch (err: any) {
         setError(err.message || 'Failed to sign in.');
         setIsLoading(false);
+        mixpanel.track('Sign In', {
+            login_method: 'email',
+            success: false,
+            error: err.message
+        });
     }
   };
 
@@ -75,6 +89,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
 
   const handleSocialLogin = async () => {
       try {
+          mixpanel.track('Sign In Attempt', {
+              login_method: 'google'
+          });
           const { error } = await supabase.auth.signInWithOAuth({
               provider: 'google',
               options: {

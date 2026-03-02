@@ -6,6 +6,7 @@ import { AnalysisResult, Criteria, User } from '../types';
 import { EvaluationView } from './EvaluationView';
 import { generateId } from '../lib/utils';
 import { useLanguage } from '../contexts/LanguageContext';
+import mixpanel from '../lib/mixpanel';
 
 interface AnalyzerProps {
   criteria: Criteria[];
@@ -120,6 +121,11 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
     setError(null);
     setResult(null);
 
+    mixpanel.track('Analysis Started', {
+        input_mode: inputMode,
+        transcript_length: textToProcess.length
+    });
+
     try {
       // Pass user ID for usage tracking
       const analysis = await analyzeTranscript(textToProcess, criteria, user?.id);
@@ -137,9 +143,21 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
       
       setResult(fullResult);
       onAnalysisComplete(fullResult);
+
+      mixpanel.track('Analysis Completed', {
+          score: fullResult.overallScore,
+          agent_name: fullResult.agentName,
+          sentiment: fullResult.sentiment,
+          input_mode: inputMode,
+          duration: inputMode === 'mic' ? recordingDuration : undefined
+      });
     } catch (err: any) {
       setError(err.message || 'Failed to analyze transcript.');
       setProcessingStatus('idle');
+      mixpanel.track('Analysis Failed', {
+          error: err.message,
+          input_mode: inputMode
+      });
     }
   };
 
