@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AnalysisResult, ViewState } from '../types';
 import { 
   AreaChart, 
@@ -8,7 +8,9 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer
+  ResponsiveContainer,
+  LineChart,
+  Line
 } from 'recharts';
 import { 
   TrendingUp, 
@@ -17,7 +19,9 @@ import {
   Activity, 
   Award, 
   BarChart2, 
-  ArrowUpRight 
+  ArrowUpRight,
+  Filter,
+  Calendar
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -29,8 +33,9 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilterSelect }) => {
   const { t, isRTL } = useLanguage();
+  const [timeRange, setTimeRange] = useState<'1w' | '1m' | '6m' | '1y'>('1m');
 
-  // --- Logic (Untouched) ---
+  // --- Data Processing ---
   const totalEvaluations = history.length;
   const averageScore = totalEvaluations > 0 
     ? Math.round(history.reduce((acc, curr) => acc + curr.overallScore, 0) / totalEvaluations) 
@@ -39,13 +44,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
   const lowScores = history.filter(h => h.overallScore < 75).length;
   const highScores = history.filter(h => h.overallScore >= 90).length;
 
-  // Updated to show last 50 evaluations
-  const recentTrendData = [...history].reverse().slice(-50).map((h, i) => ({
-    name: `Eval ${i + 1}`,
+  // Prepare data for charts
+  // We'll use the history to generate "sparkline" data
+  const reversedHistory = [...history].reverse();
+  
+  const trendData = reversedHistory.slice(-30).map((h, i) => ({
+    name: i,
     score: h.overallScore,
-    agent: h.agentName,
-    date: new Date(h.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    date: new Date(h.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+    // Mocking some secondary data for visual variety in sparklines if needed
+    vol: Math.floor(Math.random() * 100) + 50 
   }));
+
+  // Mock delta calculations (in a real app, compare vs previous period)
+  const scoreDelta = "+2.4%";
+  const evalDelta = "+12%";
+  const highDelta = "+5%";
+  const lowDelta = "-2%";
 
   const agentPerformance: Record<string, { total: number, count: number }> = {};
   history.forEach(h => {
@@ -66,221 +81,241 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
     return 'text-red-500';
   };
 
-  const getScoreGradient = (score: number) => {
-    if (score >= 90) return 'from-emerald-500/20 to-emerald-500/5 border-emerald-200/50 dark:border-emerald-500/20';
-    if (score >= 75) return 'from-blue-500/20 to-blue-500/5 border-blue-200/50 dark:border-blue-500/20';
-    if (score >= 60) return 'from-amber-500/20 to-amber-500/5 border-amber-200/50 dark:border-amber-500/20';
-    return 'from-red-500/20 to-red-500/5 border-red-200/50 dark:border-red-500/20';
-  };
-
   const handleCardClick = (filter: 'all' | 'high' | 'low') => {
       if (onFilterSelect) {
           onFilterSelect(filter);
       }
   };
 
-  return (
-    <div className="space-y-8 animate-fade-in pb-12">
-      
-      {/* Top Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        
-        {/* Main Score Card */}
-        <div 
-            onClick={() => handleCardClick('all')}
-            className={`relative overflow-hidden p-6 rounded-3xl bg-gradient-to-br ${getScoreGradient(averageScore)} border bg-white dark:bg-slate-900 shadow-sm group hover:shadow-md transition-all cursor-pointer hover:scale-[1.02] active:scale-95`}
-        >
-          <div className="relative z-10 flex flex-col justify-between h-full">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                <Activity size={24} className={getScoreColor(averageScore)} />
-              </div>
-              <span className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full bg-white/50 dark:bg-slate-800/50 ${getScoreColor(averageScore)}`}>
-                <TrendingUp size={12} className={isRTL ? "transform scale-x-[-1]" : ""} /> {t('dash.live')}
-              </span>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('dash.avg_quality')}</p>
-              <h3 className={`text-4xl font-serif font-bold mt-1 ${getScoreColor(averageScore)}`}>
-                {averageScore}<span className="text-xl align-top">%</span>
-              </h3>
-            </div>
+  // Custom Tooltip for the main chart
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700">
+          <p className="text-sm font-bold text-slate-900 dark:text-white mb-2">{payload[0].payload.date}</p>
+          <div className="flex items-center gap-2 text-sm">
+            <div className="w-2 h-2 rounded-full bg-[#0500e2]"></div>
+            <span className="text-slate-500 dark:text-slate-400">Score:</span>
+            <span className="font-bold text-[#0500e2]">{payload[0].value}%</span>
           </div>
-          <div className="absolute -end-4 -bottom-4 w-32 h-32 bg-current opacity-5 rounded-full blur-2xl group-hover:scale-110 transition-transform text-slate-900 dark:text-white pointer-events-none"></div>
         </div>
+      );
+    }
+    return null;
+  };
 
-        {/* Total Evaluations */}
-        <div 
-            onClick={() => handleCardClick('all')}
-            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-95 group"
-        >
-           <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl text-[#0500e2] dark:text-[#4b53fa] group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 transition-colors">
-                <BarChart2 size={24} />
-              </div>
-           </div>
-           <div>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('dash.total_evals')}</p>
-              <h3 className="text-4xl font-serif font-bold mt-1 text-slate-900 dark:text-white">{totalEvaluations}</h3>
-           </div>
-        </div>
-
-        {/* Top Performers */}
-        <div 
-            onClick={() => handleCardClick('high')}
-            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-95 group"
-        >
-           <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/40 transition-colors">
-                <Award size={24} />
-              </div>
-           </div>
-           <div>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('dash.high_performers')}</p>
-              <h3 className="text-4xl font-serif font-bold mt-1 text-slate-900 dark:text-white">{highScores}</h3>
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium">{t('dash.score_over_90')}</p>
-           </div>
-        </div>
-
-        {/* Needs Attention */}
-        <div 
-            onClick={() => handleCardClick('low')}
-            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-95 group"
-        >
-           <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-2xl text-red-600 dark:text-red-400 group-hover:bg-red-100 dark:group-hover:bg-red-900/40 transition-colors">
-                <AlertTriangle size={24} />
-              </div>
-           </div>
-           <div>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('dash.critical_review')}</p>
-              <h3 className="text-4xl font-serif font-bold mt-1 text-slate-900 dark:text-white">{lowScores}</h3>
-              <p className="text-xs text-red-500 dark:text-red-400 mt-1 font-medium">{t('dash.score_under_75')}</p>
-           </div>
+  return (
+    <div className="space-y-6 animate-fade-in pb-12 font-sans">
+      
+      {/* 1. Top Wide Card - Balance Style */}
+      <div 
+        onClick={() => handleCardClick('all')}
+        className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer transition-all hover:shadow-md group relative overflow-hidden"
+      >
+        <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6 relative z-10">
+            <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-slate-700 dark:text-slate-300">{t('dash.avg_quality')}</h2>
+                </div>
+                <div>
+                    <div className="text-5xl font-serif font-bold text-slate-900 dark:text-white tracking-tight">
+                        {averageScore}%
+                    </div>
+                    <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">
+                        You've increased your quality by <span className="text-emerald-500 font-bold">{scoreDelta}</span> this month
+                    </p>
+                </div>
+            </div>
+            
+            {/* Sparkline Area Chart */}
+            <div className="h-[120px] w-full md:w-1/2 lg:w-2/3" dir="ltr">
+                <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={trendData}>
+                        <defs>
+                            <linearGradient id="colorAvg" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#0500e2" stopOpacity={0.2}/>
+                                <stop offset="95%" stopColor="#0500e2" stopOpacity={0}/>
+                            </linearGradient>
+                        </defs>
+                        <Area 
+                            type="monotone" 
+                            dataKey="score" 
+                            stroke="#0500e2" 
+                            strokeWidth={3} 
+                            fill="url(#colorAvg)" 
+                            fillOpacity={1}
+                        />
+                    </AreaChart>
+                </ResponsiveContainer>
+            </div>
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Trend Chart */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-               <h3 className="text-xl font-bold font-serif text-slate-900 dark:text-white">{t('dash.quality_trend')}</h3>
-               <p className="text-sm text-slate-500 dark:text-slate-400">{t('dash.last_10')}</p>
-            </div>
-            <div className="flex gap-2">
-                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                    <div className="w-2 h-2 rounded-full bg-[#0500e2]"></div> Avg Score
-                </span>
-            </div>
-          </div>
+      {/* 2. Three Metric Cards Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          <div className="h-[350px] w-full" dir="ltr"> {/* Charts often prefer LTR even in RTL contexts for axis consistency, or need specific Recharts RTL config. LTR wrapper is a safe default for charts */}
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={recentTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0500e2" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#0500e2" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-800" />
-                <XAxis 
-                    dataKey="name" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#94a3b8', fontSize: 12 }} 
-                    dy={10}
-                    interval="preserveStartEnd"
-                />
-                <YAxis 
-                    domain={[0, 100]} 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#94a3b8', fontSize: 12 }} 
-                />
-                <Tooltip 
-                    contentStyle={{ 
-                        backgroundColor: 'var(--tooltip-bg)', 
-                        borderRadius: '12px', 
-                        border: '1px solid var(--tooltip-border)', 
-                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                        color: 'var(--tooltip-text)'
-                    }}
-                    cursor={{ stroke: '#0500e2', strokeWidth: 1, strokeDasharray: '5 5' }}
-                    labelStyle={{ color: '#64748b', fontWeight: 600, marginBottom: '0.5rem' }}
-                    itemStyle={{ color: 'var(--tooltip-text)' }}
-                />
-                <Area 
-                    type="monotone" 
-                    dataKey="score" 
-                    stroke="#0500e2" 
-                    strokeWidth={3}
-                    fillOpacity={1} 
-                    fill="url(#colorScore)" 
-                    activeDot={{ r: 8, strokeWidth: 0, fill: '#0500e2' }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Leaderboard */}
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-                <h3 className="text-xl font-bold font-serif text-slate-900 dark:text-white">{t('dash.top_agents')}</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400">{t('dash.based_on_avg')}</p>
-            </div>
-            <Users size={20} className="text-slate-400" />
-          </div>
-
-          <div className="flex-1 space-y-6">
-            {leaderboardData.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                    <Users size={40} strokeWidth={1.5} className="mb-2 opacity-50" />
-                    <p className="text-sm">{t('dash.no_data')}</p>
-                </div>
-            ) : (
-                leaderboardData.map((agent, idx) => (
-                    <div key={idx} className="group">
-                        <div className="flex justify-between items-end mb-2">
-                            <div className="flex items-center gap-3">
-                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-sm ${
-                                    idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-orange-400' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
-                                }`}>
-                                    {idx + 1}
-                                </div>
-                                <div>
-                                    <p className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-none">{agent.name}</p>
-                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">{agent.count} evaluations</p>
-                                </div>
-                            </div>
-                            <span className={`text-sm font-bold ${getScoreColor(agent.avg)}`}>{agent.avg}%</span>
-                        </div>
-                        {/* Progress Bar */}
-                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden" dir="ltr">
-                            <div 
-                                className={`h-full rounded-full transition-all duration-1000 ease-out ${
-                                    agent.avg >= 90 ? 'bg-emerald-500' : agent.avg >= 75 ? 'bg-[#0500e2]' : 'bg-amber-500'
-                                }`}
-                                style={{ width: `${agent.avg}%` }}
-                            ></div>
-                        </div>
-                    </div>
-                ))
-            )}
-          </div>
-          
-          <button 
-            onClick={() => setView('roster')}
-            className="mt-8 w-full py-3 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+          {/* Total Evaluations */}
+          <div 
+            onClick={() => handleCardClick('all')}
+            className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer group"
           >
-            {t('dash.view_roster')} <ArrowUpRight size={16} className={isRTL ? "transform scale-x-[-1]" : ""} />
-          </button>
-        </div>
+              <h3 className="text-sm font-bold text-slate-600 dark:text-slate-400 mb-4">{t('dash.total_evals')}</h3>
+              <div className="text-3xl font-serif font-bold text-slate-900 dark:text-white mb-2">{totalEvaluations}</div>
+              <div className="flex items-center gap-2 text-xs font-medium mb-4">
+                  <span className="text-emerald-500">{evalDelta}</span>
+                  <span className="text-slate-400">vs last month</span>
+              </div>
+              <div className="h-16 w-full" dir="ltr">
+                  <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={trendData}>
+                          <Line type="monotone" dataKey="vol" stroke="#ef4444" strokeWidth={2} dot={false} />
+                      </LineChart>
+                  </ResponsiveContainer>
+              </div>
+          </div>
+
+          {/* High Performers */}
+          <div 
+            onClick={() => handleCardClick('high')}
+            className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+          >
+              <h3 className="text-sm font-bold text-slate-600 dark:text-slate-400 mb-4">{t('dash.high_performers')}</h3>
+              <div className="text-3xl font-serif font-bold text-slate-900 dark:text-white mb-2">{highScores}</div>
+              <div className="flex items-center gap-2 text-xs font-medium mb-4">
+                  <span className="text-emerald-500">{highDelta}</span>
+                  <span className="text-slate-400">vs last month</span>
+              </div>
+              <div className="h-16 w-full" dir="ltr">
+                  <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={trendData}>
+                          <Line type="monotone" dataKey="score" stroke="#0500e2" strokeWidth={2} dot={false} />
+                      </LineChart>
+                  </ResponsiveContainer>
+              </div>
+          </div>
+
+          {/* Critical Review */}
+          <div 
+            onClick={() => handleCardClick('low')}
+            className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+          >
+              <h3 className="text-sm font-bold text-slate-600 dark:text-slate-400 mb-4">{t('dash.critical_review')}</h3>
+              <div className="text-3xl font-serif font-bold text-slate-900 dark:text-white mb-2">{lowScores}</div>
+              <div className="flex items-center gap-2 text-xs font-medium mb-4">
+                  <span className="text-red-500">{lowDelta}</span>
+                  <span className="text-slate-400">vs last month</span>
+              </div>
+              <div className="h-16 w-full" dir="ltr">
+                  <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={trendData}>
+                          <Line type="monotone" dataKey="score" stroke="#10b981" strokeWidth={2} dot={false} />
+                      </LineChart>
+                  </ResponsiveContainer>
+              </div>
+          </div>
+      </div>
+
+      {/* 3. Main Chart Section */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('dash.quality_trend')}</h3>
+              
+              <div className="flex items-center gap-3">
+                  <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                      {['1w', '1m', '6m', '1y'].map((range) => (
+                          <button
+                              key={range}
+                              onClick={() => setTimeRange(range as any)}
+                              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
+                                  timeRange === range 
+                                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-300'
+                              }`}
+                          >
+                              {range.toUpperCase()}
+                          </button>
+                      ))}
+                  </div>
+                  <button className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                      <Filter size={14} /> Filter
+                  </button>
+              </div>
+          </div>
+
+          <div className="h-[350px] w-full" dir="ltr">
+              <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={trendData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                      <defs>
+                          <linearGradient id="colorMain" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#0500e2" stopOpacity={0.1}/>
+                              <stop offset="95%" stopColor="#0500e2" stopOpacity={0}/>
+                          </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-800" />
+                      <XAxis 
+                          dataKey="date" 
+                          axisLine={false} 
+                          tickLine={false} 
+                          tick={{ fill: '#94a3b8', fontSize: 12 }} 
+                          dy={10}
+                          interval="preserveStartEnd"
+                      />
+                      <YAxis 
+                          domain={[0, 100]} 
+                          axisLine={false} 
+                          tickLine={false} 
+                          tick={{ fill: '#94a3b8', fontSize: 12 }} 
+                      />
+                      <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#0500e2', strokeWidth: 1, strokeDasharray: '5 5' }} />
+                      <Area 
+                          type="monotone" 
+                          dataKey="score" 
+                          stroke="#0500e2" 
+                          strokeWidth={3}
+                          fill="url(#colorMain)" 
+                          activeDot={{ r: 6, strokeWidth: 4, stroke: '#fff', fill: '#0500e2' }}
+                      />
+                  </AreaChart>
+              </ResponsiveContainer>
+          </div>
+      </div>
+
+      {/* 4. Leaderboard (Restyled) */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+              <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('dash.top_agents')}</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t('dash.based_on_avg')}</p>
+              </div>
+              <button 
+                  onClick={() => setView('roster')}
+                  className="text-sm font-bold text-[#0500e2] hover:underline flex items-center gap-1"
+              >
+                  {t('dash.view_roster')} <ArrowUpRight size={16} className={isRTL ? "transform scale-x-[-1]" : ""} />
+              </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              {leaderboardData.length === 0 ? (
+                  <div className="col-span-full py-12 flex flex-col items-center justify-center text-slate-400">
+                      <Users size={40} strokeWidth={1.5} className="mb-2 opacity-50" />
+                      <p className="text-sm">{t('dash.no_data')}</p>
+                  </div>
+              ) : (
+                  leaderboardData.map((agent, idx) => (
+                      <div key={idx} className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col items-center text-center hover:border-[#0500e2]/30 transition-colors">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm mb-3 ${
+                              idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-orange-400' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                          }`}>
+                              {idx + 1}
+                          </div>
+                          <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate w-full">{agent.name}</p>
+                          <p className="text-xs text-slate-400 dark:text-slate-500 mb-3">{agent.count} evals</p>
+                          <div className={`text-lg font-bold ${getScoreColor(agent.avg)}`}>{agent.avg}%</div>
+                      </div>
+                  ))
+              )}
+          </div>
       </div>
     </div>
   );

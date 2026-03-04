@@ -4,6 +4,7 @@ import { MessageSquare, X, Send, Loader2, Sparkles, Minimize2, AlertTriangle } f
 import { createChatSession } from '../services/geminiService';
 import { User } from '../types';
 import { incrementUsage, checkLimit, COSTS } from '../lib/usageService';
+import mixpanel from '../lib/mixpanel';
 
 interface Message {
   role: 'user' | 'model';
@@ -44,6 +45,19 @@ export const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isOpen]);
 
+  // Track Launch AI when chat is opened
+  useEffect(() => {
+      if (isOpen) {
+          mixpanel.track('Launch AI', {
+              feature: 'ChatBot'
+          });
+      } else {
+          mixpanel.track('AI Dismissed', {
+              feature: 'ChatBot'
+          });
+      }
+  }, [isOpen]);
+
   const wordCount = input.trim() === '' ? 0 : input.trim().split(/\s+/).length;
   const isOverLimit = wordCount > 24;
 
@@ -61,6 +75,11 @@ export const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
 
     const userMessage = input.trim();
     setInput('');
+    
+    mixpanel.track('AI Prompt Sent', {
+        'Prompt Text': userMessage,
+        feature: 'ChatBot'
+    });
     
     // Optimistic update
     setMessages(prev => [
@@ -84,6 +103,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
     }
 
     setIsLoading(true);
+    const startTime = Date.now();
 
     try {
       // Use Streaming - iterate DIRECTLY over the result promise which resolves to the iterable response
@@ -105,6 +125,13 @@ export const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
           }
       }
       
+      const duration = Date.now() - startTime;
+      mixpanel.track('AI Response Sent', {
+          'API Response Time': duration,
+          feature: 'ChatBot',
+          response_length: fullResponse.length
+      });
+      
       // Track Usage only on success
       if (user && fullResponse.length > 0) {
           await incrementUsage(user.id, COSTS.CHAT, 'chat');
@@ -112,6 +139,12 @@ export const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
 
     } catch (error: any) {
       console.error("Chat error:", error);
+      
+      mixpanel.track('API Error', {
+          feature: 'ChatBot',
+          error_message: error.message
+      });
+
       let errorMsg = "I'm sorry, I encountered an error. Please try again.";
       if (error.message?.includes('Failed to fetch')) {
           errorMsg = "Network error: Unable to reach the AI service. Please check your connection.";

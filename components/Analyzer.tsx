@@ -121,10 +121,14 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
     setError(null);
     setResult(null);
 
-    mixpanel.track('Analysis Started', {
+    mixpanel.track('AI Prompt Sent', {
+        'Prompt Text': textToProcess,
         input_mode: inputMode,
-        transcript_length: textToProcess.length
+        transcript_length: textToProcess.length,
+        feature: 'Analyzer'
     });
+
+    const startTime = Date.now();
 
     try {
       // Pass user ID for usage tracking
@@ -144,19 +148,22 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
       setResult(fullResult);
       onAnalysisComplete(fullResult);
 
-      mixpanel.track('Analysis Completed', {
+      const duration = Date.now() - startTime;
+      mixpanel.track('AI Response Sent', {
+          'API Response Time': duration,
           score: fullResult.overallScore,
           agent_name: fullResult.agentName,
           sentiment: fullResult.sentiment,
           input_mode: inputMode,
-          duration: inputMode === 'mic' ? recordingDuration : undefined
+          feature: 'Analyzer'
       });
     } catch (err: any) {
       setError(err.message || 'Failed to analyze transcript.');
       setProcessingStatus('idle');
-      mixpanel.track('Analysis Failed', {
-          error: err.message,
-          input_mode: inputMode
+      mixpanel.track('API Error', {
+          error_message: err.message,
+          input_mode: inputMode,
+          feature: 'Analyzer'
       });
     }
   };

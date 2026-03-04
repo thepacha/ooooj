@@ -4,6 +4,11 @@ import { ArrowRight, Play, Mic, Shield, Zap, TrendingUp, Phone, Check, MessageSq
 import { PublicNavigation } from './PublicNavigation';
 import { Footer } from './Footer';
 import { useLanguage } from '../contexts/LanguageContext';
+import { TidioLogo } from './TidioLogo';
+import { AssemblyAILogo } from './AssemblyAILogo';
+import { AlgoliaLogo } from './AlgoliaLogo';
+import { AiSdrLogoLight, AiSdrLogoDark } from './AiSdrLogo';
+import { LiveChatLogo } from './LiveChatLogo';
 
 interface LandingPageProps {
   onLoginClick: () => void;
@@ -16,6 +21,56 @@ interface LandingPageProps {
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignupClick, onPricingClick, onTermsClick, onPrivacyClick, onRefundClick }) => {
   const { t, isRTL } = useLanguage();
+  
+  // Marquee Animation Logic
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const positionRef = React.useRef(0);
+  const targetSpeedRef = React.useRef(0.5); // Normal speed
+  const currentSpeedRef = React.useRef(0.5);
+  const animationFrameRef = React.useRef<number>(0);
+
+  useEffect(() => {
+    const animate = () => {
+      // Smoothly interpolate current speed towards target speed
+      // 0.05 is the smoothing factor (lower = smoother/slower reaction)
+      currentSpeedRef.current += (targetSpeedRef.current - currentSpeedRef.current) * 0.05;
+
+      // Update position
+      positionRef.current -= currentSpeedRef.current;
+
+      if (containerRef.current) {
+        const container = containerRef.current;
+        // We assume the content is duplicated, so we reset when we scroll past half the width
+        const scrollWidth = container.scrollWidth;
+        const halfWidth = scrollWidth / 2;
+
+        // Reset position for infinite loop effect
+        if (Math.abs(positionRef.current) >= halfWidth) {
+          positionRef.current = 0;
+        }
+        
+        container.style.transform = `translateX(${positionRef.current}px)`;
+      }
+
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    animationFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
+
+  const handleMouseEnter = () => {
+    targetSpeedRef.current = 0; // Stop target
+  };
+
+  const handleMouseLeave = () => {
+    targetSpeedRef.current = 0.5; // Resume speed
+  };
   const [wordIndex, setWordIndex] = useState(0);
   
   const rotatingWords = [
@@ -195,13 +250,131 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
       {/* Social Proof Strip */}
       <div className="border-y border-slate-200/60 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 py-10 backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-6 text-center">
-              <p className="text-sm font-medium text-slate-500 mb-6">{t('landing.social_proof_text')}</p>
-              <div className="flex flex-wrap justify-center gap-x-12 gap-y-8 opacity-60 grayscale" dir="ltr">
-                  <span className="text-xl font-serif font-black text-slate-800 dark:text-white">Acme Corp</span>
-                  <span className="text-xl font-sans font-bold italic text-slate-700 dark:text-slate-200">GlobalBank</span>
-                  <span className="text-xl font-mono font-semibold text-slate-600 dark:text-slate-300">stripe</span>
-                  <span className="text-xl font-black text-slate-800 dark:text-white">UBER</span>
-                  <span className="text-xl font-bold tracking-widest text-slate-700 dark:text-slate-200">LINEAR</span>
+              <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-8">Trusted by top Businesses and Partners</p>
+              
+              <div 
+                  className="relative w-full overflow-hidden group py-4" 
+                  dir="ltr"
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                  onTouchStart={handleMouseEnter}
+                  onTouchEnd={handleMouseLeave}
+              >
+                  <div 
+                      ref={containerRef}
+                      className="flex w-max"
+                      style={{ willChange: 'transform' }}
+                  >
+                      {/* First Set */}
+                      <div className="flex items-center gap-x-8 px-4 shrink-0">
+                          {/* ElevenLabs Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://elevenlabs.io/startup-grants" target="_blank" rel="noopener noreferrer" className="block dark:hidden">
+                                <img src="https://eleven-public-cdn.elevenlabs.io/payloadcms/pwsc4vchsqt-ElevenLabsGrants.webp" alt="ElevenLabs" style={{ width: '150px' }} />
+                             </a>
+                             <a href="https://elevenlabs.io/startup-grants" target="_blank" rel="noopener noreferrer" className="hidden dark:block">
+                                <img src="https://eleven-public-cdn.elevenlabs.io/payloadcms/cy7rxce8uki-IIElevenLabsGrants%201.webp" alt="ElevenLabs" style={{ width: '150px' }} />
+                             </a>
+                          </div>
+
+                          {/* Tidio Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://affiliate.tidio.com/9xkyz0qoz9ls" target="_blank" rel="noopener noreferrer" className="block">
+                                <TidioLogo className="w-[100px] h-auto dark:hidden" fill="#000B26" />
+                                <TidioLogo className="w-[100px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
+                          {/* AssemblyAI Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://www.assemblyai.com/" target="_blank" rel="noopener noreferrer" className="block">
+                                <AssemblyAILogo className="w-[140px] h-auto dark:hidden" fill="#09032F" />
+                                <AssemblyAILogo className="w-[140px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
+                          {/* Algolia Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://www.algolia.com/" target="_blank" rel="noopener noreferrer" className="block">
+                                <AlgoliaLogo className="w-[130px] h-auto dark:hidden" fill="#003dff" />
+                                <AlgoliaLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
+                          {/* AiSdr Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://partner.aisdr.com/eaunie6ih0qb" target="_blank" rel="noopener noreferrer" className="block">
+                                <AiSdrLogoLight className="w-[130px] h-auto dark:hidden" />
+                                <AiSdrLogoDark className="w-[130px] h-auto hidden dark:block" />
+                             </a>
+                          </div>
+
+                          {/* LiveChat Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://www.livechat.com/?a=vkKISurVg&utm_campaign=pp_livechat-default&utm_source=PP" target="_blank" rel="noopener noreferrer" className="block">
+                                <LiveChatLogo className="w-[130px] h-auto dark:hidden" fill="#1B1B20" />
+                                <LiveChatLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+                      </div>
+
+                      {/* Duplicate Set */}
+                      <div className="flex items-center gap-x-8 px-4 shrink-0">
+                          {/* ElevenLabs Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://elevenlabs.io/startup-grants" target="_blank" rel="noopener noreferrer" className="block dark:hidden">
+                                <img src="https://eleven-public-cdn.elevenlabs.io/payloadcms/pwsc4vchsqt-ElevenLabsGrants.webp" alt="ElevenLabs" style={{ width: '150px' }} />
+                             </a>
+                             <a href="https://elevenlabs.io/startup-grants" target="_blank" rel="noopener noreferrer" className="hidden dark:block">
+                                <img src="https://eleven-public-cdn.elevenlabs.io/payloadcms/cy7rxce8uki-IIElevenLabsGrants%201.webp" alt="ElevenLabs" style={{ width: '150px' }} />
+                             </a>
+                          </div>
+
+                          {/* Tidio Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://affiliate.tidio.com/9xkyz0qoz9ls" target="_blank" rel="noopener noreferrer" className="block">
+                                <TidioLogo className="w-[100px] h-auto dark:hidden" fill="#000B26" />
+                                <TidioLogo className="w-[100px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
+                          {/* AssemblyAI Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://www.assemblyai.com/" target="_blank" rel="noopener noreferrer" className="block">
+                                <AssemblyAILogo className="w-[140px] h-auto dark:hidden" fill="#09032F" />
+                                <AssemblyAILogo className="w-[140px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
+                          {/* Algolia Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://www.algolia.com/" target="_blank" rel="noopener noreferrer" className="block">
+                                <AlgoliaLogo className="w-[130px] h-auto dark:hidden" fill="#003dff" />
+                                <AlgoliaLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
+                          {/* AiSdr Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://partner.aisdr.com/eaunie6ih0qb" target="_blank" rel="noopener noreferrer" className="block">
+                                <AiSdrLogoLight className="w-[130px] h-auto dark:hidden" />
+                                <AiSdrLogoDark className="w-[130px] h-auto hidden dark:block" />
+                             </a>
+                          </div>
+
+                          {/* LiveChat Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://www.livechat.com/?a=vkKISurVg&utm_campaign=pp_livechat-default&utm_source=PP" target="_blank" rel="noopener noreferrer" className="block">
+                                <LiveChatLogo className="w-[130px] h-auto dark:hidden" fill="#1B1B20" />
+                                <LiveChatLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+                      </div>
+                  </div>
+                  
+                  {/* Gradient Masks */}
+                  <div className="pointer-events-none absolute inset-y-0 left-0 w-1/6 bg-gradient-to-r from-white dark:from-slate-900 to-transparent"></div>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 w-1/6 bg-gradient-to-l from-white dark:from-slate-900 to-transparent"></div>
               </div>
           </div>
       </div>
