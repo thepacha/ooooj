@@ -9,7 +9,7 @@ interface PublicNavigationProps {
   onSignup?: () => void;
   onPricing?: () => void;
   onLanding?: () => void;
-  activePage?: 'landing' | 'pricing' | 'login' | 'signup';
+  activePage?: 'landing' | 'pricing' | 'login' | 'signup' | 'partners';
 }
 
 export const PublicNavigation: React.FC<PublicNavigationProps> = ({ 

@@ -7,9 +7,10 @@ interface FooterProps {
   onTermsClick?: () => void;
   onPrivacyClick?: () => void;
   onRefundClick?: () => void;
+  onPartnersClick?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, onRefundClick }) => {
+export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, onRefundClick, onPartnersClick }) => {
   const { t } = useLanguage();
 
   return (
@@ -25,20 +26,42 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, on
                     </p>
                 </div>
                 
-                {[
-                    { key: 'product', label: t('landing.footer.product') }, 
-                    { key: 'company', label: t('landing.footer.company') }, 
-                    { key: 'resources', label: t('landing.footer.resources') }
-                ].map((col, i) => (
-                    <div key={i}>
-                        <h4 className="font-bold text-slate-900 dark:text-white mb-4 text-sm">{col.label}</h4>
-                        <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
-                            {[1,2,3,4].map(item => (
-                                <li key={item}><a href="#" className="hover:text-[#0500e2] transition-colors">Link Item {item}</a></li>
-                            ))}
-                        </ul>
-                    </div>
-                ))}
+                {/* Product Column */}
+                <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-4 text-sm">{t('landing.footer.product')}</h4>
+                    <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
+                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Features</a></li>
+                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Pricing</a></li>
+                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Security</a></li>
+                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Roadmap</a></li>
+                    </ul>
+                </div>
+
+                {/* Company Column */}
+                <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-4 text-sm">{t('landing.footer.company')}</h4>
+                    <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
+                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">About Us</a></li>
+                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Careers</a></li>
+                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Blog</a></li>
+                        <li>
+                            <button onClick={onPartnersClick} className="hover:text-[#0500e2] transition-colors text-left">
+                                Partners
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                {/* Resources Column */}
+                <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-4 text-sm">{t('landing.footer.resources')}</h4>
+                    <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
+                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Help Center</a></li>
+                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">API Documentation</a></li>
+                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Community</a></li>
+                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Status</a></li>
+                    </ul>
+                </div>
 
                 {/* Legal Column with Functional Link */}
                 <div>

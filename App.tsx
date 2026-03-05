@@ -20,6 +20,7 @@ import { Admin } from './components/Admin';
 import { Terms } from './components/Terms';
 import { Privacy } from './components/Privacy';
 import { RefundPolicy } from './components/RefundPolicy';
+import { PartnersPage } from './components/PartnersPage';
 import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA, User } from './types';
 import { Menu, Loader2 } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
@@ -27,7 +28,7 @@ import { supabase } from './lib/supabase';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import mixpanel from './lib/mixpanel';
 
-type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 'privacy' | 'refund';
+type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 'privacy' | 'refund' | 'partners';
 
 // URL Routing Configuration
 const APP_ROUTES: Record<string, ViewState> = {
@@ -89,6 +90,7 @@ function AppContent() {
       if (path === '/termsandconditions') return { auth: 'terms', view: 'dashboard' };
       if (path === '/privacypolicy') return { auth: 'privacy', view: 'dashboard' };
       if (path === '/refund-policy') return { auth: 'refund', view: 'dashboard' };
+      if (path === '/partners') return { auth: 'partners', view: 'dashboard' };
       if (path === '/pricing') return { auth: 'pricing', view: 'dashboard' };
       if (path === '/login') return { auth: 'login', view: 'dashboard' };
       if (path === '/signup') return { auth: 'signup', view: 'dashboard' };
@@ -146,6 +148,7 @@ function AppContent() {
           if (path === '/pricing') { setAuthView('pricing'); return; }
           if (path === '/privacypolicy') { setAuthView('privacy'); return; }
           if (path === '/refund-policy') { setAuthView('refund'); return; }
+          if (path === '/partners') { setAuthView('partners'); return; }
           if (path === '/login') { setAuthView('login'); return; }
           if (path === '/signup') { setAuthView('signup'); return; }
           
@@ -189,6 +192,7 @@ function AppContent() {
       else if (view === 'pricing') path = '/pricing';
       else if (view === 'privacy') path = '/privacypolicy';
       else if (view === 'refund') path = '/refund-policy';
+      else if (view === 'partners') path = '/partners';
       else if (view === 'login') path = '/login';
       else if (view === 'signup') path = '/signup';
       
@@ -300,7 +304,7 @@ function AppContent() {
         if (!session) {
             if (mounted) {
                 // If on public pages, stay there. Otherwise go to login/landing.
-                if (authView !== 'pricing' && authView !== 'signup' && authView !== 'terms' && authView !== 'privacy' && authView !== 'refund') {
+                if (authView !== 'pricing' && authView !== 'signup' && authView !== 'terms' && authView !== 'privacy' && authView !== 'refund' && authView !== 'partners') {
                     navigateAuth(isAppDomain ? 'login' : 'landing');
                 }
                 setUser(null);
@@ -399,7 +403,7 @@ function AppContent() {
         if (mounted && isLoadingUser) {
             console.warn("Auth check timed out, forcing default view.");
             setIsLoadingUser(false);
-            if (authView !== 'pricing' && authView !== 'terms' && authView !== 'privacy' && authView !== 'refund') {
+            if (authView !== 'pricing' && authView !== 'terms' && authView !== 'privacy' && authView !== 'refund' && authView !== 'partners') {
                navigateAuth(isAppDomain ? 'login' : 'landing');
             }
         }
@@ -767,6 +771,22 @@ function AppContent() {
       )
   }
 
+  if (authView === 'partners') {
+      return (
+          <div className="animate-fade-in w-full min-h-screen">
+              <PartnersPage 
+                onBack={handleBackToHome}
+                onLogin={handleLandingLoginClick} 
+                onSignup={handleLandingSignupClick} 
+                onPricing={() => navigateAuth('pricing')}
+                onTermsClick={() => navigateAuth('terms')}
+                onPrivacyClick={() => navigateAuth('privacy')}
+                onRefundClick={() => navigateAuth('refund')}
+              />
+          </div>
+      )
+  }
+
   if (authView === 'landing') {
       return (
         <div className="animate-fade-in w-full min-h-screen">
@@ -777,6 +797,7 @@ function AppContent() {
                 onTermsClick={() => navigateAuth('terms')}
                 onPrivacyClick={() => navigateAuth('privacy')}
                 onRefundClick={() => navigateAuth('refund')}
+                onPartnersClick={() => navigateAuth('partners')}
             />
         </div>
       );

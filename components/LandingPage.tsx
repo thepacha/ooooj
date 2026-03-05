@@ -9,6 +9,10 @@ import { AssemblyAILogo } from './AssemblyAILogo';
 import { AlgoliaLogo } from './AlgoliaLogo';
 import { AiSdrLogoLight, AiSdrLogoDark } from './AiSdrLogo';
 import { LiveChatLogo } from './LiveChatLogo';
+import { MixpanelLogo } from './MixpanelLogo';
+import { ApolloLogo } from './ApolloLogo';
+import { LemlistLogo } from './LemlistLogo';
+import { TrainualLogo } from './TrainualLogo';
 
 interface LandingPageProps {
   onLoginClick: () => void;
@@ -17,9 +21,10 @@ interface LandingPageProps {
   onTermsClick: () => void;
   onPrivacyClick: () => void;
   onRefundClick: () => void;
+  onPartnersClick: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignupClick, onPricingClick, onTermsClick, onPrivacyClick, onRefundClick }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignupClick, onPricingClick, onTermsClick, onPrivacyClick, onRefundClick, onPartnersClick }) => {
   const { t, isRTL } = useLanguage();
   
   // Marquee Animation Logic
@@ -250,7 +255,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
       {/* Social Proof Strip */}
       <div className="border-y border-slate-200/60 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 py-10 backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-6 text-center">
-              <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-8">Trusted by top Businesses and Partners</p>
+              <div className="flex flex-col items-center justify-center gap-2 mb-8">
+                <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Trusted by top Businesses and Partners</p>
+                <button onClick={onPartnersClick} className="text-xs font-medium text-[#0500e2] hover:underline">View all partners</button>
+              </div>
               
               <div 
                   className="relative w-full overflow-hidden group py-4" 
@@ -316,6 +324,38 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                                 <LiveChatLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
                              </a>
                           </div>
+
+                          {/* Mixpanel Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://mixpanel.com/home/" target="_blank" rel="noopener noreferrer" className="block">
+                                <MixpanelLogo className="w-[130px] h-auto dark:hidden" fill="#7856FF" />
+                                <MixpanelLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
+                          {/* Apollo Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://get.apollo.io/lu68l2625bfq" target="_blank" rel="noopener noreferrer" className="block">
+                                <ApolloLogo className="w-[130px] h-auto dark:hidden" fill="#1B1B20" />
+                                <ApolloLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
+                          {/* Lemlist Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://get.lemlist.com/om1pnwx0qp22" target="_blank" rel="noopener noreferrer" className="block">
+                                <LemlistLogo className="w-[130px] h-auto dark:hidden" fill="#1D1D1B" />
+                                <LemlistLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
+                          {/* Trainual Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://start.trainual.com/5pc28cs7v3j9" target="_blank" rel="noopener noreferrer" className="block">
+                                <TrainualLogo className="w-[130px] h-auto dark:hidden" fill="#5A26D8" />
+                                <TrainualLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
                       </div>
 
                       {/* Duplicate Set */}
@@ -369,12 +409,44 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                                 <LiveChatLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
                              </a>
                           </div>
+
+                          {/* Mixpanel Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://mixpanel.com/home/" target="_blank" rel="noopener noreferrer" className="block">
+                                <MixpanelLogo className="w-[130px] h-auto dark:hidden" fill="#7856FF" />
+                                <MixpanelLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
+                          {/* Apollo Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://get.apollo.io/lu68l2625bfq" target="_blank" rel="noopener noreferrer" className="block">
+                                <ApolloLogo className="w-[130px] h-auto dark:hidden" fill="#1B1B20" />
+                                <ApolloLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
+                          {/* Lemlist Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://get.lemlist.com/om1pnwx0qp22" target="_blank" rel="noopener noreferrer" className="block">
+                                <LemlistLogo className="w-[130px] h-auto dark:hidden" fill="#1D1D1B" />
+                                <LemlistLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
+                          {/* Trainual Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://start.trainual.com/5pc28cs7v3j9" target="_blank" rel="noopener noreferrer" className="block">
+                                <TrainualLogo className="w-[130px] h-auto dark:hidden" fill="#5A26D8" />
+                                <TrainualLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
                       </div>
                   </div>
                   
                   {/* Gradient Masks */}
-                  <div className="pointer-events-none absolute inset-y-0 left-0 w-1/6 bg-gradient-to-r from-white dark:from-slate-900 to-transparent"></div>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 w-1/6 bg-gradient-to-l from-white dark:from-slate-900 to-transparent"></div>
+                  <div className="pointer-events-none absolute inset-y-0 left-0 w-8 md:w-1/6 bg-gradient-to-r from-white dark:from-slate-900 to-transparent"></div>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 w-8 md:w-1/6 bg-gradient-to-l from-white dark:from-slate-900 to-transparent"></div>
               </div>
           </div>
       </div>
@@ -574,6 +646,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
         onTermsClick={onTermsClick} 
         onPrivacyClick={onPrivacyClick} 
         onRefundClick={onRefundClick}
+        onPartnersClick={onPartnersClick}
       />
     </div>
   );
