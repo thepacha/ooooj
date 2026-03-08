@@ -16,6 +16,9 @@ import { LemlistLogo } from './LemlistLogo';
 import { TrainualLogo } from './TrainualLogo';
 import { InstantlyLogo } from './InstantlyLogo';
 import { CloudflareLogo } from './CloudflareLogo';
+import { CallHippoLogo } from './CallHippoLogo';
+import { ReplyLogo } from './ReplyLogo';
+import { EmergentLogo } from './EmergentLogo';
 
 interface PartnersPageProps {
   onLogin: () => void;
@@ -170,6 +173,39 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({
         </>
       ),
       description: "Scale your outreach campaigns with unlimited email sending accounts."
+    },
+    { 
+      name: 'CallHippo', 
+      url: 'https://join.callhippo.com/88wju5vbplrf', 
+      logo: (
+        <>
+          <CallHippoLogo className="w-[130px] h-auto dark:hidden" />
+          <CallHippoLogo className="w-[130px] h-auto hidden dark:block" />
+        </>
+      ),
+      description: "A Virtual Phone System for businesses of all sizes."
+    },
+    { 
+      name: 'Reply', 
+      url: 'https://get.reply.io/mbu34hr353q4', 
+      logo: (
+        <>
+          <ReplyLogo className="w-[130px] h-auto dark:hidden" />
+          <ReplyLogo className="w-[130px] h-auto hidden dark:block" />
+        </>
+      ),
+      description: "AI-powered sales engagement platform to automate your outreach."
+    },
+    { 
+      name: 'Emergent', 
+      url: 'https://get.emergent.sh/ba8fr8u0tg9h', 
+      logo: (
+        <>
+          <EmergentLogo className="w-[130px] h-auto dark:hidden" fill="black" />
+          <EmergentLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
+        </>
+      ),
+      description: "The AI employee that learns your business and executes complex tasks."
     },
   ];
 

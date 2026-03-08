@@ -15,6 +15,9 @@ import { LemlistLogo } from './LemlistLogo';
 import { TrainualLogo } from './TrainualLogo';
 import { InstantlyLogo } from './InstantlyLogo';
 import { CloudflareLogo } from './CloudflareLogo';
+import { CallHippoLogo } from './CallHippoLogo';
+import { ReplyLogo } from './ReplyLogo';
+import { EmergentLogo } from './EmergentLogo';
 
 interface LandingPageProps {
   onLoginClick: () => void;
@@ -374,6 +377,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                                 <InstantlyLogo className="w-[130px] h-auto hidden dark:block" />
                              </a>
                           </div>
+
+                          {/* CallHippo Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://join.callhippo.com/88wju5vbplrf" target="_blank" rel="noopener noreferrer" className="block">
+                                <CallHippoLogo className="w-[130px] h-auto dark:hidden" />
+                                <CallHippoLogo className="w-[130px] h-auto hidden dark:block" />
+                             </a>
+                          </div>
+
+                          {/* Reply Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://get.reply.io/mbu34hr353q4" target="_blank" rel="noopener noreferrer" className="block">
+                                <ReplyLogo className="w-[130px] h-auto dark:hidden" />
+                                <ReplyLogo className="w-[130px] h-auto hidden dark:block" />
+                             </a>
+                          </div>
+
+                          {/* Emergent Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://get.emergent.sh/ba8fr8u0tg9h" target="_blank" rel="noopener noreferrer" className="block">
+                                <EmergentLogo className="w-[130px] h-auto dark:hidden" fill="black" />
+                                <EmergentLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
                       </div>
 
                       {/* Duplicate Set */}
@@ -473,6 +500,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                              <a href="https://refer.instantly.ai/ksddft8jgi65" target="_blank" rel="noopener noreferrer" className="block">
                                 <InstantlyLogo className="w-[130px] h-auto dark:hidden" />
                                 <InstantlyLogo className="w-[130px] h-auto hidden dark:block" />
+                             </a>
+                          </div>
+
+                          {/* CallHippo Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://join.callhippo.com/88wju5vbplrf" target="_blank" rel="noopener noreferrer" className="block">
+                                <CallHippoLogo className="w-[130px] h-auto dark:hidden" />
+                                <CallHippoLogo className="w-[130px] h-auto hidden dark:block" />
+                             </a>
+                          </div>
+
+                          {/* Reply Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://get.reply.io/mbu34hr353q4" target="_blank" rel="noopener noreferrer" className="block">
+                                <ReplyLogo className="w-[130px] h-auto dark:hidden" />
+                                <ReplyLogo className="w-[130px] h-auto hidden dark:block" />
+                             </a>
+                          </div>
+
+                          {/* Emergent Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://get.emergent.sh/ba8fr8u0tg9h" target="_blank" rel="noopener noreferrer" className="block">
+                                <EmergentLogo className="w-[130px] h-auto dark:hidden" fill="black" />
+                                <EmergentLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
                              </a>
                           </div>
                       </div>
