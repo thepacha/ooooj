@@ -13,6 +13,8 @@ import { MixpanelLogo } from './MixpanelLogo';
 import { ApolloLogo } from './ApolloLogo';
 import { LemlistLogo } from './LemlistLogo';
 import { TrainualLogo } from './TrainualLogo';
+import { InstantlyLogo } from './InstantlyLogo';
+import { CloudflareLogo } from './CloudflareLogo';
 
 interface LandingPageProps {
   onLoginClick: () => void;
@@ -275,6 +277,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                   >
                       {/* First Set */}
                       <div className="flex items-center gap-x-8 px-4 shrink-0">
+                          {/* Cloudflare Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://www.cloudflare.com/" target="_blank" rel="noopener noreferrer" className="block">
+                                <CloudflareLogo className="w-[150px] h-auto dark:hidden" fill="black" />
+                                <CloudflareLogo className="w-[150px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
                           {/* ElevenLabs Logo */}
                           <div className="opacity-100 hover:opacity-80 transition-opacity">
                              <a href="https://elevenlabs.io/startup-grants" target="_blank" rel="noopener noreferrer" className="block dark:hidden">
@@ -354,12 +364,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                              <a href="https://start.trainual.com/5pc28cs7v3j9" target="_blank" rel="noopener noreferrer" className="block">
                                 <TrainualLogo className="w-[130px] h-auto dark:hidden" fill="#5A26D8" />
                                 <TrainualLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
+                          {/* Instantly Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://refer.instantly.ai/ksddft8jgi65" target="_blank" rel="noopener noreferrer" className="block">
+                                <InstantlyLogo className="w-[130px] h-auto dark:hidden" />
+                                <InstantlyLogo className="w-[130px] h-auto hidden dark:block" />
                              </a>
                           </div>
                       </div>
 
                       {/* Duplicate Set */}
                       <div className="flex items-center gap-x-8 px-4 shrink-0">
+                          {/* Cloudflare Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://www.cloudflare.com/" target="_blank" rel="noopener noreferrer" className="block">
+                                <CloudflareLogo className="w-[150px] h-auto dark:hidden" fill="black" />
+                                <CloudflareLogo className="w-[150px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
                           {/* ElevenLabs Logo */}
                           <div className="opacity-100 hover:opacity-80 transition-opacity">
                              <a href="https://elevenlabs.io/startup-grants" target="_blank" rel="noopener noreferrer" className="block dark:hidden">
@@ -439,6 +465,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                              <a href="https://start.trainual.com/5pc28cs7v3j9" target="_blank" rel="noopener noreferrer" className="block">
                                 <TrainualLogo className="w-[130px] h-auto dark:hidden" fill="#5A26D8" />
                                 <TrainualLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
+                          {/* Instantly Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://refer.instantly.ai/ksddft8jgi65" target="_blank" rel="noopener noreferrer" className="block">
+                                <InstantlyLogo className="w-[130px] h-auto dark:hidden" />
+                                <InstantlyLogo className="w-[130px] h-auto hidden dark:block" />
                              </a>
                           </div>
                       </div>

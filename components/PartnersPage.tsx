@@ -14,6 +14,8 @@ import { MixpanelLogo } from './MixpanelLogo';
 import { ApolloLogo } from './ApolloLogo';
 import { LemlistLogo } from './LemlistLogo';
 import { TrainualLogo } from './TrainualLogo';
+import { InstantlyLogo } from './InstantlyLogo';
+import { CloudflareLogo } from './CloudflareLogo';
 
 interface PartnersPageProps {
   onLogin: () => void;
@@ -37,6 +39,17 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({
   const { t, isRTL } = useLanguage();
 
   const partners = [
+    { 
+      name: 'Cloudflare', 
+      url: 'https://www.cloudflare.com/', 
+      logo: (
+        <>
+          <CloudflareLogo className="w-[150px] h-auto dark:hidden" fill="black" />
+          <CloudflareLogo className="w-[150px] h-auto hidden dark:block" fill="white" />
+        </>
+      ),
+      description: "The global network built for the cloud."
+    },
     { 
       name: 'ElevenLabs', 
       url: 'https://elevenlabs.io/startup-grants', 
@@ -147,6 +160,17 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({
       ),
       description: "The top-rated training manual software for growing businesses."
     },
+    { 
+      name: 'Instantly', 
+      url: 'https://refer.instantly.ai/ksddft8jgi65', 
+      logo: (
+        <>
+          <InstantlyLogo className="w-[130px] h-auto dark:hidden" />
+          <InstantlyLogo className="w-[130px] h-auto hidden dark:block" />
+        </>
+      ),
+      description: "Scale your outreach campaigns with unlimited email sending accounts."
+    },
   ];
 
   return (
@@ -219,28 +243,28 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-6">
-          <div className="max-w-5xl mx-auto bg-[#0500e2] rounded-[3rem] px-8 py-16 md:p-24 text-center relative overflow-hidden shadow-2xl">
+      <section className="py-12 px-6">
+          <div className="max-w-3xl mx-auto bg-[#0500e2] rounded-[2rem] px-6 py-10 md:p-12 text-center relative overflow-hidden shadow-xl">
               {/* Background Decoration */}
-              <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-              <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
               
               <div className="relative z-10">
-                  <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-8 backdrop-blur-sm border border-white/20">
-                      <Handshake size={32} className="text-white" />
+                  <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto mb-6 backdrop-blur-sm border border-white/20">
+                      <Handshake size={24} className="text-white" />
                   </div>
                   
-                  <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight">
+                  <h2 className="text-2xl md:text-3xl font-bold text-white mb-4 tracking-tight">
                       Become a Partner
                   </h2>
-                  <p className="text-blue-100 text-lg max-w-2xl mx-auto mb-10">
+                  <p className="text-blue-100 text-base max-w-xl mx-auto mb-8">
                       Join our ecosystem and help us revolutionize the way businesses analyze customer interactions.
                   </p>
                   
                   <div className="flex flex-col sm:flex-row justify-center gap-4">
                       <button 
                         onClick={() => window.location.href = 'mailto:partners@revuqai.com'}
-                        className="px-10 py-4 bg-white text-[#0500e2] rounded-xl font-bold text-lg hover:bg-blue-50 transition-colors shadow-lg"
+                        className="px-8 py-3 bg-white text-[#0500e2] rounded-lg font-bold text-base hover:bg-blue-50 transition-colors shadow-md"
                       >
                           Contact Us
                       </button>
