@@ -57,42 +57,44 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
   const showBackground = scrolled || isAuthPage || isMenuOpen;
 
   return (
-    <>
+    <div className="flex justify-center w-full">
       <nav 
-        className={`fixed top-0 left-0 right-0 z-[60] transition-all duration-300 ${
+        className={`fixed z-[60] transition-all duration-300 ${
           showBackground
-            ? 'bg-white dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 shadow-sm py-4' 
-            : 'bg-transparent py-6'
+            ? 'top-4 w-[calc(100%-2rem)] max-w-5xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200/50 dark:border-slate-700/50 shadow-lg rounded-full py-3 px-6' 
+            : 'top-0 w-full max-w-7xl bg-transparent py-6 px-6 md:px-8'
         }`}
         aria-label="Main Navigation"
       >
-        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+        <div className="flex justify-between items-center w-full">
             {/* Logo */}
             <button 
                 onClick={() => handleNavClick(onLanding)} 
                 className="flex items-center gap-2 text-[#0500e2] dark:text-[#4b53fa] cursor-pointer hover:opacity-90 transition-opacity relative z-[70]"
                 aria-label="Go to Home"
             >
-                <RevuLogo className="h-8 md:h-9 w-auto" />
+                <RevuLogo className="h-7 md:h-8 w-auto" />
             </button>
             
             {/* Desktop Nav Links - Clean & Simple */}
-            <div className="hidden lg:flex items-center gap-10 text-sm font-bold text-slate-600 dark:text-slate-300">
+            <div className="hidden lg:flex items-center gap-8 text-sm font-semibold text-slate-600 dark:text-slate-300">
                 <button onClick={() => handleNavClick(onLanding)} className="hover:text-[#0500e2] dark:hover:text-white transition-colors">{t('nav.features')}</button>
                 <button onClick={() => handleNavClick(onLanding)} className="hover:text-[#0500e2] dark:hover:text-white transition-colors">{t('nav.how_it_works')}</button>
                 <button onClick={() => handleNavClick(onPricing)} className={`hover:text-[#0500e2] dark:hover:text-white transition-colors ${activePage === 'pricing' ? 'text-[#0500e2] dark:text-white' : ''}`}>{t('nav.pricing')}</button>
             </div>
 
             {/* Desktop Auth Buttons */}
-            <div className="hidden lg:flex items-center gap-6">
+            <div className="hidden lg:flex items-center gap-5">
                 <button 
                     onClick={toggleLanguage}
-                    className="text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-1.5 text-xs font-bold uppercase"
+                    className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-1.5 text-xs font-bold uppercase"
                     title={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
                 >
                     <Globe size={16} />
-                    {language}
+                    <span>{language}</span>
                 </button>
+
+                <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1"></div>
 
                 <div className="flex items-center gap-4">
                     <button 
@@ -108,10 +110,10 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
                     
                     <button 
                         onClick={() => handleNavClick(onSignup)}
-                        className={`px-6 py-2.5 text-sm font-bold rounded-full transition-all flex items-center gap-2 ${
+                        className={`px-5 py-2 text-sm font-bold rounded-full transition-all flex items-center gap-2 ${
                             activePage === 'signup'
                             ? 'bg-[#0400c0] text-white cursor-default'
-                            : 'bg-[#0500e2] text-white hover:bg-[#0400c0] hover:shadow-lg hover:-translate-y-0.5'
+                            : 'bg-[#0500e2] text-white hover:bg-[#0400c0] hover:shadow-md hover:-translate-y-0.5'
                         }`}
                     >
                         {t('nav.get_started')} 
@@ -120,7 +122,7 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
             </div>
 
             {/* Mobile Toggle */}
-            <div className="flex items-center gap-5 lg:hidden relative z-[70]">
+            <div className="flex items-center gap-4 lg:hidden relative z-[70]">
                 <button 
                     onClick={toggleLanguage}
                     className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -133,7 +135,7 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
                     aria-label={isMenuOpen ? "Close Menu" : "Open Menu"}
                     aria-expanded={isMenuOpen}
                 >
-                    {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                    {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
             </div>
         </div>
@@ -148,7 +150,7 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
         aria-hidden={!isMenuOpen}
       >
             <div className="flex flex-col h-full px-6 pb-10 overflow-y-auto">
-                <div className="flex-1 flex flex-col gap-8 text-2xl font-bold text-slate-900 dark:text-white mt-10">
+                <div className="flex-1 flex flex-col gap-6 text-xl font-bold text-slate-900 dark:text-white mt-8">
                     <button onClick={() => handleNavClick(onLanding)} className="text-start hover:text-[#0500e2] transition-colors border-b border-slate-100 dark:border-slate-800 pb-4">{t('nav.features')}</button>
                     <button onClick={() => handleNavClick(onLanding)} className="text-start hover:text-[#0500e2] transition-colors border-b border-slate-100 dark:border-slate-800 pb-4">{t('nav.how_it_works')}</button>
                     <button onClick={() => handleNavClick(onPricing)} className={`text-start hover:text-[#0500e2] transition-colors border-b border-slate-100 dark:border-slate-800 pb-4 ${activePage === 'pricing' ? 'text-[#0500e2]' : ''}`}>{t('nav.pricing')}</button>
@@ -157,7 +159,7 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
                 <div className="mt-auto space-y-4">
                     <button 
                         onClick={() => handleNavClick(onLogin)} 
-                        className={`w-full py-4 rounded-xl border-2 font-bold text-lg transition-colors ${
+                        className={`w-full py-3.5 rounded-xl border-2 font-bold text-lg transition-colors ${
                             activePage === 'login'
                             ? 'border-[#0500e2] text-[#0500e2] bg-blue-50 dark:bg-blue-900/20'
                             : 'border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800'
@@ -168,7 +170,7 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
                     
                     <button 
                         onClick={() => handleNavClick(onSignup)} 
-                        className={`w-full py-4 rounded-xl font-bold text-lg shadow-xl transition-colors ${
+                        className={`w-full py-3.5 rounded-xl font-bold text-lg shadow-xl transition-colors ${
                             activePage === 'signup'
                             ? 'bg-[#0400c0] text-white cursor-default'
                             : 'bg-[#0500e2] text-white hover:bg-[#0400c0]'
@@ -179,6 +181,6 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
                 </div>
             </div>
       </div>
-    </>
+    </div>
   );
 };

@@ -7,6 +7,8 @@ import { ArrowRight, Handshake } from 'lucide-react';
 // Import Logos
 import { TidioLogo } from './TidioLogo';
 import { AssemblyAILogo } from './AssemblyAILogo';
+import { DeepgramLogo } from './DeepgramLogo';
+import { WatiLogo } from './WatiLogo';
 import { AlgoliaLogo } from './AlgoliaLogo';
 import { AiSdrLogoLight, AiSdrLogoDark } from './AiSdrLogo';
 import { LiveChatLogo } from './LiveChatLogo';
@@ -85,6 +87,28 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({
         </>
       ),
       description: "Speech AI models to transcribe and understand speech."
+    },
+    { 
+      name: 'Deepgram', 
+      url: 'https://deepgram.com/', 
+      logo: (
+        <>
+          <DeepgramLogo className="w-[140px] h-auto dark:hidden" fill="black" />
+          <DeepgramLogo className="w-[140px] h-auto hidden dark:block" fill="white" />
+        </>
+      ),
+      description: "Build Voice AI into your apps with the fastest, most accurate API."
+    },
+    { 
+      name: 'Wati', 
+      url: 'https://affiliates.wati.io/185ld817ykwy', 
+      logo: (
+        <>
+          <WatiLogo className="w-[140px] h-auto dark:hidden" fill="black" />
+          <WatiLogo className="w-[140px] h-auto hidden dark:block" fill="white" />
+        </>
+      ),
+      description: "WhatsApp Business API platform for customer engagement."
     },
     { 
       name: 'Algolia', 

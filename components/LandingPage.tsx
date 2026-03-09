@@ -6,6 +6,8 @@ import { Footer } from './Footer';
 import { useLanguage } from '../contexts/LanguageContext';
 import { TidioLogo } from './TidioLogo';
 import { AssemblyAILogo } from './AssemblyAILogo';
+import { DeepgramLogo } from './DeepgramLogo';
+import { WatiLogo } from './WatiLogo';
 import { AlgoliaLogo } from './AlgoliaLogo';
 import { AiSdrLogoLight, AiSdrLogoDark } from './AiSdrLogo';
 import { LiveChatLogo } from './LiveChatLogo';
@@ -314,6 +316,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                              </a>
                           </div>
 
+                          {/* Deepgram Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://deepgram.com/" target="_blank" rel="noopener noreferrer" className="block">
+                                <DeepgramLogo className="w-[140px] h-auto dark:hidden" fill="black" />
+                                <DeepgramLogo className="w-[140px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
                           {/* Algolia Logo */}
                           <div className="opacity-100 hover:opacity-80 transition-opacity">
                              <a href="https://www.algolia.com/" target="_blank" rel="noopener noreferrer" className="block">
@@ -436,6 +446,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                              <a href="https://www.assemblyai.com/" target="_blank" rel="noopener noreferrer" className="block">
                                 <AssemblyAILogo className="w-[140px] h-auto dark:hidden" fill="#09032F" />
                                 <AssemblyAILogo className="w-[140px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
+                          {/* Deepgram Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://deepgram.com/" target="_blank" rel="noopener noreferrer" className="block">
+                                <DeepgramLogo className="w-[140px] h-auto dark:hidden" fill="black" />
+                                <DeepgramLogo className="w-[140px] h-auto hidden dark:block" fill="white" />
                              </a>
                           </div>
 
