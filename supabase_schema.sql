@@ -84,6 +84,8 @@ alter table scenarios add column if not exists objectives text[];
 alter table scenarios add column if not exists talk_tracks text[];
 alter table scenarios add column if not exists openers text[];
 alter table scenarios add column if not exists voice text;
+alter table scenarios add column if not exists language text;
+alter table scenarios add column if not exists dialect text;
 
 -- ==========================================
 -- SECURITY HELPER FUNCTIONS

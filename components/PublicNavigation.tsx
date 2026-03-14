@@ -57,9 +57,9 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
   const showBackground = scrolled || isAuthPage || isMenuOpen;
 
   return (
-    <div className="flex justify-center w-full">
+    <>
       <nav 
-        className={`fixed z-[60] transition-all duration-300 ${
+        className={`fixed left-1/2 -translate-x-1/2 z-[60] transition-all duration-300 ${
           showBackground
             ? 'top-4 w-[calc(100%-2rem)] max-w-5xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200/50 dark:border-slate-700/50 shadow-lg rounded-full py-3 px-6' 
             : 'top-0 w-full max-w-7xl bg-transparent py-6 px-6 md:px-8'
@@ -181,6 +181,6 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
                 </div>
             </div>
       </div>
-    </div>
+    </>
   );
 };

@@ -169,6 +169,14 @@ export const createTrainingSession = (scenario: TrainingScenario): Chat => {
         SCENARIO SPECIFICS:
         ${scenario.systemInstruction}
         
+        LANGUAGE: ${scenario.language || 'English'}
+        DIALECT: ${scenario.dialect || 'N/A'}
+        
+        CRITICAL LANGUAGE INSTRUCTION:
+        You MUST speak exclusively in the specified LANGUAGE and DIALECT. 
+        If the language is Arabic, you MUST use the specified dialect (e.g., Egyptian, Gulf, Levantine, Maghrebi, or Modern Standard Arabic) in your vocabulary and grammar.
+        Do NOT use English unless the user specifically asks for it.
+        
         CONTEXT:
         The conversation has already started. You have just said: "${scenario.initialMessage}".
         Wait for the user's response to this statement, then continue the roleplay naturally.
@@ -216,13 +224,15 @@ export interface GenerateScenarioParams {
     persona?: string;
     mood?: string;
     industry?: string;
+    language?: string;
+    dialect?: string;
 }
 
 export const generateAIScenario = async (params: GenerateScenarioParams): Promise<Omit<TrainingScenario, 'id' | 'icon'>> => {
     const ai = getAI();
     const seed = Date.now().toString();
     
-    const { topic, category, difficulty, funnelStage, persona, mood, industry } = params;
+    const { topic, category, difficulty, funnelStage, persona, mood, industry, language, dialect } = params;
 
     const prompt = `
         Create a rich, complex training roleplay scenario for a ${category} agent.
@@ -235,9 +245,11 @@ export const generateAIScenario = async (params: GenerateScenarioParams): Promis
         ${funnelStage ? `SALES STAGE: ${funnelStage} (Ensure the customer behavior reflects this specific stage of the funnel)` : ''}
         ${persona ? `BUYER PERSONA: ${persona}` : 'PERSONA: Create a random realistic persona'}
         ${mood ? `CUSTOMER MOOD: ${mood}` : ''}
+        ${language ? `LANGUAGE: ${language}` : 'LANGUAGE: English'}
+        ${dialect ? `DIALECT: ${dialect}` : ''}
         
         INSTRUCTIONS:
-        1. Assign a GENDER and NAME suitable for the persona.
+        1. Assign a GENDER and NAME suitable for the persona and language/dialect.
         2. Select a suitable VOICE for this persona:
            - 'Puck' (Male, Mid-range)
            - 'Charon' (Male, Deep)
@@ -249,10 +261,12 @@ export const generateAIScenario = async (params: GenerateScenarioParams): Promis
            If Sales Stage is 'Closing', make them negotiate terms.
            If Sales Stage is 'Discovery', make them answer questions but be guarded.
            If Mood is '${mood}', reflect that in sentence length and tone.
+           The AI MUST speak in the requested LANGUAGE (${language || 'English'})${dialect ? ` and DIALECT (${dialect})` : ''}.
         5. Be creative!
         6. Generate 5 distinct "Mission Objectives" for the agent relevant to the ${funnelStage || 'situation'}.
-        7. Generate 6 "Suggested Talk Tracks" (direct quotes/phrases).
-        8. Generate 4 "Smart Openers" - effective opening lines for the agent to use in this specific scenario.
+        7. Generate 6 "Suggested Talk Tracks" (direct quotes/phrases) in the requested language.
+        8. Generate 4 "Smart Openers" - effective opening lines for the agent to use in this specific scenario, in the requested language.
+        9. The initialMessage MUST be in the requested language and dialect.
         
         IMPORTANT: Ensure the scenario details (Name, Context, Secret) are fresh and creative.
 
@@ -275,6 +289,8 @@ export const generateAIScenario = async (params: GenerateScenarioParams): Promis
                         initialMessage: { type: Type.STRING },
                         systemInstruction: { type: Type.STRING },
                         voice: { type: Type.STRING, enum: ['Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'] },
+                        language: { type: Type.STRING },
+                        dialect: { type: Type.STRING },
                         objectives: { type: Type.ARRAY, items: { type: Type.STRING } },
                         talkTracks: { type: Type.ARRAY, items: { type: Type.STRING } },
                         openers: { type: Type.ARRAY, items: { type: Type.STRING } }
@@ -367,12 +383,16 @@ export const generateSmartOpeners = async (scenario: TrainingScenario): Promise<
         DESCRIPTION: ${scenario.description}
         CUSTOMER PERSONA: ${scenario.systemInstruction}
         GOAL: Resolve the issue efficiently while maintaining high empathy.
+        
+        LANGUAGE: ${scenario.language || 'English'}
+        DIALECT: ${scenario.dialect || 'N/A'}
 
         REQUIREMENTS:
         1. Openers must be "Smart" & "Professional" - avoid generic "How can I help?".
         2. Tailor them to the specific context (e.g. if angry, validate emotion first).
         3. Use psychological techniques (e.g. labeling, agenda setting).
         4. Make them sound human, not robotic.
+        5. The openers MUST be in the specified LANGUAGE and DIALECT.
 
         Return strictly a JSON array of strings.
     `;
@@ -469,6 +489,14 @@ export const connectLiveTraining = (scenario: TrainingScenario, callbacks: {
         SCENARIO: ${scenario.title}
         CONTEXT: ${scenario.description}
         YOUR PERSONA: ${scenario.systemInstruction}
+        
+        LANGUAGE: ${scenario.language || 'English'}
+        DIALECT: ${scenario.dialect || 'N/A'}
+        
+        CRITICAL LANGUAGE INSTRUCTION:
+        You MUST speak exclusively in the specified LANGUAGE and DIALECT. 
+        If the language is Arabic, you MUST use the specified dialect (e.g., Egyptian, Gulf, Levantine, Maghrebi, or Modern Standard Arabic) in your pronunciation, vocabulary, and grammar.
+        Do NOT use English unless the user specifically asks for it.
         
         INSTRUCTIONS FOR HUMAN REALISM:
         1. Speak naturally. Use fillers like "um", "uh", "you know", "like" where appropriate for the emotion.

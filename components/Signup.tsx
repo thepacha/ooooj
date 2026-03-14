@@ -83,20 +83,6 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
         return;
     }
 
-    // Validate Business Email (Public Domains Check)
-    const publicDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'live.com', 'msn.com', 'icloud.com', 'aol.com', 'protonmail.com', 'mail.com', 'yandex.com'];
-    const emailDomain = email.split('@')[1]?.toLowerCase();
-    if (emailDomain && publicDomains.includes(emailDomain)) {
-        setError("Please use a valid business email address (no public domains like Gmail).");
-        return;
-    }
-
-    // Validate Website Matches Email Domain
-    if (emailDomain && website.toLowerCase() !== emailDomain) {
-        setError("Company website domain must match your work email domain.");
-        return;
-    }
-
     setIsLoading(true);
 
     const fullName = `${firstName.trim()} ${lastName.trim()}`;

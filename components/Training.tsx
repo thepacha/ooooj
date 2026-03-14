@@ -279,6 +279,8 @@ interface AIParamsState {
     persona: string;
     mood: string;
     industry: string;
+    language: string;
+    dialect: string;
 }
 
 export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisComplete }) => {
@@ -310,7 +312,9 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         funnelStage: 'Discovery',
         persona: '',
         mood: 'Neutral',
-        industry: ''
+        industry: '',
+        language: 'English',
+        dialect: ''
     });
     const [isGenerating, setIsGenerating] = useState(false);
     const [isGeneratingTopic, setIsGeneratingTopic] = useState(false);
@@ -364,6 +368,8 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         initialMessage: s.initial_message,
                         systemInstruction: s.system_instruction,
                         voice: (s.voice || getRandom(VOICES)) as any, 
+                        language: s.language,
+                        dialect: s.dialect,
                         objectives: s.objectives || [],
                         talkTracks: s.talk_tracks || [],
                         openers: s.openers || []
@@ -413,7 +419,9 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
             objectives: s.objectives,
             talk_tracks: s.talkTracks,
             openers: s.openers,
-            voice: s.voice
+            voice: s.voice,
+            language: s.language,
+            dialect: s.dialect
         }));
         
         const { error } = await supabase.from('scenarios').insert(records);
@@ -892,7 +900,9 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
             voice: 'Puck',
             objectives: genericObjectives,
             talkTracks: genericTalkTracks,
-            openers: genericOpeners
+            openers: genericOpeners,
+            language: manualParams.language || 'English',
+            dialect: manualParams.dialect || ''
         };
 
         if (user) {
@@ -1088,6 +1098,40 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                     </div>
                                 </div>
 
+                                {/* Language and Dialect */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Language</label>
+                                        <select 
+                                            value={aiParams.language}
+                                            onChange={(e) => setAiParams({...aiParams, language: e.target.value, dialect: e.target.value === 'Arabic' ? 'Modern Standard Arabic' : ''})}
+                                            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2]"
+                                        >
+                                            <option value="English">English</option>
+                                            <option value="Arabic">Arabic</option>
+                                            <option value="Spanish">Spanish</option>
+                                            <option value="French">French</option>
+                                            <option value="German">German</option>
+                                        </select>
+                                    </div>
+                                    {aiParams.language === 'Arabic' && (
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Dialect</label>
+                                            <select 
+                                                value={aiParams.dialect}
+                                                onChange={(e) => setAiParams({...aiParams, dialect: e.target.value})}
+                                                className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2]"
+                                            >
+                                                <option value="Modern Standard Arabic">Modern Standard Arabic</option>
+                                                <option value="Egyptian Arabic">Egyptian Arabic</option>
+                                                <option value="Gulf Arabic">Gulf Arabic</option>
+                                                <option value="Levantine Arabic">Levantine Arabic</option>
+                                                <option value="Maghrebi Arabic">Maghrebi Arabic</option>
+                                            </select>
+                                        </div>
+                                    )}
+                                </div>
+
                                 {/* Topic Description */}
                                 <div>
                                     <div className="flex justify-between items-center mb-2">
@@ -1164,6 +1208,38 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                             <option value="Technical">Technical</option>
                                         </select>
                                     </div>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Language</label>
+                                        <select 
+                                            value={manualParams.language || 'English'}
+                                            onChange={(e) => setManualParams({...manualParams, language: e.target.value, dialect: e.target.value === 'Arabic' ? 'Modern Standard Arabic' : ''})}
+                                            className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2]"
+                                        >
+                                            <option value="English">English</option>
+                                            <option value="Arabic">Arabic</option>
+                                            <option value="Spanish">Spanish</option>
+                                            <option value="French">French</option>
+                                            <option value="German">German</option>
+                                        </select>
+                                    </div>
+                                    {manualParams.language === 'Arabic' && (
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Dialect</label>
+                                            <select 
+                                                value={manualParams.dialect || 'Modern Standard Arabic'}
+                                                onChange={(e) => setManualParams({...manualParams, dialect: e.target.value})}
+                                                className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2]"
+                                            >
+                                                <option value="Modern Standard Arabic">Modern Standard Arabic</option>
+                                                <option value="Egyptian Arabic">Egyptian Arabic</option>
+                                                <option value="Gulf Arabic">Gulf Arabic</option>
+                                                <option value="Levantine Arabic">Levantine Arabic</option>
+                                                <option value="Maghrebi Arabic">Maghrebi Arabic</option>
+                                            </select>
+                                        </div>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Initial Customer Message</label>

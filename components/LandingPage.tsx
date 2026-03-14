@@ -9,6 +9,7 @@ import { AssemblyAILogo } from './AssemblyAILogo';
 import { DeepgramLogo } from './DeepgramLogo';
 import { WatiLogo } from './WatiLogo';
 import { AlgoliaLogo } from './AlgoliaLogo';
+import { CloseLogo } from './CloseLogo';
 import { AiSdrLogoLight, AiSdrLogoDark } from './AiSdrLogo';
 import { LiveChatLogo } from './LiveChatLogo';
 import { MixpanelLogo } from './MixpanelLogo';
@@ -332,6 +333,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                              </a>
                           </div>
 
+                          {/* Close Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://refer.close.com/zlxjnul0pmti" target="_blank" rel="noopener noreferrer" className="block">
+                                <CloseLogo className="w-[130px] h-auto dark:hidden" fill="black" />
+                                <CloseLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
                           {/* AiSdr Logo */}
                           <div className="opacity-100 hover:opacity-80 transition-opacity">
                              <a href="https://partner.aisdr.com/eaunie6ih0qb" target="_blank" rel="noopener noreferrer" className="block">
@@ -462,6 +471,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                              <a href="https://www.algolia.com/" target="_blank" rel="noopener noreferrer" className="block">
                                 <AlgoliaLogo className="w-[130px] h-auto dark:hidden" fill="#003dff" />
                                 <AlgoliaLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
+                             </a>
+                          </div>
+
+                          {/* Close Logo */}
+                          <div className="opacity-100 hover:opacity-80 transition-opacity">
+                             <a href="https://refer.close.com/zlxjnul0pmti" target="_blank" rel="noopener noreferrer" className="block">
+                                <CloseLogo className="w-[130px] h-auto dark:hidden" fill="black" />
+                                <CloseLogo className="w-[130px] h-auto hidden dark:block" fill="white" />
                              </a>
                           </div>
 
