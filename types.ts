@@ -46,8 +46,7 @@ export interface TrainingScenario {
 export interface TrainingResult {
   score: number;
   feedback: string;
-  strengths: string[];
-  improvements: string[];
+  criteriaResults: CriteriaResult[];
   sentiment: 'Positive' | 'Neutral' | 'Negative';
 }
 

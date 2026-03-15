@@ -59,50 +59,43 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
   return (
     <>
       <nav 
-        className={`fixed left-1/2 -translate-x-1/2 z-[60] transition-all duration-300 ${
-          showBackground
-            ? 'top-4 w-[calc(100%-2rem)] max-w-5xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200/50 dark:border-slate-700/50 shadow-lg rounded-full py-3 px-6' 
-            : 'top-0 w-full max-w-7xl bg-transparent py-6 px-6 md:px-8'
-        }`}
+        className={`fixed left-1/2 -translate-x-1/2 z-[60] transition-all duration-300 top-6 w-[calc(100%-2rem)] max-w-4xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] rounded-full py-2.5 px-3`}
         aria-label="Main Navigation"
       >
         <div className="flex justify-between items-center w-full">
             {/* Logo */}
             <button 
                 onClick={() => handleNavClick(onLanding)} 
-                className="flex items-center gap-2 text-[#0500e2] dark:text-[#4b53fa] cursor-pointer hover:opacity-90 transition-opacity relative z-[70]"
+                className="flex items-center gap-2 text-slate-900 dark:text-white cursor-pointer hover:opacity-90 transition-opacity relative z-[70] pl-3"
                 aria-label="Go to Home"
             >
-                <RevuLogo className="h-7 md:h-8 w-auto" />
+                <RevuLogo className="h-6 md:h-7 w-auto" />
             </button>
             
             {/* Desktop Nav Links - Clean & Simple */}
-            <div className="hidden lg:flex items-center gap-8 text-sm font-semibold text-slate-600 dark:text-slate-300">
-                <button onClick={() => handleNavClick(onLanding)} className="hover:text-[#0500e2] dark:hover:text-white transition-colors">{t('nav.features')}</button>
-                <button onClick={() => handleNavClick(onLanding)} className="hover:text-[#0500e2] dark:hover:text-white transition-colors">{t('nav.how_it_works')}</button>
-                <button onClick={() => handleNavClick(onPricing)} className={`hover:text-[#0500e2] dark:hover:text-white transition-colors ${activePage === 'pricing' ? 'text-[#0500e2] dark:text-white' : ''}`}>{t('nav.pricing')}</button>
+            <div className="hidden lg:flex items-center gap-8 text-sm font-medium text-slate-900 dark:text-slate-200">
+                <button onClick={() => handleNavClick(onLanding)} className="hover:opacity-70 transition-opacity">About</button>
+                <button onClick={() => handleNavClick(onLanding)} className="hover:opacity-70 transition-opacity">Features</button>
+                <button onClick={() => handleNavClick(onPricing)} className={`hover:opacity-70 transition-opacity ${activePage === 'pricing' ? 'opacity-70' : ''}`}>Pricing</button>
             </div>
 
             {/* Desktop Auth Buttons */}
-            <div className="hidden lg:flex items-center gap-5">
+            <div className="hidden lg:flex items-center gap-3 pr-1">
                 <button 
                     onClick={toggleLanguage}
-                    className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-1.5 text-xs font-bold uppercase"
+                    className="text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-1.5 text-xs font-bold uppercase mr-2"
                     title={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
                 >
                     <Globe size={16} />
-                    <span>{language}</span>
                 </button>
 
-                <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1"></div>
-
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                     <button 
                         onClick={() => handleNavClick(onLogin)} 
-                        className={`text-sm font-bold transition-colors ${
+                        className={`text-sm font-medium transition-colors px-4 py-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 ${
                             activePage === 'login' 
-                            ? 'text-[#0500e2] dark:text-white cursor-default' 
-                            : 'text-slate-700 dark:text-slate-200 hover:text-[#0500e2] dark:hover:text-white'
+                            ? 'text-slate-900 dark:text-white cursor-default bg-slate-100 dark:bg-slate-800' 
+                            : 'text-slate-900 dark:text-slate-200'
                         }`}
                     >
                         {t('nav.login')}
@@ -110,19 +103,20 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
                     
                     <button 
                         onClick={() => handleNavClick(onSignup)}
-                        className={`px-5 py-2 text-sm font-bold rounded-full transition-all flex items-center gap-2 ${
+                        className={`px-5 py-2.5 text-sm font-medium rounded-full transition-all flex items-center gap-2 ${
                             activePage === 'signup'
-                            ? 'bg-[#0400c0] text-white cursor-default'
-                            : 'bg-[#0500e2] text-white hover:bg-[#0400c0] hover:shadow-md hover:-translate-y-0.5'
+                            ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 cursor-default'
+                            : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:scale-105'
                         }`}
                     >
-                        {t('nav.get_started')} 
+                        {t('nav.get_started')}
+                        <ArrowRight size={16} className={isRTL ? 'rotate-180' : ''} />
                     </button>
                 </div>
             </div>
 
             {/* Mobile Toggle */}
-            <div className="flex items-center gap-4 lg:hidden relative z-[70]">
+            <div className="flex items-center gap-4 lg:hidden relative z-[70] pr-2">
                 <button 
                     onClick={toggleLanguage}
                     className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"

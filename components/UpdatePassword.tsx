@@ -57,7 +57,7 @@ export const UpdatePassword: React.FC<UpdatePasswordProps> = ({ onComplete }) =>
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-6 font-sans">
+    <div className="min-h-screen flex items-center justify-center bg-[#f5f4f0] dark:bg-[#0a0a0a] p-6 font-sans">
       <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 p-8 md:p-10 animate-fade-in">
         
         <div className="flex justify-center mb-8 text-[#0500e2] dark:text-[#4b53fa]">

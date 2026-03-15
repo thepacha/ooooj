@@ -14,7 +14,7 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, on
   const { t } = useLanguage();
 
   return (
-      <footer className="bg-slate-50 dark:bg-slate-950 pt-20 pb-10 px-6 border-t border-slate-200 dark:border-slate-800">
+      <footer className="bg-[#f5f4f0] dark:bg-[#0a0a0a] pt-20 pb-10 px-6 border-t border-slate-200 dark:border-slate-800">
         <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 mb-16">
                 <div className="col-span-2 lg:col-span-2">

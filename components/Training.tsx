@@ -778,21 +778,6 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
             // 3. Process Result
             const evalResult = await evaluateTrainingSession(transcript, activeScenario);
             setResult(evalResult);
-            
-            const simulatedCriteria: CriteriaResult[] = [
-                ...evalResult.strengths.map(s => ({
-                    name: 'Strength',
-                    score: 95,
-                    reasoning: s,
-                    suggestion: ''
-                })),
-                ...evalResult.improvements.map(i => ({
-                    name: 'Improvement Area',
-                    score: 65,
-                    reasoning: i,
-                    suggestion: 'Review training material.'
-                }))
-            ];
 
             const trainingAnalysis: AnalysisResult = {
                 id: generateId(),
@@ -802,7 +787,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                 summary: `Training Session (${activeScenario.difficulty}): ${evalResult.feedback}`,
                 overallScore: evalResult.score,
                 sentiment: evalResult.sentiment || 'Neutral',
-                criteriaResults: simulatedCriteria,
+                criteriaResults: evalResult.criteriaResults || [],
                 rawTranscript: transcript
             };
 
@@ -1503,10 +1488,12 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                     <CheckCircle size={18} /> {t('training.result.strengths')}
                                 </h3>
                                 <ul className="space-y-3">
-                                    {result.strengths.map((s, i) => (
+                                    {(result.criteriaResults || []).filter(c => c.score >= 80).map((c, i) => (
                                         <li key={i} className="flex gap-3 text-sm text-slate-700 dark:text-slate-300">
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0"></div>
-                                            {s}
+                                            <div>
+                                                <span className="font-bold">{c.name}:</span> {c.reasoning}
+                                            </div>
                                         </li>
                                     ))}
                                 </ul>
@@ -1517,10 +1504,12 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                     <TrendingUp size={18} /> {t('training.result.improvements')}
                                 </h3>
                                 <ul className="space-y-3">
-                                    {result.improvements.map((s, i) => (
+                                    {(result.criteriaResults || []).filter(c => c.score < 80).map((c, i) => (
                                         <li key={i} className="flex gap-3 text-sm text-slate-700 dark:text-slate-300">
                                             <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0"></div>
-                                            {s}
+                                            <div>
+                                                <span className="font-bold">{c.name}:</span> {c.suggestion || c.reasoning}
+                                            </div>
                                         </li>
                                     ))}
                                 </ul>

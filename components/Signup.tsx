@@ -167,7 +167,7 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
 
   if (successMessage) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 font-sans p-6">
+        <div className="min-h-screen flex items-center justify-center bg-[#f5f4f0] dark:bg-[#0a0a0a] font-sans p-6">
             <div className="max-w-md w-full text-center p-12 bg-white dark:bg-slate-900 rounded-[2rem] shadow-xl border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-500">
                 <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-sm">
                     <Mail size={32} />
@@ -186,7 +186,7 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
   }
 
   return (
-    <div className="min-h-screen flex bg-white dark:bg-slate-950 font-sans selection:bg-[#0500e2] selection:text-white">
+    <div className="min-h-screen flex bg-[#f5f4f0] dark:bg-[#0a0a0a] font-sans selection:bg-[#0500e2] selection:text-white">
       {/* Header */}
       <PublicNavigation 
         onLanding={onBackToHome}
@@ -197,7 +197,7 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
       />
 
       {/* Left Side - Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 py-12 lg:px-20 relative z-10 bg-white dark:bg-slate-950 pt-32 lg:pt-32">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 py-12 lg:px-20 relative z-10 bg-[#f5f4f0] dark:bg-[#0a0a0a] pt-32 lg:pt-32">
         <div className="max-w-lg mx-auto w-full">
             <div className="mb-10">
                 <h1 className="text-4xl lg:text-5xl font-serif font-bold text-slate-900 dark:text-white mb-3 tracking-tight">{t('auth.create_account')}</h1>

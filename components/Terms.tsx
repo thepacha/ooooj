@@ -12,7 +12,7 @@ interface TermsProps {
 
 export const Terms: React.FC<TermsProps> = ({ onBack, onLogin, onSignup, onPricing }) => {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 animate-fade-in">
+    <div className="min-h-screen bg-[#f5f4f0] dark:bg-[#0a0a0a] font-sans text-slate-900 dark:text-slate-100 animate-fade-in">
       <PublicNavigation 
         onLanding={onBack}
         onLogin={onLogin}

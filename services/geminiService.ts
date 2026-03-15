@@ -96,6 +96,23 @@ export const analyzeTranscript = async (transcript: string, criteria: Criteria[]
     // Ensure criteriaResults is always an array
     if (!res.criteriaResults) res.criteriaResults = [];
     
+    // Calculate overall score manually based on weights to avoid hallucinated scores
+    if (res.criteriaResults.length > 0 && criteria.length > 0) {
+        let totalWeight = 0;
+        let weightedScoreSum = 0;
+        
+        res.criteriaResults.forEach((result: any) => {
+            const originalCriterion = criteria.find(c => c.name === result.name);
+            const weight = originalCriterion ? originalCriterion.weight : 1;
+            totalWeight += weight;
+            weightedScoreSum += (result.score || 0) * weight;
+        });
+        
+        if (totalWeight > 0) {
+            res.overallScore = Math.round(weightedScoreSum / totalWeight);
+        }
+    }
+    
     return res as Omit<AnalysisResult, 'id' | 'timestamp' | 'rawTranscript'>;
 };
 
@@ -448,11 +465,22 @@ export const evaluateTrainingSession = async (transcript: string, scenario: Trai
                     properties: {
                         score: { type: Type.NUMBER, description: "Score from 0-100" },
                         feedback: { type: Type.STRING, description: "A 2-3 sentence summary of how they did." },
-                        strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
-                        improvements: { type: Type.ARRAY, items: { type: Type.STRING } },
+                        criteriaResults: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    name: { type: Type.STRING, description: "Name of the criterion evaluated (e.g., Empathy, Problem Solving)" },
+                                    score: { type: Type.NUMBER, description: "Score from 0-100 for this specific criterion" },
+                                    reasoning: { type: Type.STRING, description: "Why this score was given" },
+                                    suggestion: { type: Type.STRING, description: "How to improve" }
+                                },
+                                required: ['name', 'score', 'reasoning', 'suggestion']
+                            }
+                        },
                         sentiment: { type: Type.STRING, enum: ['Positive', 'Neutral', 'Negative'], description: "The overall sentiment of the interaction." }
                     },
-                    required: ['score', 'feedback', 'strengths', 'improvements', 'sentiment']
+                    required: ['score', 'feedback', 'criteriaResults', 'sentiment']
                 }
             }
         });
@@ -466,8 +494,7 @@ export const evaluateTrainingSession = async (transcript: string, scenario: Trai
         return {
             score: 0,
             feedback: "Error analyzing session.",
-            strengths: [],
-            improvements: [],
+            criteriaResults: [],
             sentiment: 'Neutral'
         };
     }

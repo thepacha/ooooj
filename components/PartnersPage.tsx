@@ -234,7 +234,7 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({
   ];
 
   return (
-    <div className={`min-h-screen bg-[#f8faff] dark:bg-[#020617] font-sans text-slate-900 dark:text-white overflow-x-hidden ${isRTL ? 'rtl' : ''}`}>
+    <div className={`min-h-screen bg-[#f5f4f0] dark:bg-[#0a0a0a] font-sans text-slate-900 dark:text-white overflow-x-hidden ${isRTL ? 'rtl' : ''}`}>
       
       {/* Navigation */}
       <PublicNavigation 
