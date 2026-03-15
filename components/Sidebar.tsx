@@ -99,7 +99,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                   currentView === 'admin'
-                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md'
+                    ? 'bg-[#0500e2] text-white dark:bg-white dark:text-slate-900 shadow-md'
                     : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >

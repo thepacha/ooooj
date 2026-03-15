@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
+import { motion, AnimatePresence } from 'motion/react';
 import { Analyzer } from './components/Analyzer';
 import { Dashboard } from './components/Dashboard';
 import { History } from './components/History';
@@ -787,10 +788,18 @@ function AppContent() {
       )
   }
 
-  if (authView === 'landing') {
+  if (authView === 'landing' && !isRecoveryMode) {
       return (
-        <div className="animate-fade-in w-full min-h-screen">
-            <LandingPage 
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key="landing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="w-full min-h-screen"
+          >
+              <LandingPage 
                 onLoginClick={handleLandingLoginClick} 
                 onSignupClick={handleLandingSignupClick} 
                 onPricingClick={() => navigateAuth('pricing')}
@@ -798,15 +807,24 @@ function AppContent() {
                 onPrivacyClick={() => navigateAuth('privacy')}
                 onRefundClick={() => navigateAuth('refund')}
                 onPartnersClick={() => navigateAuth('partners')}
-            />
-        </div>
+              />
+          </motion.div>
+        </AnimatePresence>
       );
   }
 
-  if (authView === 'pricing') {
+  if (authView === 'pricing' && !isRecoveryMode) {
       return (
-        <div className="animate-fade-in w-full min-h-screen">
-            <Pricing 
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key="pricing"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
+            transition={{ duration: 0.3 }}
+            className="w-full min-h-screen"
+          >
+              <Pricing 
                 onPlanSelect={handleLandingSignupClick} 
                 onLogin={handleLandingLoginClick}
                 onSignup={handleLandingSignupClick}
@@ -815,34 +833,53 @@ function AppContent() {
                 onTermsClick={() => navigateAuth('terms')}
                 onPrivacyClick={() => navigateAuth('privacy')}
                 onRefundClick={() => navigateAuth('refund')}
-            />
-        </div>
+              />
+          </motion.div>
+        </AnimatePresence>
       );
   }
 
-  if (authView === 'login') {
+  if (authView === 'login' && !isRecoveryMode) {
       return (
-        <div className="animate-fade-in w-full min-h-screen">
-            <Login 
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key="login"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.3 }}
+            className="w-full min-h-screen"
+          >
+              <Login 
                 onLogin={() => {}} 
                 onSwitchToSignup={() => navigateAuth('signup')}
                 onPricing={() => navigateAuth('pricing')}
                 onBackToHome={handleBackToHome}
-            />
-        </div>
+              />
+          </motion.div>
+        </AnimatePresence>
       );
   }
 
-  if (authView === 'signup') {
+  if (authView === 'signup' && !isRecoveryMode) {
       return (
-        <div className="animate-fade-in w-full min-h-screen">
-            <Signup 
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key="signup"
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="w-full min-h-screen"
+          >
+              <Signup 
                 onSignup={() => {}} 
                 onSwitchToLogin={() => navigateAuth('login')}
                 onPricing={() => navigateAuth('pricing')}
                 onBackToHome={handleBackToHome}
-            />
-        </div>
+              />
+          </motion.div>
+        </AnimatePresence>
       );
   }
 

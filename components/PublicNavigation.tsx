@@ -74,9 +74,9 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
             
             {/* Desktop Nav Links - Clean & Simple */}
             <div className="hidden lg:flex items-center gap-8 text-sm font-medium text-slate-900 dark:text-slate-200">
-                <button onClick={() => handleNavClick(onLanding)} className="hover:opacity-70 transition-opacity">About</button>
-                <button onClick={() => handleNavClick(onLanding)} className="hover:opacity-70 transition-opacity">Features</button>
-                <button onClick={() => handleNavClick(onPricing)} className={`hover:opacity-70 transition-opacity ${activePage === 'pricing' ? 'opacity-70' : ''}`}>Pricing</button>
+                <button onClick={() => handleNavClick(onLanding)} className="hover:text-[#0500e2] transition-colors">About</button>
+                <button onClick={() => handleNavClick(onLanding)} className="hover:text-[#0500e2] transition-colors">Features</button>
+                <button onClick={() => handleNavClick(onPricing)} className={`hover:text-[#0500e2] transition-colors ${activePage === 'pricing' ? 'text-[#0500e2]' : ''}`}>Pricing</button>
             </div>
 
             {/* Desktop Auth Buttons */}
@@ -105,8 +105,8 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
                         onClick={() => handleNavClick(onSignup)}
                         className={`px-5 py-2.5 text-sm font-medium rounded-full transition-all flex items-center gap-2 ${
                             activePage === 'signup'
-                            ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 cursor-default'
-                            : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:scale-105'
+                            ? 'bg-[#0500e2] dark:bg-white text-white dark:text-slate-900 cursor-default'
+                            : 'bg-[#0500e2] dark:bg-white text-white dark:text-slate-900 hover:scale-105'
                         }`}
                     >
                         {t('nav.get_started')}

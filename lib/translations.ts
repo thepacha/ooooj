@@ -270,7 +270,7 @@ export const translations = {
 
     // Landing Page
     'landing.hero.badge': 'New: Voice Engine 2.0',
-    'landing.hero.prefix': 'Practice closing deals with AI before your next sales call.',
+    'landing.hero.prefix': 'PRACTICE WITH AI 24/7. CLOSE MORE SALES WITH CONFIDENCE',
     'landing.hero.words.0': 'to cut onboarding time in half.',
     'landing.hero.words.1': 'to close deals 30% faster.',
     'landing.hero.words.2': 'to increase average deal sizes.',
@@ -751,7 +751,7 @@ export const translations = {
 
     // Landing Page
     'landing.hero.badge': 'جديد: محرك الصوت 2.0',
-    'landing.hero.prefix': 'تدرب على إغلاق الصفقات باستخدام الذكاء الاصطناعي قبل مكالمة المبيعات القادمة.',
+    'landing.hero.prefix': 'تَدَرَّبْ بِالذَّكَاءِ الاِصْطِنَاعِيِّ 24/7. أَغْلِقْ صَفَقَاتِكَ بِثِقَةٍ',
     'landing.hero.words.0': 'لتقليص وقت التأهيل للنصف.',
     'landing.hero.words.1': 'لإغلاق الصفقات أسرع بـ 30%.',
     'landing.hero.words.2': 'لزيادة متوسط حجم الصفقات.',

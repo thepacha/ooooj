@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { ArrowRight, Play, Mic, Shield, Zap, TrendingUp, Phone, Check, MessageSquare, AlertCircle, BarChart3, Star, Search, Bell, ChevronDown, Edit2, MoreVertical } from 'lucide-react';
 import { PublicNavigation } from './PublicNavigation';
 import { Footer } from './Footer';
@@ -119,7 +120,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
             
             {/* Left Side: Copy */}
             <div className="flex flex-col items-start text-left">
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white tracking-tight mb-10 leading-[1.1]">
+                <div className="mb-6">
+                    <span className="text-[10px] font-bold tracking-[0.2em] text-[#0500e2] uppercase bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-900/30">
+                        {t('landing.hero.badge')}
+                    </span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight mb-6 leading-tight uppercase">
                     {t('landing.hero.prefix')}
                 </h1>
 
@@ -202,10 +208,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                         ))}
                     </div>
                     
-                    <button className="mt-8 sm:mt-10 w-full py-3 sm:py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base hover:opacity-90 transition-all flex items-center justify-center gap-2 sm:gap-3 group">
+                    <motion.button 
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={onSignupClick}
+                        className="mt-8 sm:mt-10 w-full py-3 sm:py-4 bg-[#0500e2] dark:bg-white text-white dark:text-slate-900 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base hover:opacity-90 transition-all flex items-center justify-center gap-2 sm:gap-3 group"
+                    >
                         Create your custom scenario 
                         <ArrowRight size={16} className="sm:w-[18px] sm:h-[18px] group-hover:translate-x-1 transition-transform" />
-                    </button>
+                    </motion.button>
                 </div>
             </div>
         </div>
@@ -692,7 +703,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
 
       {/* CTA */}
       <section className="py-20 px-6">
-          <div className="max-w-5xl mx-auto bg-slate-900 dark:bg-white rounded-[3rem] px-8 py-16 md:p-24 text-center relative overflow-hidden shadow-2xl">
+          <div className="max-w-5xl mx-auto bg-[#0500e2] dark:bg-white rounded-[3rem] px-8 py-16 md:p-24 text-center relative overflow-hidden shadow-2xl">
               {/* Background Glow */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-500/20 via-slate-900/0 to-transparent pointer-events-none"></div>
               
