@@ -146,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
           <div className="flex items-center justify-between px-2 pt-2">
             <button 
                 onClick={() => setView('account')}
-                className="flex items-center gap-3 flex-1 text-left group"
+                className="flex items-center gap-3 flex-1 text-start group"
             >
                 <div className="w-8 h-8 rounded-full bg-[#0500e2] text-white flex items-center justify-center text-xs font-bold shadow-sm group-hover:scale-105 transition-transform overflow-hidden">
                     {user?.avatar_url ? (

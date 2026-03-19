@@ -132,7 +132,7 @@ export const AgentProfile: React.FC<AgentProfileProps> = ({ agentName, history, 
              <div className="absolute top-0 right-0 p-4 opacity-10">
                 <Award size={100} className="text-amber-500" />
             </div>
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('profile.total_evaluations')}</p>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{t('profile.total_evals')}</p>
             <div className="text-5xl font-serif font-bold text-slate-900 dark:text-white">
                 {stats.count}
             </div>
@@ -166,7 +166,7 @@ export const AgentProfile: React.FC<AgentProfileProps> = ({ agentName, history, 
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                 <TrendingUp size={20} className="text-[#0500e2]" />
-                {t('profile.performance_trend')}
+                {t('profile.trend')}
             </h3>
             <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
@@ -209,7 +209,7 @@ export const AgentProfile: React.FC<AgentProfileProps> = ({ agentName, history, 
 
         {/* Strengths & Weaknesses */}
         <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">{t('profile.insights')}</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">{t('profile.skills')}</h3>
             
             <div className="space-y-6">
                 <div>
@@ -248,7 +248,7 @@ export const AgentProfile: React.FC<AgentProfileProps> = ({ agentName, history, 
       {/* Recent Evaluations List */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100 dark:border-slate-800">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('profile.recent_evaluations')}</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('profile.history')}</h3>
         </div>
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {stats.evaluations.slice().reverse().slice(0, 5).map((evaluation) => (
@@ -270,7 +270,7 @@ export const AgentProfile: React.FC<AgentProfileProps> = ({ agentName, history, 
                                 {new Date(evaluation.timestamp).toLocaleDateString()}
                             </div>
                             <div className="text-xs text-slate-500">
-                                {evaluation.customerName || 'Unknown Customer'} • {evaluation.duration || '00:00'}
+                                {evaluation.customerName || 'Unknown Customer'}
                             </div>
                         </div>
                     </div>

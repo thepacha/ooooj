@@ -66,7 +66,7 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
             {/* Logo */}
             <button 
                 onClick={() => handleNavClick(onLanding)} 
-                className="flex items-center gap-2 text-slate-900 dark:text-white cursor-pointer hover:opacity-90 transition-opacity relative z-[70] pl-3"
+                className="flex items-center gap-2 text-slate-900 dark:text-white cursor-pointer hover:opacity-90 transition-opacity relative z-[70] ps-3"
                 aria-label="Go to Home"
             >
                 <RevuLogo className="h-6 md:h-7 w-auto" />
@@ -80,10 +80,10 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
             </div>
 
             {/* Desktop Auth Buttons */}
-            <div className="hidden lg:flex items-center gap-3 pr-1">
+            <div className="hidden lg:flex items-center gap-3 pe-1">
                 <button 
                     onClick={toggleLanguage}
-                    className="text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-1.5 text-xs font-bold uppercase mr-2"
+                    className="text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-1.5 text-xs font-bold uppercase me-2"
                     title={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
                 >
                     <Globe size={16} />
@@ -116,7 +116,7 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
             </div>
 
             {/* Mobile Toggle */}
-            <div className="flex items-center gap-4 lg:hidden relative z-[70] pr-2">
+            <div className="flex items-center gap-4 lg:hidden relative z-[70] pe-2">
                 <button 
                     onClick={toggleLanguage}
                     className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"

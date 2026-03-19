@@ -278,6 +278,7 @@ export const translations = {
     'landing.hero.words.4': 'to hit quota in their first 90 days.',
     'landing.hero.subtitle': "Bad calls cost revenue. Train agents with AI before they cost you customers. Hyper-realistic call simulations that eliminate guesswork and build confidence fast.",
     'landing.cta.start': 'Start Simulation',
+    'landing.scenario_freedom.cta': 'Close More Deals',
     'landing.cta.demo': 'Listen to Demo',
     'landing.social_proof_text': 'Used by 500+ forward-thinking teams',
     
@@ -759,6 +760,7 @@ export const translations = {
     'landing.hero.words.4': 'لتحقيق الهدف في أول 90 يوماً.',
     'landing.hero.subtitle': 'لا تتدرب على عملاء حقيقيين. درب وكلاءك باستخدام سيناريوهات ذكاء اصطناعي واقعية للغاية تحاكي أصعب مكالماتك - قبل أن يرفعوا سماعة الهاتف.',
     'landing.cta.start': 'بدء المحاكاة',
+    'landing.scenario_freedom.cta': 'إغلاق المزيد من الصفقات',
     'landing.cta.demo': 'استمع للعرض',
     'landing.social_proof_text': 'يستخدمه أكثر من 500 فريق ريادي',
 

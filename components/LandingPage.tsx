@@ -103,7 +103,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
   }, [rotatingWords.length]);
   
   return (
-    <div className={`min-h-screen bg-[#f8faff] dark:bg-[#020617] font-sans text-slate-900 dark:text-white overflow-x-hidden ${isRTL ? 'rtl' : ''}`}>
+    <div 
+      className={`min-h-screen bg-[#f8faff] dark:bg-[#020617] font-sans text-slate-900 dark:text-white overflow-x-hidden ${isRTL ? 'rtl' : ''}`}
+      dir={isRTL ? 'rtl' : 'ltr'}
+    >
       
       {/* Navigation */}
       <PublicNavigation 
@@ -119,7 +122,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
             
             {/* Left Side: Copy */}
-            <div className="flex flex-col items-start text-left">
+            <div className="flex flex-col items-start text-start">
                 <div className="mb-6">
                     <span className="text-[10px] font-bold tracking-[0.2em] text-[#0500e2] uppercase bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-900/30">
                         {t('landing.hero.badge')}
@@ -129,7 +132,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                     {t('landing.hero.prefix')}
                 </h1>
 
-                <p className="text-xl text-slate-500 dark:text-slate-400 mb-12 leading-relaxed max-w-xl">
+                <p className="text-xl text-slate-500 dark:text-slate-400 mb-12 leading-relaxed max-w-xl text-start">
                     {t('landing.hero.subtitle')}
                 </p>
 
@@ -139,8 +142,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                         className="px-8 py-4 bg-[#0500e2] text-white rounded-full font-bold text-lg hover:bg-[#0400c0] transition-all flex items-center justify-center gap-4 group shadow-lg shadow-blue-500/20"
                     >
                         {t('nav.get_started')} 
-                        <div className="w-8 h-8 rounded-full bg-white text-[#0500e2] flex items-center justify-center group-hover:translate-x-1 transition-transform">
-                            <ArrowRight size={18} />
+                        <div className="w-8 h-8 rounded-full bg-white text-[#0500e2] flex items-center justify-center group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform">
+                            <ArrowRight size={18} className={isRTL ? 'rotate-180' : ''} />
                         </div>
                     </button>
                     <button 
@@ -189,7 +192,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                                 key={i} 
                                 className={`flex items-center justify-between p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all ${scenario.highlighted ? 'bg-[#fff9c4] dark:bg-yellow-900/30 ring-2 ring-yellow-400/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                             >
-                                <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 pr-2 sm:pr-4">
+                                <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 pe-2 sm:pe-4">
                                     <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-white dark:border-slate-900 overflow-hidden shadow-md shrink-0">
                                         <img src={scenario.avatar} alt="Scenario lead" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                                     </div>
@@ -214,8 +217,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                         onClick={onSignupClick}
                         className="mt-8 sm:mt-10 w-full py-3 sm:py-4 bg-[#0500e2] dark:bg-white text-white dark:text-slate-900 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base hover:opacity-90 transition-all flex items-center justify-center gap-2 sm:gap-3 group"
                     >
-                        Create your custom scenario 
-                        <ArrowRight size={16} className="sm:w-[18px] sm:h-[18px] group-hover:translate-x-1 transition-transform" />
+                        {t('landing.scenario_freedom.cta')}
+                        <ArrowRight size={16} className={`sm:w-[18px] sm:h-[18px] group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform ${isRTL ? 'rotate-180' : ''}`} />
                     </motion.button>
                 </div>
             </div>
@@ -527,8 +530,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                   </div>
                   
                   {/* Gradient Masks */}
-                  <div className="pointer-events-none absolute inset-y-0 left-0 w-8 md:w-1/6 bg-gradient-to-r from-white dark:from-slate-900 to-transparent"></div>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 w-8 md:w-1/6 bg-gradient-to-l from-white dark:from-slate-900 to-transparent"></div>
+                  <div className="pointer-events-none absolute inset-y-0 start-0 w-8 md:w-1/6 bg-gradient-to-r rtl:bg-gradient-to-l from-white dark:from-slate-900 to-transparent"></div>
+                  <div className="pointer-events-none absolute inset-y-0 end-0 w-8 md:w-1/6 bg-gradient-to-l rtl:bg-gradient-to-r from-white dark:from-slate-900 to-transparent"></div>
               </div>
           </div>
       </div>
@@ -564,7 +567,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
               {/* New Way */}
               <div className="p-8 md:p-10 rounded-[2.5rem] bg-[#0500e2] text-white shadow-2xl shadow-blue-900/20 relative overflow-hidden group">
                   {/* Background Decoration */}
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-white/20 transition-colors"></div>
+                  <div className="absolute top-0 end-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 rtl:-translate-x-1/2 group-hover:bg-white/20 transition-colors"></div>
                   
                   <div className="relative z-10">
                     <h3 className="text-xl font-bold mb-8 flex items-center gap-3">
@@ -590,7 +593,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
       <section className="py-24 px-6 bg-[#f8faff] dark:bg-[#020617] border-y border-slate-200/50 dark:border-slate-800">
           <div className="max-w-7xl mx-auto">
               <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
-                  <div className="max-w-xl">
+                  <div className="max-w-xl text-start">
                       <h2 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">{t('landing.scenarios.title')}</h2>
                       <p className="text-slate-500 dark:text-slate-400 text-lg">
                           {t('landing.scenarios.subtitle')}
@@ -630,8 +633,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
               <div className="order-2 lg:order-1 relative">
                   {/* Decorative Elements */}
-                  <div className="absolute -left-12 -top-12 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px]"></div>
-                  <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px]"></div>
+                  <div className="absolute -start-12 -top-12 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px]"></div>
+                  <div className="absolute -end-12 -bottom-12 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px]"></div>
                   
                   {/* Mockup Card */}
                   <div className="relative bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 p-8 md:p-10 transform hover:scale-[1.01] transition-transform duration-700">
@@ -669,11 +672,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                   </div>
               </div>
 
-              <div className="order-1 lg:order-2">
+              <div className="order-1 lg:order-2 text-start">
                   <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6 leading-tight">
                       {t('landing.analytics.title')}
                   </h2>
-                  <p className="text-lg text-slate-500 dark:text-slate-400 mb-10 leading-relaxed">
+                  <p className="text-lg text-slate-500 dark:text-slate-400 mb-10 leading-relaxed text-start">
                       {t('landing.analytics.subtitle')}
                   </p>
                   <ul className="space-y-5 mb-12">

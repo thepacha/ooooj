@@ -15,7 +15,6 @@ export const AssemblyAILogo: React.FC<AssemblyAILogoProps> = ({ className, fill 
       x="0px" 
       y="0px" 
       viewBox="0 0 317.4 59.2" 
-      style={{ enableBackground: 'new 0 0 317.4 59.2' }} 
       xmlSpace="preserve"
       className={className}
       role="img"

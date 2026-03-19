@@ -9,7 +9,7 @@ export const CallHippoLogo: React.FC<CallHippoLogoProps> = ({ className }) => {
   const clipPathId = useId();
 
   return (
-    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 287.3" className={className} style={{ enableBackground: 'new 0 0 1080 287.3' }}>
+    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 287.3" className={className}>
       <defs>
         <clipPath id={clipPathId}>
           <circle cx="155.6" cy="149.3" r="116.9"/>

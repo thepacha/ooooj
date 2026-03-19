@@ -370,7 +370,7 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
       </div>
 
       {/* Right Side - Visual */}
-      <div className="hidden lg:block w-1/2 relative overflow-hidden bg-slate-900 border-l border-slate-800">
+      <div className="hidden lg:block w-1/2 relative overflow-hidden bg-slate-900 border-s border-slate-800">
          <BackgroundGradientAnimation containerClassName="h-full w-full opacity-40">
              <div className="absolute inset-0 flex flex-col items-center justify-center p-20 z-10">
                 <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-10 rounded-[2.5rem] max-w-lg shadow-2xl transition-all hover:scale-[1.01] duration-700">

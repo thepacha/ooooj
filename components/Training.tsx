@@ -302,6 +302,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     const [isLoadingScenarios, setIsLoadingScenarios] = useState(false);
     const [connectionError, setConnectionError] = useState<string | null>(null);
     const [regeneratingIds, setRegeneratingIds] = useState<Set<string>>(new Set());
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     // Creation State
     const [creationType, setCreationType] = useState<'manual' | 'ai'>('ai');
@@ -634,7 +635,8 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         currentOutputTranscription.current = '';
                     }
 
-                    const base64Audio = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
+                    const parts = message.serverContent?.modelTurn?.parts;
+                    const base64Audio = parts?.[0]?.inlineData?.data;
                     if (base64Audio && outputAudioContext.current) {
                         const ctx = outputAudioContext.current;
                         // Ensure playback context is running
@@ -898,12 +900,12 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         setView('list');
     }
 
-    const handleDeleteScenario = async (id: string, e: React.MouseEvent) => {
+    const confirmDelete = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
         if (!user) return;
-        if (!window.confirm("Delete this scenario?")) return;
-
+        
         setScenarios(prev => prev.filter(s => s.id !== id));
+        setDeletingId(null);
 
         const { error } = await supabase.from('scenarios').delete().eq('id', id);
         if (error) {
@@ -1006,7 +1008,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                             value={aiParams.industry}
                                             onChange={(e) => setAiParams({...aiParams, industry: e.target.value})}
                                             placeholder="Or type custom industry (e.g. Solar Energy)"
-                                            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2] text-sm"
+                                            className="w-full ps-9 pe-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2] text-sm"
                                         />
                                     </div>
                                 </div>
@@ -1350,7 +1352,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         <span className="text-sm font-medium text-red-700 dark:text-red-300">{connectionError}</span>
                         <button 
                             onClick={() => confirmStartSession()}
-                            className="ml-auto text-xs bg-white dark:bg-red-900/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900 transition-colors"
+                            className="ms-auto text-xs bg-white dark:bg-red-900/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900 transition-colors"
                         >
                             Retry
                         </button>
@@ -1373,8 +1375,8 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-5 py-4 text-sm md:text-base shadow-sm whitespace-pre-wrap leading-relaxed ${
                                 msg.role === 'user' 
-                                ? 'bg-[#0500e2] text-white rounded-br-sm' 
-                                : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-bl-sm'
+                                ? 'bg-[#0500e2] text-white rounded-be-sm' 
+                                : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-bs-sm'
                             }`}>
                                 {msg.text}
                             </div>
@@ -1393,11 +1395,11 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyDown={handleKeyDown}
                                     placeholder={isOverLimit ? "Message too long!" : "Type your response..."}
-                                    className={`w-full pl-5 pr-14 py-3 md:py-4 text-base rounded-2xl bg-slate-100 dark:bg-slate-950 border outline-none focus:ring-2 focus:ring-[#0500e2] transition-all ${
+                                    className={`w-full ps-5 pe-14 py-3 md:py-4 text-base rounded-2xl bg-slate-100 dark:bg-slate-950 border outline-none focus:ring-2 focus:ring-[#0500e2] transition-all ${
                                         isOverLimit ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : 'border-transparent focus:bg-white dark:focus:bg-slate-900'
                                     }`}
                                 />
-                                <div className={`absolute top-1/2 -translate-y-1/2 right-4 text-[10px] font-bold transition-colors ${isOverLimit ? 'text-red-500' : 'text-slate-400'}`}>
+                                <div className={`absolute top-1/2 -translate-y-1/2 end-4 text-[10px] font-bold transition-colors ${isOverLimit ? 'text-red-500' : 'text-slate-400'}`}>
                                     {wordCount}/24
                                 </div>
                             </div>
@@ -1544,8 +1546,8 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
              {/* New "AI Training Companion" Header */}
              <div className="bg-[#0500e2] rounded-[2.5rem] p-6 md:p-12 text-white relative overflow-hidden shadow-2xl">
                 {/* Background Decoration */}
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
-                <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-black/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4"></div>
+                <div className="absolute top-0 end-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 rtl:-translate-x-1/4"></div>
+                <div className="absolute bottom-0 start-0 w-[300px] h-[300px] bg-black/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4 rtl:translate-x-1/4"></div>
 
                 <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                     <div>
@@ -1643,7 +1645,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                             <div key={scenario.id} className="group relative flex flex-col h-full bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-blue-100 dark:hover:border-blue-900/30 transition-all duration-300 overflow-hidden">
                                 
                                 {/* Decorative Background Gradient (Subtle) */}
-                                <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br opacity-5 rounded-bl-[4rem] transition-opacity group-hover:opacity-10 pointer-events-none ${
+                                <div className={`absolute top-0 end-0 w-32 h-32 bg-gradient-to-br opacity-5 rounded-bs-[4rem] transition-opacity group-hover:opacity-10 pointer-events-none ${
                                     scenario.category === 'Sales' ? 'from-green-500 to-emerald-600' : 
                                     scenario.category === 'Technical' ? 'from-slate-600 to-slate-800' : 
                                     'from-red-500 to-pink-600'
@@ -1670,13 +1672,31 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                             >
                                                 <RefreshCw size={18} className={regeneratingIds.has(scenario.id) ? "animate-spin text-[#0500e2]" : ""} />
                                             </button>
-                                            <button 
-                                                onClick={(e) => handleDeleteScenario(scenario.id, e)}
-                                                className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
-                                                title="Delete Scenario"
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
+                                            
+                                            {deletingId === scenario.id ? (
+                                                <div className="flex items-center gap-1 animate-in fade-in zoom-in-95">
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); setDeletingId(null); }}
+                                                        className="px-2 py-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-[10px] font-bold uppercase transition-colors"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button 
+                                                        onClick={(e) => confirmDelete(scenario.id, e)}
+                                                        className="px-2 py-1 bg-red-500 text-white rounded-lg text-[10px] font-bold uppercase hover:bg-red-600 transition-colors"
+                                                    >
+                                                        Confirm
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); setDeletingId(scenario.id); }}
+                                                    className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
+                                                    title="Delete Scenario"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
 
@@ -1736,10 +1756,10 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse min-w-[600px]">
+                            <table className="w-full text-start border-collapse min-w-[600px]">
                                 <thead className="bg-slate-50 dark:bg-slate-900/50">
                                     <tr>
-                                        <th className="p-4 pl-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('history.table.date')}</th>
+                                        <th className="p-4 ps-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('history.table.date')}</th>
                                         <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('history.table.agent')}</th>
                                         <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('eval.summary')}</th>
                                         <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('eval.score')}</th>
@@ -1748,7 +1768,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                     {trainingHistory.map((item) => (
                                         <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                            <td className="p-4 pl-6">
+                                            <td className="p-4 ps-6 text-sm font-medium text-slate-900 dark:text-white">
                                                 <div className="flex items-center gap-2">
                                                     <Calendar size={14} className="text-slate-400" />
                                                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">

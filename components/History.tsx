@@ -132,13 +132,13 @@ export const History: React.FC<HistoryProps> = ({
         </div>
 
         <div className="relative w-full md:w-auto">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input
             type="text"
             placeholder={t('history.search')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0500e2] w-full md:w-64 transition-colors"
+            className="ps-10 pe-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0500e2] w-full md:w-64 transition-colors"
           />
         </div>
       </div>
@@ -171,7 +171,7 @@ export const History: React.FC<HistoryProps> = ({
 
       <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[800px]">
+          <table className="w-full text-start border-collapse min-w-[800px]">
             <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">{t('history.table.date')}</th>
@@ -179,7 +179,7 @@ export const History: React.FC<HistoryProps> = ({
                 <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">{t('history.table.customer')}</th>
                 <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">{t('history.table.sentiment')}</th>
                 <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400">{t('history.table.score')}</th>
-                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 text-right">{t('history.table.actions')}</th>
+                <th className="p-4 font-semibold text-sm text-slate-600 dark:text-slate-400 text-end">{t('history.table.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -227,7 +227,7 @@ export const History: React.FC<HistoryProps> = ({
                               {item.overallScore}%
                           </span>
                       </td>
-                      <td className="p-4 text-right">
+                      <td className="p-4 text-end">
                           <div className="flex items-center justify-end gap-3">
                             {activeFilter === 'trash' ? (
                                 <>

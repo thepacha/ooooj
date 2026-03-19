@@ -45,7 +45,7 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, on
                         <li><a href="#" className="hover:text-[#0500e2] transition-colors">Careers</a></li>
                         <li><a href="#" className="hover:text-[#0500e2] transition-colors">Blog</a></li>
                         <li>
-                            <button onClick={onPartnersClick} className="hover:text-[#0500e2] transition-colors text-left">
+                            <button onClick={onPartnersClick} className="hover:text-[#0500e2] transition-colors text-start">
                                 Partners
                             </button>
                         </li>
@@ -68,17 +68,17 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, on
                     <h4 className="font-bold text-slate-900 dark:text-white mb-4 text-sm">{t('landing.footer.legal')}</h4>
                     <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
                         <li>
-                            <button onClick={onTermsClick} className="hover:text-[#0500e2] transition-colors text-left">
+                            <button onClick={onTermsClick} className="hover:text-[#0500e2] transition-colors text-start">
                                 Terms of Service
                             </button>
                         </li>
                         <li>
-                            <button onClick={onPrivacyClick} className="hover:text-[#0500e2] transition-colors text-left">
+                            <button onClick={onPrivacyClick} className="hover:text-[#0500e2] transition-colors text-start">
                                 Privacy Policy
                             </button>
                         </li>
                         <li>
-                            <button onClick={onRefundClick} className="hover:text-[#0500e2] transition-colors text-left">
+                            <button onClick={onRefundClick} className="hover:text-[#0500e2] transition-colors text-start">
                                 Refund Policy
                             </button>
                         </li>

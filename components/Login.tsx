@@ -116,7 +116,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
       />
 
       {/* Left Side - Form Container */}
-      <div className="w-full lg:w-[45%] flex flex-col justify-center p-8 md:p-12 lg:p-16 relative z-10 bg-[#f5f4f0] dark:bg-[#0a0a0a] border-r border-slate-100 dark:border-slate-900 pt-32 lg:pt-32">
+      <div className="w-full lg:w-[45%] flex flex-col justify-center p-8 md:p-12 lg:p-16 relative z-10 bg-[#f5f4f0] dark:bg-[#0a0a0a] border-e border-slate-100 dark:border-slate-900 pt-32 lg:pt-32">
         
         <div className="max-w-md mx-auto w-full">
             <div className="mb-10">

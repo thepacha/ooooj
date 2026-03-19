@@ -191,8 +191,8 @@ export const createTrainingSession = (scenario: TrainingScenario): Chat => {
         
         CRITICAL LANGUAGE INSTRUCTION:
         You MUST speak exclusively in the specified LANGUAGE and DIALECT. 
-        If the language is Arabic, you MUST use the specified dialect (e.g., Egyptian, Gulf, Levantine, Maghrebi, or Modern Standard Arabic) in your vocabulary and grammar.
-        Do NOT use English unless the user specifically asks for it.
+        ${scenario.language === 'Arabic' ? 'If the language is Arabic, you MUST use the specified dialect (e.g., Egyptian, Gulf, Levantine, Maghrebi, or Modern Standard Arabic) in your vocabulary and grammar.' : ''}
+        Do NOT use any other language unless the user specifically asks for it.
         
         CONTEXT:
         The conversation has already started. You have just said: "${scenario.initialMessage}".
@@ -522,8 +522,8 @@ export const connectLiveTraining = (scenario: TrainingScenario, callbacks: {
         
         CRITICAL LANGUAGE INSTRUCTION:
         You MUST speak exclusively in the specified LANGUAGE and DIALECT. 
-        If the language is Arabic, you MUST use the specified dialect (e.g., Egyptian, Gulf, Levantine, Maghrebi, or Modern Standard Arabic) in your pronunciation, vocabulary, and grammar.
-        Do NOT use English unless the user specifically asks for it.
+        ${scenario.language === 'Arabic' ? 'If the language is Arabic, you MUST use the specified dialect (e.g., Egyptian, Gulf, Levantine, Maghrebi, or Modern Standard Arabic) in your pronunciation, vocabulary, and grammar.' : ''}
+        Do NOT use any other language unless the user specifically asks for it.
         
         INSTRUCTIONS FOR HUMAN REALISM:
         1. Speak naturally. Use fillers like "um", "uh", "you know", "like" where appropriate for the emotion.
