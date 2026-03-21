@@ -9,6 +9,8 @@ export interface Notification {
   time: string;
   timestamp: number;
   read: boolean;
+  link?: 'dashboard' | 'analyze' | 'history' | 'settings' | 'evaluation' | 'usage' | 'roster' | 'pricing' | 'training' | 'admin' | 'terms' | 'privacy' | 'account' | 'notifications';
+  targetId?: string;
 }
 
 const STORAGE_KEY = 'revuqa_notifications';
@@ -23,6 +25,7 @@ const MOCK_NOTIFICATIONS: Notification[] = [
     time: '10m ago',
     timestamp: Date.now() - 10 * 60 * 1000,
     read: false,
+    link: 'analyze'
   },
   {
     id: '2',
@@ -32,6 +35,7 @@ const MOCK_NOTIFICATIONS: Notification[] = [
     time: '1h ago',
     timestamp: Date.now() - 60 * 60 * 1000,
     read: false,
+    link: 'history'
   },
   {
     id: '3',
@@ -41,6 +45,7 @@ const MOCK_NOTIFICATIONS: Notification[] = [
     time: '2h ago',
     timestamp: Date.now() - 2 * 60 * 60 * 1000,
     read: true,
+    link: 'roster'
   }
 ];
 
@@ -84,7 +89,8 @@ export function useNotifications() {
         message: 'Your team has completed 12 evaluations in the last 4 hours. Average score: 85%.',
         time: 'Just now',
         timestamp: now,
-        read: false
+        read: false,
+        link: 'dashboard'
       });
       updatedGen.fourHour = now;
     }
@@ -98,7 +104,8 @@ export function useNotifications() {
         message: 'Yesterday\'s top performer was Sarah Smith with a 92% average score.',
         time: 'Just now',
         timestamp: now,
-        read: false
+        read: false,
+        link: 'roster'
       });
       updatedGen.daily = now;
     }
@@ -112,7 +119,8 @@ export function useNotifications() {
         message: 'Your team\'s weekly average improved by 3% compared to last week.',
         time: 'Just now',
         timestamp: now,
-        read: false
+        read: false,
+        link: 'dashboard'
       });
       updatedGen.weekly = now;
     }
@@ -126,7 +134,8 @@ export function useNotifications() {
         message: 'Monthly goals achieved! 450 total evaluations completed this month.',
         time: 'Just now',
         timestamp: now,
-        read: false
+        read: false,
+        link: 'history'
       });
       updatedGen.monthly = now;
     }
@@ -149,6 +158,14 @@ export function useNotifications() {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
+  const deleteNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const deleteAllNotifications = () => {
+    setNotifications([]);
+  };
+
   const addNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'time' | 'read'>) => {
     const newNotif: Notification = {
       ...notification,
@@ -164,6 +181,8 @@ export function useNotifications() {
     notifications,
     markAsRead,
     markAllAsRead,
-    addNotification
+    addNotification,
+    deleteNotification,
+    deleteAllNotifications
   };
 }

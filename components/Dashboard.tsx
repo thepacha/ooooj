@@ -21,7 +21,8 @@ import {
   BarChart2, 
   ArrowUpRight,
   Filter,
-  Calendar
+  Calendar,
+  Bell
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -106,6 +107,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
 
   return (
     <div className="space-y-6 animate-fade-in pb-12 font-sans">
+      
+      {/* Notifications Quick Access */}
+      <div className="flex justify-between items-center bg-indigo-50/40 dark:bg-indigo-900/10 p-4 rounded-2xl border border-indigo-100/50 dark:border-indigo-500/10 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-white dark:bg-slate-800 rounded-xl text-[#0500e2] dark:text-[#4b53fa] shadow-sm">
+            <Bell size={20} />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Recent Activity</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Stay updated with your latest performance</p>
+          </div>
+        </div>
+        <button 
+          onClick={() => setView('notifications')}
+          className="px-4 py-2 bg-[#0500e2] hover:bg-[#0400c0] text-white text-xs font-bold rounded-xl shadow-lg shadow-[#0500e2]/20 transition-all active:scale-95"
+        >
+          Show all
+        </button>
+      </div>
       
       {/* 1. Top Wide Card - Balance Style */}
       <div 

@@ -90,17 +90,16 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ user, onLogout, setView, o
 
           {/* Notifications Dropdown */}
           {showNotifications && (
-            <div className="absolute right-0 sm:-right-4 mt-4 w-[calc(100vw-2rem)] sm:w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 max-w-[400px]">
+            <div className="fixed top-[80px] left-4 right-4 sm:absolute sm:top-auto sm:-right-4 sm:left-auto sm:mt-4 sm:w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 max-w-[400px] mx-auto sm:mx-0">
               <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <h3 className="font-semibold text-slate-900 dark:text-white">Notifications</h3>
-                {unreadCount > 0 && (
-                  <button 
-                    onClick={markAllAsRead}
-                    className="text-xs text-[#0500e2] hover:text-[#0400c0] dark:text-[#4b53fa] font-medium flex items-center gap-1"
-                  >
-                    <Check size={14} /> Mark all read
-                  </button>
-                )}
+                <button 
+                  onClick={markAllAsRead}
+                  disabled={unreadCount === 0}
+                  className="text-xs text-[#0500e2] hover:text-[#0400c0] dark:text-[#4b53fa] font-medium flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                >
+                  <Check size={14} /> Mark all read
+                </button>
               </div>
               <div className="max-h-[400px] overflow-y-auto">
                 {recentNotifications.length > 0 ? (
@@ -145,19 +144,17 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ user, onLogout, setView, o
                   </div>
                 )}
               </div>
-              {notifications.length > 5 && (
-                <div className="p-3 border-t border-slate-100 dark:border-slate-800 text-center bg-slate-50/50 dark:bg-slate-800/20">
-                  <button 
-                    onClick={() => {
-                      setShowNotifications(false);
-                      setView('notifications');
-                    }}
-                    className="text-sm text-[#0500e2] hover:text-[#0400c0] dark:text-[#4b53fa] font-medium"
-                  >
-                    View all notifications
-                  </button>
-                </div>
-              )}
+              <div className="p-3 border-t border-slate-100 dark:border-slate-800 text-center bg-slate-50/50 dark:bg-slate-800/20">
+                <button 
+                  onClick={() => {
+                    setShowNotifications(false);
+                    setView('notifications');
+                  }}
+                  className="text-sm text-[#0500e2] hover:text-[#0400c0] dark:text-[#4b53fa] font-medium"
+                >
+                  Show all
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -181,7 +178,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ user, onLogout, setView, o
           </button>
 
           {showProfileMenu && (
-            <div className="absolute right-0 mt-4 w-64 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+            <div className="fixed top-[80px] left-4 right-4 sm:absolute sm:top-auto sm:right-0 sm:left-auto sm:mt-4 sm:w-64 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 max-w-[400px] mx-auto sm:mx-0">
               <div className="p-4 border-b border-slate-100 dark:border-slate-800">
                 <p className="font-semibold text-slate-900 dark:text-white truncate">{user?.name || 'Guest User'}</p>
                 <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{user?.email || 'guest@example.com'}</p>

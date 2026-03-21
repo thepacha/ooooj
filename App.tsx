@@ -24,7 +24,7 @@ import { Privacy } from './components/Privacy';
 import { RefundPolicy } from './components/RefundPolicy';
 import { PartnersPage } from './components/PartnersPage';
 import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA, User } from './types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Trash2, AlertTriangle, Sparkles, MessageSquare, TrendingUp, Info } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
 import { supabase } from './lib/supabase';
 import { useLanguage, LanguageProvider } from './contexts/LanguageContext';
@@ -221,8 +221,10 @@ function AppContent() {
   const [criteria, setCriteria] = useState<Criteria[]>(DEFAULT_CRITERIA);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedEvaluation, setSelectedEvaluation] = useState<AnalysisResult | null>(null);
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   
-  const { notifications, markAsRead, markAllAsRead, addNotification } = useNotifications();
+  const { notifications, markAsRead, markAllAsRead, addNotification, deleteNotification, deleteAllNotifications } = useNotifications();
 
   // Filter state for History view
   const [historyFilter, setHistoryFilter] = useState<'all' | 'high' | 'low' | 'trash'>('all');
@@ -479,6 +481,8 @@ function AppContent() {
       type: 'feedback',
       title: 'Analysis Complete',
       message: `Evaluation for ${result.agentName} is ready. Score: ${result.overallScore}%`,
+      link: 'evaluation',
+      targetId: result.id
     });
 
     if (user) {
@@ -686,13 +690,91 @@ function AppContent() {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Notifications</h2>
-              <button
-                onClick={markAllAsRead}
-                className="text-sm text-[#0500e2] hover:text-[#0400c0] dark:text-[#4b53fa] font-medium"
-              >
-                Mark all as read
-              </button>
+              <div className="flex gap-4">
+                <button
+                  onClick={markAllAsRead}
+                  disabled={!notifications.some(n => !n.read)}
+                  className="text-sm text-[#0500e2] hover:text-[#0400c0] dark:text-[#4b53fa] font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                >
+                  Mark all as read
+                </button>
+                <button
+                  onClick={() => setShowDeleteAllModal(true)}
+                  disabled={notifications.length === 0}
+                  className="text-sm text-red-500 hover:text-red-600 dark:text-red-400 font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                >
+                  Delete all
+                </button>
+              </div>
             </div>
+
+            {/* Delete All Confirmation Modal */}
+            <AnimatePresence>
+              {showDeleteAllModal && (
+                <div 
+                  className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                  onClick={() => {
+                    setShowDeleteAllModal(false);
+                    setDeleteConfirmText('');
+                  }}
+                >
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="bg-white dark:bg-slate-900 rounded-2xl shadow-[0_0_50px_-12px_rgba(0,0,0,0.25)] dark:shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] border border-slate-200 dark:border-slate-800 w-full max-w-md overflow-hidden relative"
+                  >
+                    <div className="p-6">
+                      <div className="flex items-center gap-3 mb-4 text-red-500">
+                        <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-full">
+                          <Trash2 size={24} />
+                        </div>
+                        <h3 className="text-xl font-bold">Delete All Notifications?</h3>
+                      </div>
+                      <p className="text-slate-600 dark:text-slate-400 mb-6">
+                        This action cannot be undone. Please type <span className="font-mono font-bold text-slate-900 dark:text-white">delete</span> to confirm.
+                      </p>
+                      <input
+                        type="text"
+                        value={deleteConfirmText}
+                        onChange={(e) => setDeleteConfirmText(e.target.value)}
+                        placeholder="Type 'delete' here"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all mb-6"
+                        autoFocus
+                      />
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => {
+                            setShowDeleteAllModal(false);
+                            setDeleteConfirmText('');
+                          }}
+                          className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          disabled={deleteConfirmText.toLowerCase() !== 'delete'}
+                          onClick={() => {
+                            deleteAllNotifications();
+                            setShowDeleteAllModal(false);
+                            setDeleteConfirmText('');
+                          }}
+                          className={`flex-1 px-4 py-3 rounded-xl font-bold text-white transition-all ${
+                            deleteConfirmText.toLowerCase() === 'delete'
+                              ? 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/30'
+                              : 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed'
+                          }`}
+                        >
+                          Delete All
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+
             <div className="bg-white dark:bg-[#1a1b26] rounded-2xl border border-gray-100 dark:border-gray-800/50 overflow-hidden">
               {notifications.length === 0 ? (
                 <div className="p-8 text-center text-gray-500 dark:text-gray-400">
@@ -710,8 +792,33 @@ function AppContent() {
                       }`}
                     >
                       <div className="flex justify-between items-start gap-4">
-                        <div className="flex-1">
-                          <h4 className={`text-sm font-medium ${!notification.read ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+                        <div className="flex-shrink-0 mt-0.5">
+                          {notification.type === 'alert' && <AlertTriangle size={18} className="text-red-500 dark:text-red-400" />}
+                          {notification.type === 'feedback' && <Sparkles size={18} className="text-amber-500 dark:text-amber-400" />}
+                          {notification.type === 'assignment' && <MessageSquare size={18} className="text-blue-500 dark:text-blue-400" />}
+                          {notification.type === 'performance' && <TrendingUp size={18} className="text-green-500 dark:text-green-400" />}
+                          {notification.type === 'system' && <Info size={18} className="text-gray-500 dark:text-gray-400" />}
+                          {!['alert', 'feedback', 'assignment', 'performance', 'system'].includes(notification.type) && <Info size={18} className="text-gray-500 dark:text-gray-400" />}
+                        </div>
+                        <div 
+                          className={`flex-1 ${notification.link ? 'cursor-pointer group' : ''}`}
+                          onClick={() => {
+                            if (!notification.read) {
+                              markAsRead(notification.id);
+                            }
+                            if (notification.link === 'evaluation' && notification.targetId) {
+                              const targetEval = history.find(h => h.id === notification.targetId);
+                              if (targetEval) {
+                                handleSelectEvaluation(targetEval);
+                              } else {
+                                handleNavigate('history');
+                              }
+                            } else if (notification.link) {
+                              handleNavigate(notification.link);
+                            }
+                          }}
+                        >
+                          <h4 className={`text-sm font-medium ${!notification.read ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'} ${notification.link ? 'group-hover:text-[#0500e2] dark:group-hover:text-[#4b53fa] transition-colors' : ''}`}>
                             {notification.title}
                           </h4>
                           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -721,13 +828,22 @@ function AppContent() {
                             {notification.time}
                           </span>
                         </div>
-                        {!notification.read && (
+                        <div className="flex items-start gap-3">
+                          {!notification.read && (
+                            <button
+                              onClick={() => markAsRead(notification.id)}
+                              className="w-2 h-2 rounded-full bg-[#0500e2] dark:bg-[#4b53fa] flex-shrink-0 mt-1.5"
+                              aria-label="Mark as read"
+                            />
+                          )}
                           <button
-                            onClick={() => markAsRead(notification.id)}
-                            className="w-2 h-2 rounded-full bg-[#0500e2] dark:bg-[#4b53fa] flex-shrink-0 mt-1.5"
-                            aria-label="Mark as read"
-                          />
-                        )}
+                            onClick={() => deleteNotification(notification.id)}
+                            className="text-gray-400 hover:text-red-500 transition-colors"
+                            aria-label="Delete notification"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -971,7 +1087,7 @@ function AppContent() {
             user={user} 
             onLogout={handleLogout} 
             setView={handleNavWithFilter} 
-            onMenuClick={() => setIsSidebarOpen(true)} 
+            onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} 
             notifications={notifications}
             markAsRead={markAsRead}
             markAllAsRead={markAllAsRead}

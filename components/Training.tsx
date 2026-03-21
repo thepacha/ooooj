@@ -800,6 +800,8 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
               type: 'system',
               title: 'Training Complete',
               message: `Session "${activeScenario.title}" evaluated successfully.`,
+              link: 'evaluation',
+              targetId: trainingAnalysis.id
             });
 
             if (user) {
