@@ -224,7 +224,7 @@ function AppContent() {
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   
-  const { notifications, markAsRead, markAllAsRead, addNotification, deleteNotification, deleteAllNotifications } = useNotifications();
+  const { notifications, markAsRead, markAllAsRead, addNotification, deleteNotification, deleteAllNotifications } = useNotifications(user?.id);
 
   // Filter state for History view
   const [historyFilter, setHistoryFilter] = useState<'all' | 'high' | 'low' | 'trash'>('all');

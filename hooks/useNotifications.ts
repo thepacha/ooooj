@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { generateId } from '../lib/utils';
+import { supabase } from '../lib/supabase';
 
 export interface Notification {
   id: string;
@@ -13,60 +13,67 @@ export interface Notification {
   targetId?: string;
 }
 
-const STORAGE_KEY = 'revuqa_notifications';
 const LAST_GEN_KEY = 'revuqa_last_gen';
 
-const MOCK_NOTIFICATIONS: Notification[] = [
-  {
-    id: '1',
-    type: 'assignment',
-    title: 'New Assignment',
-    message: 'You have been assigned to review "Q3 Sales Call - John Doe".',
-    time: '10m ago',
-    timestamp: Date.now() - 10 * 60 * 1000,
-    read: false,
-    link: 'analyze'
-  },
-  {
-    id: '2',
-    type: 'feedback',
-    title: 'Feedback Ready',
-    message: 'Your recent roleplay session has been evaluated.',
-    time: '1h ago',
-    timestamp: Date.now() - 60 * 60 * 1000,
-    read: false,
-    link: 'history'
-  },
-  {
-    id: '3',
-    type: 'alert',
-    title: 'Score Below Threshold',
-    message: 'Agent Sarah Smith scored 65% on Objection Handling.',
-    time: '2h ago',
-    timestamp: Date.now() - 2 * 60 * 60 * 1000,
-    read: true,
-    link: 'roster'
-  }
-];
+export function useNotifications(userId?: string) {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
-export function useNotifications() {
-  const [notifications, setNotifications] = useState<Notification[]>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch (e) {
-        console.error('Failed to parse notifications', e);
-      }
+  // Fetch notifications from Supabase
+  useEffect(() => {
+    if (!userId) {
+      setNotifications([]);
+      return;
     }
-    return MOCK_NOTIFICATIONS;
-  });
+
+    const fetchNotifications = async () => {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('timestamp', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.error('Failed to fetch notifications:', error);
+        return;
+      }
+
+      if (data) {
+        setNotifications(data.map(n => ({
+          id: n.id,
+          type: n.type,
+          title: n.title,
+          message: n.message,
+          time: n.time,
+          timestamp: n.timestamp,
+          read: n.read,
+          link: n.link,
+          targetId: n.target_id
+        })));
+      }
+    };
+
+    fetchNotifications();
+
+    // Set up realtime subscription
+    const subscription = supabase
+      .channel('notifications_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, 
+        () => {
+          fetchNotifications();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [userId]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications));
-  }, [notifications]);
+    if (!userId) return;
 
-  useEffect(() => {
     // Generate recurring notifications
     const lastGenStr = localStorage.getItem(LAST_GEN_KEY);
     const lastGen = lastGenStr ? JSON.parse(lastGenStr) : {
@@ -77,13 +84,12 @@ export function useNotifications() {
     };
 
     const now = Date.now();
-    const newNotifications: Notification[] = [];
+    const newNotifications: Omit<Notification, 'id'>[] = [];
     const updatedGen = { ...lastGen };
 
     // 4 hours = 4 * 60 * 60 * 1000 = 14400000
     if (now - lastGen.fourHour > 14400000) {
       newNotifications.push({
-        id: generateId(),
         type: 'performance',
         title: '4-Hour Performance Update',
         message: 'Your team has completed 12 evaluations in the last 4 hours. Average score: 85%.',
@@ -98,10 +104,9 @@ export function useNotifications() {
     // Daily = 24 * 60 * 60 * 1000 = 86400000
     if (now - lastGen.daily > 86400000) {
       newNotifications.push({
-        id: generateId(),
         type: 'performance',
         title: 'Daily Performance Summary',
-        message: 'Yesterday\'s top performer was Sarah Smith with a 92% average score.',
+        message: "Yesterday's top performer was Sarah Smith with a 92% average score.",
         time: 'Just now',
         timestamp: now,
         read: false,
@@ -113,10 +118,9 @@ export function useNotifications() {
     // Weekly = 7 * 24 * 60 * 60 * 1000 = 604800000
     if (now - lastGen.weekly > 604800000) {
       newNotifications.push({
-        id: generateId(),
         type: 'performance',
         title: 'Weekly Performance Report',
-        message: 'Your team\'s weekly average improved by 3% compared to last week.',
+        message: "Your team's weekly average improved by 3% compared to last week.",
         time: 'Just now',
         timestamp: now,
         read: false,
@@ -128,7 +132,6 @@ export function useNotifications() {
     // Monthly = 30 * 24 * 60 * 60 * 1000 = 2592000000
     if (now - lastGen.monthly > 2592000000) {
       newNotifications.push({
-        id: generateId(),
         type: 'performance',
         title: 'Monthly Performance Review',
         message: 'Monthly goals achieved! 450 total evaluations completed this month.',
@@ -141,40 +144,123 @@ export function useNotifications() {
     }
 
     if (newNotifications.length > 0) {
-      setNotifications(prev => {
-        const updated = [...newNotifications, ...prev];
-        // Keep only top 50 notifications to prevent localstorage bloat
-        return updated.slice(0, 50);
-      });
-      localStorage.setItem(LAST_GEN_KEY, JSON.stringify(updatedGen));
+      const insertNotifications = async () => {
+        const recordsToInsert = newNotifications.map(n => ({
+          user_id: userId,
+          type: n.type,
+          title: n.title,
+          message: n.message,
+          time: n.time,
+          timestamp: n.timestamp,
+          read: n.read,
+          link: n.link,
+          target_id: n.targetId
+        }));
+
+        const { error } = await supabase
+          .from('notifications')
+          .insert(recordsToInsert);
+
+        if (error) {
+          console.error('Error inserting recurring notifications:', error);
+        } else {
+          localStorage.setItem(LAST_GEN_KEY, JSON.stringify(updatedGen));
+        }
+      };
+      
+      insertNotifications();
     }
-  }, []);
+  }, [userId]);
 
-  const markAsRead = (id: string) => {
+  const markAsRead = async (id: string) => {
+    if (!userId) return;
+    
+    // Optimistic update
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('id', id)
+      .eq('user_id', userId);
+      
+    if (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
+    if (!userId) return;
+    
+    // Optimistic update
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('user_id', userId)
+      .eq('read', false);
+      
+    if (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
   };
 
-  const deleteNotification = (id: string) => {
+  const deleteNotification = async (id: string) => {
+    if (!userId) return;
+    
+    // Optimistic update
     setNotifications(prev => prev.filter(n => n.id !== id));
+    
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userId);
+      
+    if (error) {
+      console.error('Error deleting notification:', error);
+    }
   };
 
-  const deleteAllNotifications = () => {
+  const deleteAllNotifications = async () => {
+    if (!userId) return;
+    
+    // Optimistic update
     setNotifications([]);
+    
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', userId);
+      
+    if (error) {
+      console.error('Error deleting all notifications:', error);
+    }
   };
 
-  const addNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'time' | 'read'>) => {
-    const newNotif: Notification = {
-      ...notification,
-      id: generateId(),
-      timestamp: Date.now(),
+  const addNotification = async (notification: Omit<Notification, 'id' | 'timestamp' | 'time' | 'read'>) => {
+    if (!userId) return;
+    
+    const newNotif = {
+      user_id: userId,
+      type: notification.type,
+      title: notification.title,
+      message: notification.message,
       time: 'Just now',
-      read: false
+      timestamp: Date.now(),
+      read: false,
+      link: notification.link,
+      target_id: notification.targetId
     };
-    setNotifications(prev => [newNotif, ...prev].slice(0, 50));
+    
+    const { error } = await supabase
+      .from('notifications')
+      .insert([newNotif]);
+      
+    if (error) {
+      console.error('Error adding notification:', error);
+    }
   };
 
   return {
