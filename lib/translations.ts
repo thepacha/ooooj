@@ -325,7 +325,7 @@ export const translations = {
     'landing.analytics.mockup.metric3': 'Closing Technique',
 
     'landing.final_cta.title': 'Ready to build a world-class team?',
-    'landing.final_cta.button': 'Get Started for Free',
+    'landing.final_cta.button': 'Boost Your Sales',
     'landing.final_cta.note': 'No credit card required for trial.',
 
     'landing.footer.desc': 'Revu: The #1 AI-native platform for Customer Experience excellence.',
@@ -807,7 +807,7 @@ export const translations = {
     'landing.analytics.mockup.metric3': 'تقنية الإغلاق',
 
     'landing.final_cta.title': 'هل أنت مستعد لبناء فريق عالمي المستوى؟',
-    'landing.final_cta.button': 'ابدأ مجاناً',
+    'landing.final_cta.button': 'عزز مبيعاتك',
     'landing.final_cta.note': 'لا تتطلب بطاقة ائتمان للتجربة.',
 
     'landing.footer.desc': 'RevuQA: المنصة الأصلية للذكاء الاصطناعي لتميز تجربة العملاء.',

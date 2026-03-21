@@ -209,11 +209,26 @@ export const createTrainingSession = (scenario: TrainingScenario): Chat => {
     });
 };
 
-export const generateTrainingTopic = async (): Promise<string> => {
+export const generateTrainingTopic = async (params?: GenerateScenarioParams): Promise<string> => {
     const ai = getAI();
+    let contextStr = '';
+    if (params) {
+        contextStr = `
+        Please tailor the topic to the following parameters:
+        - Language: ${params.language}
+        - Buyer Mode: ${params.mood}
+        - Persona: ${params.persona}
+        - Difficulty: ${params.difficulty}
+        - Industry: ${params.industry}
+        - Funnel Stage: ${params.funnelStage}
+        - Category: ${params.category}
+        `;
+    }
+
     const prompt = `
         Generate a single, concise, and creative scenario description for a customer service or sales roleplay training session.
         It should be 1-2 sentences.
+        ${contextStr}
         
         Examples:
         - "A long-time customer is threatening to cancel because a competitor offered a lower price."

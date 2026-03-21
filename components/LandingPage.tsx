@@ -717,7 +717,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
                   <div className="flex flex-col sm:flex-row justify-center gap-4">
                       <button 
                         onClick={onSignupClick}
-                        className="px-10 py-5 bg-[#0500e2] text-white rounded-xl font-bold text-xl hover:scale-105 transition-transform shadow-lg shadow-blue-500/30"
+                        className="px-10 py-5 bg-white text-[#0500e2] dark:bg-[#0500e2] dark:text-white rounded-xl font-bold text-xl hover:scale-105 transition-transform shadow-lg shadow-blue-500/30"
                       >
                           {t('landing.final_cta.button')}
                       </button>

@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
+import { TopHeader } from './components/TopHeader';
 import { motion, AnimatePresence } from 'motion/react';
 import { Analyzer } from './components/Analyzer';
 import { Dashboard } from './components/Dashboard';
@@ -23,11 +24,12 @@ import { Privacy } from './components/Privacy';
 import { RefundPolicy } from './components/RefundPolicy';
 import { PartnersPage } from './components/PartnersPage';
 import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA, User } from './types';
-import { Menu, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
 import { supabase } from './lib/supabase';
-import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+import { useLanguage, LanguageProvider } from './contexts/LanguageContext';
 import mixpanel from './lib/mixpanel';
+import { useNotifications } from './hooks/useNotifications';
 
 type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 'privacy' | 'refund' | 'partners';
 
@@ -41,7 +43,8 @@ const APP_ROUTES: Record<string, ViewState> = {
   '/usageandlimits': 'usage',
   '/history': 'history',
   '/team': 'roster',
-  '/admin': 'admin'
+  '/admin': 'admin',
+  '/notifications': 'notifications'
 };
 
 const VIEW_TO_PATH: Record<string, string> = {
@@ -53,7 +56,8 @@ const VIEW_TO_PATH: Record<string, string> = {
   'usage': '/usageandlimits',
   'history': '/history',
   'roster': '/team',
-  'admin': '/admin'
+  'admin': '/admin',
+  'notifications': '/notifications'
 };
 
 // Safe History Wrappers
@@ -218,6 +222,8 @@ function AppContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedEvaluation, setSelectedEvaluation] = useState<AnalysisResult | null>(null);
   
+  const { notifications, markAsRead, markAllAsRead, addNotification } = useNotifications();
+
   // Filter state for History view
   const [historyFilter, setHistoryFilter] = useState<'all' | 'high' | 'low' | 'trash'>('all');
   
@@ -468,6 +474,13 @@ function AppContent() {
   const handleAnalysisComplete = async (result: AnalysisResult) => {
     setHistory((prev) => [result, ...prev]);
 
+    // Add notification
+    addNotification({
+      type: 'feedback',
+      title: 'Analysis Complete',
+      message: `Evaluation for ${result.agentName} is ready. Score: ${result.overallScore}%`,
+    });
+
     if (user) {
         try {
             await supabase.from('evaluations').insert({
@@ -654,9 +667,9 @@ function AppContent() {
           />
         );
       case 'analyze':
-        return <Analyzer criteria={criteria} onAnalysisComplete={handleAnalysisComplete} user={user} />;
+        return <Analyzer criteria={criteria} onAnalysisComplete={handleAnalysisComplete} user={user} addNotification={addNotification} />;
       case 'training':
-        return <Training user={user} history={history.filter(h => !h.isDeleted)} onAnalysisComplete={handleAnalysisComplete} />;
+        return <Training user={user} history={history.filter(h => !h.isDeleted)} onAnalysisComplete={handleAnalysisComplete} addNotification={addNotification} />;
       case 'history':
         return (
           <History 
@@ -667,6 +680,61 @@ function AppContent() {
             onPermanentDelete={handlePermanentDelete}
             filter={historyFilter}
           />
+        );
+      case 'notifications':
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Notifications</h2>
+              <button
+                onClick={markAllAsRead}
+                className="text-sm text-[#0500e2] hover:text-[#0400c0] dark:text-[#4b53fa] font-medium"
+              >
+                Mark all as read
+              </button>
+            </div>
+            <div className="bg-white dark:bg-[#1a1b26] rounded-2xl border border-gray-100 dark:border-gray-800/50 overflow-hidden">
+              {notifications.length === 0 ? (
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                  No notifications yet.
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100 dark:divide-gray-800/50">
+                  {notifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className={`p-4 transition-colors ${
+                        !notification.read
+                          ? 'bg-[#0500e2]/5 dark:bg-[#4b53fa]/10'
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex-1">
+                          <h4 className={`text-sm font-medium ${!notification.read ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+                            {notification.title}
+                          </h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            {notification.message}
+                          </p>
+                          <span className="text-xs text-gray-400 dark:text-gray-500 mt-2 block">
+                            {notification.time}
+                          </span>
+                        </div>
+                        {!notification.read && (
+                          <button
+                            onClick={() => markAsRead(notification.id)}
+                            className="w-2 h-2 rounded-full bg-[#0500e2] dark:bg-[#4b53fa] flex-shrink-0 mt-1.5"
+                            aria-label="Mark as read"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         );
       case 'roster':
         return <Roster history={history.filter(h => !h.isDeleted)} setView={handleNavigate} onSelectEvaluation={handleSelectEvaluation} />;
@@ -896,22 +964,19 @@ function AppContent() {
         user={user}
       />
       
-      {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 z-10 flex items-center justify-between shadow-sm h-16 no-print mobile-header transition-colors duration-300">
-        <div className="flex items-center gap-2 text-[#0500e2] dark:text-[#4b53fa]">
-          <RevuLogo className="h-12 w-auto" />
-        </div>
-        <button 
-          onClick={() => setIsSidebarOpen(true)}
-          className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
-        >
-          <Menu size={24} />
-        </button>
-      </div>
-
-      <main className={`flex-1 w-full lg:ms-64 transition-all duration-300 print:ms-0 print:w-full print:block`}>
-        <div className="h-full p-4 pt-24 lg:p-8 lg:pt-8 overflow-y-auto print:h-auto print:overflow-visible print:p-0 content-wrapper">
-          <div className="max-w-6xl mx-auto print:max-w-none">
+      {/* Main Content */}
+      <main className={`flex-1 w-full lg:ms-64 transition-all duration-300 print:ms-0 print:w-full print:block flex flex-col h-screen relative`}>
+        <div className="flex-1 overflow-y-auto print:h-auto print:overflow-visible content-wrapper">
+          <TopHeader 
+            user={user} 
+            onLogout={handleLogout} 
+            setView={handleNavWithFilter} 
+            onMenuClick={() => setIsSidebarOpen(true)} 
+            notifications={notifications}
+            markAsRead={markAsRead}
+            markAllAsRead={markAllAsRead}
+          />
+          <div className="p-4 lg:p-8 pt-6 lg:pt-8 max-w-6xl mx-auto print:max-w-none print:p-0">
             <div key={currentView} className="animate-fade-in-up">
                 <header className="mb-6 lg:mb-8 no-print">
                     <h1 className="text-2xl lg:text-3xl font-bold text-[#000000] dark:text-white tracking-tight capitalize">

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LayoutDashboard, FileText, History, Settings, X, Sun, Moon, LogOut, PieChart, Users, GraduationCap, ShieldAlert, Globe, User as UserIcon } from 'lucide-react';
+import { LayoutDashboard, FileText, History, Settings, X, Sun, Moon, PieChart, Users, GraduationCap, ShieldAlert, Globe } from 'lucide-react';
 import { ViewState, User } from '../types';
 import { RevuLogo } from './RevuLogo';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -19,20 +19,19 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, onClose, theme, toggleTheme, onLogout, user }) => {
   const { t, language, setLanguage, isRTL } = useLanguage();
 
-  const navItems: { id: ViewState; label: string; icon: React.ReactNode }[] = [
-    { id: 'dashboard', label: t('nav.dashboard'), icon: <LayoutDashboard size={20} /> },
-    { id: 'analyze', label: t('nav.analyze'), icon: <FileText size={20} /> },
-    { id: 'training', label: t('nav.training'), icon: <GraduationCap size={20} /> },
-    { id: 'history', label: t('nav.history'), icon: <History size={20} /> },
-    { id: 'roster', label: t('nav.roster'), icon: <Users size={20} /> },
-    { id: 'usage', label: t('nav.usage'), icon: <PieChart size={20} /> },
-    { id: 'settings', label: t('nav.settings'), icon: <Settings size={20} /> },
-    { id: 'account', label: t('nav.account'), icon: <UserIcon size={20} /> },
+  const role = user?.role || 'user';
+  
+  const allNavItems: { id: ViewState; label: string; icon: React.ReactNode; roles: string[] }[] = [
+    { id: 'dashboard', label: t('nav.dashboard'), icon: <LayoutDashboard size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
+    { id: 'analyze', label: t('nav.analyze'), icon: <FileText size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
+    { id: 'training', label: t('nav.training'), icon: <GraduationCap size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
+    { id: 'history', label: t('nav.history'), icon: <History size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
+    { id: 'roster', label: t('nav.roster'), icon: <Users size={20} />, roles: ['manager', 'org_admin', 'admin'] },
+    { id: 'usage', label: t('nav.usage'), icon: <PieChart size={20} />, roles: ['manager', 'org_admin', 'admin'] },
+    { id: 'settings', label: t('nav.settings'), icon: <Settings size={20} />, roles: ['manager', 'org_admin', 'admin'] },
   ];
 
-  const userInitials = user?.name 
-    ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() 
-    : 'JD';
+  const navItems = allNavItems.filter(item => item.roles.includes(role));
 
   const toggleLanguage = () => {
     setLanguage(language === 'en' ? 'ar' : 'en');
@@ -142,36 +141,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
                   }`}></div>
               </div>
           </button>
-
-          <div className="flex items-center justify-between px-2 pt-2">
-            <button 
-                onClick={() => setView('account')}
-                className="flex items-center gap-3 flex-1 text-start group"
-            >
-                <div className="w-8 h-8 rounded-full bg-[#0500e2] text-white flex items-center justify-center text-xs font-bold shadow-sm group-hover:scale-105 transition-transform overflow-hidden">
-                    {user?.avatar_url ? (
-                        <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                        userInitials
-                    )}
-                </div>
-                <div className="overflow-hidden">
-                    <p className="text-sm font-medium truncate text-slate-900 dark:text-white group-hover:text-[#0500e2] dark:group-hover:text-[#4b53fa] transition-colors">
-                        {user?.name || t('nav.guest')}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[100px]">
-                        {user?.email || 'guest@example.com'}
-                    </p>
-                </div>
-            </button>
-            <button 
-                onClick={onLogout}
-                className="text-slate-400 hover:text-red-600 dark:hover:text-red-400 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-all"
-                title={t('nav.logout')}
-            >
-                <LogOut size={18} />
-            </button>
-          </div>
         </div>
       </div>
     </>

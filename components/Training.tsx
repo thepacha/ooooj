@@ -19,6 +19,7 @@ interface TrainingProps {
     user: User | null;
     history: AnalysisResult[];
     onAnalysisComplete: (result: AnalysisResult) => void;
+    addNotification: (notification: any) => void;
 }
 
 // --- Procedural Generation Data (Kept same as before for variety) ---
@@ -283,7 +284,7 @@ interface AIParamsState {
     dialect: string;
 }
 
-export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisComplete }) => {
+export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisComplete, addNotification }) => {
     const { t, isRTL } = useLanguage();
     const [view, setView] = useState<'list' | 'briefing' | 'active' | 'result' | 'create'>('list');
     const [activeTab, setActiveTab] = useState<'scenarios' | 'history'>('scenarios');
@@ -795,15 +796,26 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
 
             onAnalysisComplete(trainingAnalysis);
             
+            addNotification({
+              type: 'system',
+              title: 'Training Complete',
+              message: `Session "${activeScenario.title}" evaluated successfully.`,
+            });
+
             if (user) {
                 await incrementUsage(user.id, COSTS.ANALYSIS, 'analysis'); 
             }
             
             // 4. Switch to Result View
             setView('result');
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
             alert("Failed to evaluate session.");
+            addNotification({
+              type: 'system',
+              title: 'Training Evaluation Failed',
+              message: e.message || 'An error occurred while evaluating the session.',
+            });
             setIsAnalyzing(false); // Only reset if error, otherwise view change handles it
         }
     };
@@ -836,7 +848,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
     const handleAutoGenerateTopic = async () => {
         setIsGeneratingTopic(true);
         try {
-            const topic = await generateTrainingTopic();
+            const topic = await generateTrainingTopic(aiParams);
             setAiParams(prev => ({...prev, topic}));
         } catch (e) {
             console.error("Failed to auto-generate topic", e);

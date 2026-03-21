@@ -12,6 +12,7 @@ interface AnalyzerProps {
   criteria: Criteria[];
   onAnalysisComplete: (result: AnalysisResult) => void;
   user: User | null;
+  addNotification: (notification: any) => void;
 }
 
 type InputMode = 'text' | 'upload' | 'mic';
@@ -81,7 +82,7 @@ const optimizeAudio = async (file: File): Promise<Blob> => {
 };
 
 
-export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete, user }) => {
+export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete, user, addNotification }) => {
   const { t, isRTL } = useLanguage();
   const [transcript, setTranscript] = useState('');
   const [processingStatus, setProcessingStatus] = useState<ProcessingStep>('idle');
@@ -285,12 +286,23 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
             const transcribedText = await transcribeMedia(content, mimeType, user?.id);
             setTranscript(transcribedText);
             
+            addNotification({
+              type: 'system',
+              title: 'Transcription Complete',
+              message: 'Audio/Video was successfully transcribed.',
+            });
+
             // Auto-Analyze after transcription
             handleAnalyze(transcribedText);
         } catch (err: any) {
             console.error(err);
             setError("Transcription failed: " + (err.message || "Unknown error"));
             setProcessingStatus('idle');
+            addNotification({
+              type: 'system',
+              title: 'Transcription Failed',
+              message: err.message || 'An error occurred during transcription.',
+            });
         }
     };
 
