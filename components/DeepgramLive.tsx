@@ -541,11 +541,19 @@ const AIRoleplayTab = () => {
       if (!response.ok) throw new Error(data?.error || `Server error (${response.status})`);
       const { token } = data;
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: { 
+          sampleRate: 16000, 
+          channelCount: 1, 
+          echoCancellation: true, 
+          noiseSuppression: false, 
+          autoGainControl: true 
+        } 
+      });
       streamRef.current = stream;
 
       // Use endpointing to detect when user stops speaking
-      const url = 'wss://api.deepgram.com/v1/listen?model=nova-2&smart_format=true&endpointing=1000&interim_results=true&utterance_end_ms=1000';
+      const url = 'wss://api.deepgram.com/v1/listen?model=nova-2&smart_format=true&endpointing=500&interim_results=true&utterance_end_ms=1000';
       const socket = new WebSocket(url, ['token', token]);
 
       socket.onopen = () => {
@@ -556,7 +564,6 @@ const AIRoleplayTab = () => {
         mediaRecorder.addEventListener('dataavailable', (event) => {
           // Only send audio if AI isn't speaking and we aren't processing to avoid feedback/echo
           if (event.data.size > 0 && socket.readyState === WebSocket.OPEN && !isAiSpeakingRef.current && !isProcessingRef.current) {
-            console.log('Sending audio data to Deepgram:', event.data.size, 'bytes');
             socket.send(event.data);
           }
         });

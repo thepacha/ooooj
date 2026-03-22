@@ -21,6 +21,7 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  // Config Check Route
   app.get("/api/config-check", (req, res) => {
     res.json({
       deepgram: !!process.env.DEEPGRAM_API_KEY,
@@ -38,11 +39,30 @@ async function startServer() {
         return res.status(500).json({ error: "DEEPGRAM_API_KEY is not set on the server" });
       }
 
-      // We've seen 403 errors when trying to generate temporary keys due to insufficient permissions.
-      // To ensure the app works for the user immediately, we will return the master key.
-      // In a production environment, you should ensure your key has 'keys:write' scope if you want temporary keys.
-      console.log("Returning Deepgram API key to client");
-      return res.json({ token: deepgramApiKey });
+      const { createClient } = await import("@deepgram/sdk");
+      const deepgram = createClient(deepgramApiKey);
+
+      // Try to generate a temporary key
+      try {
+        const { result: projectsResult, error: projectsError } = await deepgram.manage.getProjects();
+        if (projectsError) throw projectsError;
+
+        const projectId = projectsResult.projects[0].project_id;
+        const { result: keyResult, error: keyError } = await deepgram.manage.createProjectKey(projectId, {
+          comment: "Temporary key for RevuQAI roleplay",
+          scopes: ["usage:write"],
+          time_to_live_in_seconds: 3600, // 1 hour
+        });
+
+        if (keyError) throw keyError;
+
+        console.log("Temporary Deepgram key generated successfully");
+        return res.json({ token: keyResult.key });
+      } catch (innerError: any) {
+        console.warn("Failed to generate temporary key, falling back to master key:", innerError.message || innerError);
+        // Fallback to master key if temporary key generation fails (e.g. due to permissions)
+        return res.json({ token: deepgramApiKey });
+      }
     } catch (error: any) {
       console.error("Deepgram token endpoint critical error:", error);
       return res.status(500).json({ error: "Internal server error: " + (error.message || "Unknown error") });
@@ -60,22 +80,26 @@ async function startServer() {
         return res.status(500).json({ error: "GEMINI_API_KEY is not set on the server" });
       }
 
+      if (!messages || !Array.isArray(messages)) {
+        return res.status(400).json({ error: "Invalid messages array" });
+      }
+
       const { GoogleGenAI } = await import("@google/genai");
       const ai = new GoogleGenAI({ apiKey });
       
-      console.log("Generating AI response via server proxy for messages:", JSON.stringify(messages).substring(0, 100) + "...");
+      console.log("Generating AI response via server proxy...");
       
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: messages,
         config: {
-          systemInstruction: systemInstruction,
+          systemInstruction: systemInstruction || "You are a helpful assistant.",
         },
       });
 
       const text = response.text;
       if (!text) {
-        console.error("Gemini API returned empty text. Full response:", JSON.stringify(response));
+        console.error("Gemini API returned empty text.");
         throw new Error("Empty response from Gemini API");
       }
 
