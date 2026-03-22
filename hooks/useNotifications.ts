@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 export interface Notification {
@@ -17,6 +17,8 @@ const LAST_GEN_KEY = 'revuqa_last_gen';
 
 export function useNotifications(userId?: string) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const pendingNotificationsRef = useRef<Omit<Notification, 'id' | 'timestamp' | 'time' | 'read'>[]>([]);
+  const batchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch notifications from Supabase
   useEffect(() => {
@@ -69,107 +71,6 @@ export function useNotifications(userId?: string) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [userId]);
-
-  useEffect(() => {
-    if (!userId) return;
-
-    // Generate recurring notifications
-    const lastGenStr = localStorage.getItem(LAST_GEN_KEY);
-    const lastGen = lastGenStr ? JSON.parse(lastGenStr) : {
-      fourHour: 0,
-      daily: 0,
-      weekly: 0,
-      monthly: 0
-    };
-
-    const now = Date.now();
-    const newNotifications: Omit<Notification, 'id'>[] = [];
-    const updatedGen = { ...lastGen };
-
-    // 4 hours = 4 * 60 * 60 * 1000 = 14400000
-    if (now - lastGen.fourHour > 14400000) {
-      newNotifications.push({
-        type: 'performance',
-        title: '4-Hour Performance Update',
-        message: 'Your team has completed 12 evaluations in the last 4 hours. Average score: 85%.',
-        time: 'Just now',
-        timestamp: now,
-        read: false,
-        link: 'dashboard'
-      });
-      updatedGen.fourHour = now;
-    }
-
-    // Daily = 24 * 60 * 60 * 1000 = 86400000
-    if (now - lastGen.daily > 86400000) {
-      newNotifications.push({
-        type: 'performance',
-        title: 'Daily Performance Summary',
-        message: "Yesterday's top performer was Sarah Smith with a 92% average score.",
-        time: 'Just now',
-        timestamp: now,
-        read: false,
-        link: 'roster'
-      });
-      updatedGen.daily = now;
-    }
-
-    // Weekly = 7 * 24 * 60 * 60 * 1000 = 604800000
-    if (now - lastGen.weekly > 604800000) {
-      newNotifications.push({
-        type: 'performance',
-        title: 'Weekly Performance Report',
-        message: "Your team's weekly average improved by 3% compared to last week.",
-        time: 'Just now',
-        timestamp: now,
-        read: false,
-        link: 'dashboard'
-      });
-      updatedGen.weekly = now;
-    }
-
-    // Monthly = 30 * 24 * 60 * 60 * 1000 = 2592000000
-    if (now - lastGen.monthly > 2592000000) {
-      newNotifications.push({
-        type: 'performance',
-        title: 'Monthly Performance Review',
-        message: 'Monthly goals achieved! 450 total evaluations completed this month.',
-        time: 'Just now',
-        timestamp: now,
-        read: false,
-        link: 'history'
-      });
-      updatedGen.monthly = now;
-    }
-
-    if (newNotifications.length > 0) {
-      const insertNotifications = async () => {
-        const recordsToInsert = newNotifications.map(n => ({
-          user_id: userId,
-          type: n.type,
-          title: n.title,
-          message: n.message,
-          time: n.time,
-          timestamp: n.timestamp,
-          read: n.read,
-          link: n.link,
-          target_id: n.targetId
-        }));
-
-        const { error } = await supabase
-          .from('notifications')
-          .insert(recordsToInsert);
-
-        if (error) {
-          console.error('Error inserting recurring notifications:', error);
-        } else {
-          localStorage.setItem(LAST_GEN_KEY, JSON.stringify(updatedGen));
-        }
-      };
-      
-      insertNotifications();
-    }
   }, [userId]);
 
   const markAsRead = async (id: string) => {
@@ -242,25 +143,69 @@ export function useNotifications(userId?: string) {
   const addNotification = async (notification: Omit<Notification, 'id' | 'timestamp' | 'time' | 'read'>) => {
     if (!userId) return;
     
-    const newNotif = {
-      user_id: userId,
-      type: notification.type,
-      title: notification.title,
-      message: notification.message,
-      time: 'Just now',
-      timestamp: Date.now(),
-      read: false,
-      link: notification.link,
-      target_id: notification.targetId
-    };
-    
-    const { error } = await supabase
-      .from('notifications')
-      .insert([newNotif]);
-      
-    if (error) {
-      console.error('Error adding notification:', error);
+    pendingNotificationsRef.current.push(notification);
+
+    if (batchTimeoutRef.current) {
+      clearTimeout(batchTimeoutRef.current);
     }
+
+    batchTimeoutRef.current = setTimeout(async () => {
+      const pending = [...pendingNotificationsRef.current];
+      pendingNotificationsRef.current = [];
+
+      if (pending.length === 0) return;
+
+      const grouped: any[] = [];
+      const analysisComplete = pending.filter(n => n.title === 'Analysis Complete');
+      const others = pending.filter(n => n.title !== 'Analysis Complete');
+
+      if (analysisComplete.length > 1) {
+        grouped.push({
+          user_id: userId,
+          type: 'feedback',
+          title: 'Batch Analysis Complete',
+          message: `Your AI analysis for ${analysisComplete.length} recent support tickets is complete.`,
+          time: 'Just now',
+          timestamp: Date.now(),
+          read: false,
+          link: 'history'
+        });
+      } else if (analysisComplete.length === 1) {
+        grouped.push({
+          user_id: userId,
+          type: analysisComplete[0].type,
+          title: analysisComplete[0].title,
+          message: analysisComplete[0].message,
+          time: 'Just now',
+          timestamp: Date.now(),
+          read: false,
+          link: analysisComplete[0].link,
+          target_id: analysisComplete[0].targetId
+        });
+      }
+
+      others.forEach(n => {
+        grouped.push({
+          user_id: userId,
+          type: n.type,
+          title: n.title,
+          message: n.message,
+          time: 'Just now',
+          timestamp: Date.now(),
+          read: false,
+          link: n.link,
+          target_id: n.targetId
+        });
+      });
+
+      const { error } = await supabase
+        .from('notifications')
+        .insert(grouped);
+        
+      if (error) {
+        console.error('Error adding notifications:', error);
+      }
+    }, 1500); // 1.5 second batch window
   };
 
   return {

@@ -19,6 +19,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ user, onLogout, setView, o
   const { t } = useLanguage();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [notificationFilter, setNotificationFilter] = useState<'all' | 'unread'>('all');
   const notificationsRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -39,7 +40,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ user, onLogout, setView, o
   }, []);
 
   const unreadCount = notifications.filter(n => !n.read).length;
-  const recentNotifications = notifications.slice(0, 5);
+  const filteredNotifications = notifications.filter(n => notificationFilter === 'all' || !n.read);
+  const recentNotifications = filteredNotifications.slice(0, 5);
 
   const userInitials = user?.name 
     ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() 
@@ -47,6 +49,17 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ user, onLogout, setView, o
 
   const orgName = user?.orgName || user?.company || 'Acme Corp';
   const planName = 'Pro Plan'; // Mock plan name
+
+  const formatTime = (timestamp: number) => {
+    const diff = Date.now() - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
 
   return (
     <header className="h-14 bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/40 dark:border-slate-700/50 shadow-lg flex items-center justify-between px-4 lg:px-6 shrink-0 sticky top-4 z-30 mx-4 lg:mx-8 mb-6 rounded-2xl transition-all duration-300">
@@ -91,15 +104,46 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ user, onLogout, setView, o
           {/* Notifications Dropdown */}
           {showNotifications && (
             <div className="fixed top-[80px] left-4 right-4 sm:absolute sm:top-auto sm:-right-4 sm:left-auto sm:mt-4 sm:w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 max-w-[400px] mx-auto sm:mx-0">
-              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <h3 className="font-semibold text-slate-900 dark:text-white">Notifications</h3>
-                <button 
-                  onClick={markAllAsRead}
-                  disabled={unreadCount === 0}
-                  className="text-xs text-[#0500e2] hover:text-[#0400c0] dark:text-[#4b53fa] font-medium flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-                >
-                  <Check size={14} /> Mark all read
-                </button>
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-slate-900 dark:text-white">Notifications</h3>
+                  <button 
+                    onClick={markAllAsRead}
+                    disabled={unreadCount === 0}
+                    className="text-xs text-[#0500e2] hover:text-[#0400c0] dark:text-[#4b53fa] font-medium flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                  >
+                    <Check size={14} /> Mark all read
+                  </button>
+                </div>
+                
+                {/* Filter Tabs */}
+                <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-lg">
+                  <button
+                    onClick={() => setNotificationFilter('all')}
+                    className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-all ${
+                      notificationFilter === 'all' 
+                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => setNotificationFilter('unread')}
+                    className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-all flex items-center justify-center gap-1.5 ${
+                      notificationFilter === 'unread' 
+                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                    }`}
+                  >
+                    Unread
+                    {unreadCount > 0 && (
+                      <span className="bg-[#0500e2] text-white text-[10px] px-1.5 py-0.5 rounded-full leading-none">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
               </div>
               <div className="max-h-[400px] overflow-y-auto">
                 {recentNotifications.length > 0 ? (
@@ -120,7 +164,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ user, onLogout, setView, o
                           <p className={`text-sm font-medium truncate ${!notification.read ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
                             {notification.title}
                           </p>
-                          <span className="text-xs text-slate-400 whitespace-nowrap ml-2">{notification.time}</span>
+                          <span className="text-xs text-slate-400 whitespace-nowrap ml-2">{formatTime(notification.timestamp)}</span>
                         </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
                           {notification.message}
@@ -138,9 +182,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ user, onLogout, setView, o
                     </div>
                   ))
                 ) : (
-                  <div className="p-8 text-center text-slate-500 dark:text-slate-400">
-                    <Bell size={24} className="mx-auto mb-2 opacity-20" />
-                    <p className="text-sm">No notifications</p>
+                  <div className="p-8 text-center flex flex-col items-center justify-center">
+                    <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-500/10 rounded-full flex items-center justify-center mb-4">
+                      <CheckCircle2 size={32} className="text-emerald-500" />
+                    </div>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white mb-1">All caught up!</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Your team is performing beautifully.</p>
                   </div>
                 )}
               </div>

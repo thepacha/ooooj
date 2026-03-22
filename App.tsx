@@ -825,7 +825,7 @@ function AppContent() {
                             {notification.message}
                           </p>
                           <span className="text-xs text-gray-400 dark:text-gray-500 mt-2 block">
-                            {notification.time}
+                            {formatTime(notification.timestamp)}
                           </span>
                         </div>
                         <div className="flex items-start gap-3">
@@ -1066,6 +1066,17 @@ function AppContent() {
         </AnimatePresence>
       );
   }
+
+  const formatTime = (timestamp: number) => {
+    const diff = Date.now() - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 flex font-sans text-slate-900 dark:text-slate-100 print:block print:bg-white print:min-h-0 print:h-auto transition-colors duration-300 ${isRTL ? 'rtl' : ''}`}>

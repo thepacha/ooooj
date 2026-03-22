@@ -137,10 +137,15 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
       
       setProcessingStatus('finalizing');
       
-      // Removed artificial delay to speed up response
+      let finalAgentName = analysis.agentName;
+      const lowerName = finalAgentName?.toLowerCase().trim();
+      if (!lowerName || lowerName === 'agent' || lowerName === 'unknown' || lowerName === 'unknown agent' || lowerName === 'not specified') {
+        finalAgentName = user?.name || user?.email?.split('@')[0] || 'Agent';
+      }
 
       const fullResult: AnalysisResult = {
         ...analysis,
+        agentName: finalAgentName,
         id: generateId(),
         timestamp: new Date().toISOString(),
         rawTranscript: textToProcess

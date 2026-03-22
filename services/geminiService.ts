@@ -42,7 +42,7 @@ export const analyzeTranscript = async (transcript: string, criteria: Criteria[]
         CRITERIA TO EVALUATE:
         ${criteriaList}
         
-        Extract the Agent Name and Customer Name if available (otherwise use "Agent" and "Customer").
+        Extract the Agent Name and Customer Name if available (otherwise use "Unknown").
         Provide a summary.
         Determine the overall sentiment.
         Score each criterion from 0-100 based on the description and weight.

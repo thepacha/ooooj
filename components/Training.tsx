@@ -785,7 +785,7 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
             const trainingAnalysis: AnalysisResult = {
                 id: generateId(),
                 timestamp: new Date().toISOString(),
-                agentName: user?.name || 'Trainee',
+                agentName: user?.name || user?.email?.split('@')[0] || 'Trainee',
                 customerName: `Roleplay: ${activeScenario.title}`,
                 summary: `Training Session (${activeScenario.difficulty}): ${evalResult.feedback}`,
                 overallScore: evalResult.score,
