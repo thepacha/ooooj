@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Loader2, AlertCircle, Play, Send, MessageSquare, Volume2, Radio } from 'lucide-react';
+import { Mic, MicOff, Loader2, AlertCircle, Play, Send, MessageSquare, Volume2, Radio, Trash2 } from 'lucide-react';
 import { User } from '../types';
 
 interface DeepgramLiveProps {
@@ -117,6 +117,7 @@ export const DeepgramLive: React.FC<DeepgramLiveProps> = ({ user }) => {
 const LiveTranscriptionTab = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
+  const [interimTranscript, setInterimTranscript] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -147,7 +148,7 @@ const LiveTranscriptionTab = () => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      const url = 'wss://api.deepgram.com/v1/listen?model=nova-2&smart_format=true';
+      const url = 'wss://api.deepgram.com/v1/listen?model=nova-2&smart_format=true&interim_results=true';
       const socket = new WebSocket(url, ['token', token]);
 
       socket.onopen = () => {
@@ -169,8 +170,13 @@ const LiveTranscriptionTab = () => {
       socket.onmessage = (message) => {
         const received = JSON.parse(message.data);
         const newTranscript = received.channel?.alternatives[0]?.transcript;
-        if (newTranscript && received.is_final) {
+        if (!newTranscript) return;
+
+        if (received.is_final) {
           setTranscript((prev) => prev + (prev ? ' ' : '') + newTranscript);
+          setInterimTranscript('');
+        } else {
+          setInterimTranscript(newTranscript);
         }
       };
 
@@ -207,6 +213,7 @@ const LiveTranscriptionTab = () => {
     
     setIsRecording(false);
     setIsConnecting(false);
+    setInterimTranscript('');
     mediaRecorderRef.current = null;
     streamRef.current = null;
     socketRef.current = null;
@@ -266,9 +273,12 @@ const LiveTranscriptionTab = () => {
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 lg:p-8 shadow-sm min-h-[300px] flex flex-col">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Transcript</h3>
         <div className="flex-1 bg-slate-50 dark:bg-slate-950 rounded-xl p-4 border border-slate-100 dark:border-slate-800 overflow-y-auto">
-          {transcript ? (
+          {transcript || interimTranscript ? (
             <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
               {transcript}
+              <span className="text-slate-400 dark:text-slate-500 italic">
+                {interimTranscript ? ` ${interimTranscript}...` : ''}
+              </span>
             </p>
           ) : (
             <div className="h-full flex items-center justify-center text-slate-400 dark:text-slate-600 italic">
@@ -451,10 +461,13 @@ const AIRoleplayTab = () => {
   const isProcessingRef = useRef(false);
   const accumulatedTranscriptRef = useRef('');
   const fullTranscriptRef = useRef('');
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   // Keep messagesRef in sync for the socket callback
   useEffect(() => {
     messagesRef.current = messages;
+    // Scroll to bottom on new messages
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   // Keep isAiSpeakingRef and isProcessingRef in sync
@@ -465,6 +478,18 @@ const AIRoleplayTab = () => {
   useEffect(() => {
     isProcessingRef.current = isProcessing;
   }, [isProcessing]);
+
+  // Safety net: if user stops speaking but speech_final doesn't trigger
+  useEffect(() => {
+    if (!isSessionActive || isProcessing || !transcript.trim() || isAiSpeaking) return;
+
+    const timer = setTimeout(() => {
+      console.log('Safety timeout: user stopped speaking, triggering AI...');
+      handleUserSpeechFinished();
+    }, 3000); // 3 seconds of silence
+
+    return () => clearTimeout(timer);
+  }, [transcript, isSessionActive, isProcessing, isAiSpeaking]);
 
   const chunkText = (text: string, maxLength: number = 2000): string[] => {
     const chunks: string[] = [];
@@ -520,7 +545,7 @@ const AIRoleplayTab = () => {
       streamRef.current = stream;
 
       // Use endpointing to detect when user stops speaking
-      const url = 'wss://api.deepgram.com/v1/listen?model=nova-2&smart_format=true&endpointing=1000';
+      const url = 'wss://api.deepgram.com/v1/listen?model=nova-2&smart_format=true&endpointing=1000&interim_results=true&utterance_end_ms=1000';
       const socket = new WebSocket(url, ['token', token]);
 
       socket.onopen = () => {
@@ -541,27 +566,47 @@ const AIRoleplayTab = () => {
 
       socket.onmessage = async (message) => {
         const received = JSON.parse(message.data);
-        const newTranscript = received.channel?.alternatives[0]?.transcript;
         
-        console.log('Deepgram message:', { is_final: received.is_final, speech_final: received.speech_final, transcript: newTranscript });
+        // Deepgram sends metadata and other messages, check for transcription
+        if (!received.channel) {
+          if (received.speech_final) {
+            console.log('Speech final detected (metadata), triggering AI response...');
+            handleUserSpeechFinished();
+          }
+          return;
+        }
+
+        const newTranscript = received.channel.alternatives[0]?.transcript;
+        const isFinal = received.is_final;
+        
+        if (newTranscript || received.speech_final) {
+          console.log('Deepgram message:', { 
+            is_final: isFinal, 
+            speech_final: received.speech_final, 
+            transcript: newTranscript,
+            isAiSpeaking: isAiSpeakingRef.current,
+            isProcessing: isProcessingRef.current
+          });
+        }
 
         if (!isAiSpeakingRef.current && !isProcessingRef.current) {
           if (newTranscript) {
-            const currentFull = accumulatedTranscriptRef.current + (accumulatedTranscriptRef.current ? ' ' : '') + newTranscript;
-            fullTranscriptRef.current = currentFull;
-            
-            // Only use is_final for the actual message to avoid duplicates
-            if (received.is_final) {
-              accumulatedTranscriptRef.current = currentFull;
-              setTranscript(currentFull);
+            if (isFinal) {
+              // Lock in the transcript
+              accumulatedTranscriptRef.current += (accumulatedTranscriptRef.current ? ' ' : '') + newTranscript;
+              setTranscript(accumulatedTranscriptRef.current);
+              fullTranscriptRef.current = accumulatedTranscriptRef.current;
             } else {
-              // Show interim results for better UX
-              setTranscript(currentFull);
+              // Show interim results
+              const interim = accumulatedTranscriptRef.current + (accumulatedTranscriptRef.current ? ' ' : '') + newTranscript;
+              setTranscript(interim);
+              fullTranscriptRef.current = interim;
             }
           }
           
           // If Deepgram detects speech final (endpointing), trigger AI
           if (received.speech_final) {
+            console.log('Speech final detected, triggering AI response...');
             handleUserSpeechFinished();
           }
         }
@@ -842,6 +887,7 @@ const AIRoleplayTab = () => {
             </div>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       {error && (
@@ -851,34 +897,49 @@ const AIRoleplayTab = () => {
         </div>
       )}
 
-      <div className="flex items-center justify-center gap-4 shrink-0">
+      <div className="flex items-center justify-center gap-3 shrink-0">
         {!isSessionActive ? (
           <button
             onClick={startSession}
-            className="flex items-center gap-3 px-8 py-4 bg-[#0500e2] hover:bg-[#0400c0] text-white rounded-2xl font-bold transition-all shadow-lg shadow-[#0500e2]/20 scale-100 hover:scale-105 active:scale-95"
+            className="flex-1 flex items-center justify-center gap-3 px-8 py-4 bg-[#0500e2] hover:bg-[#0400c0] text-white rounded-2xl font-bold transition-all shadow-lg shadow-[#0500e2]/20 scale-100 hover:scale-105 active:scale-95"
           >
             <Mic size={24} />
             Start Training Session
           </button>
         ) : (
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 px-6 py-3 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-2xl border border-red-100 dark:border-red-900/30">
-              <div className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-              </div>
-              <span className="font-bold uppercase tracking-widest text-xs">Live Session</span>
-            </div>
-            
+          <div className="flex-1 flex items-center gap-3">
             <button
               onClick={stopSession}
-              className="flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-bold transition-all hover:opacity-90"
+              className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-bold transition-all hover:opacity-90"
             >
               <MicOff size={20} />
               End Session
             </button>
+            
+            <button
+              onClick={() => handleUserSpeechFinished()}
+              disabled={isProcessing || !transcript.trim()}
+              className="px-6 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 transition-all"
+              title="Manually send current transcript"
+            >
+              <Send size={20} />
+            </button>
           </div>
         )}
+
+        <button
+          onClick={() => {
+            setMessages([]);
+            messagesRef.current = [];
+            setTranscript('');
+            accumulatedTranscriptRef.current = '';
+            fullTranscriptRef.current = '';
+          }}
+          className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700 flex items-center justify-center"
+          title="Clear Chat"
+        >
+          <Trash2 size={20} />
+        </button>
       </div>
       
       {isSessionActive && (

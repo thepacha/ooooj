@@ -38,65 +38,14 @@ async function startServer() {
         return res.status(500).json({ error: "DEEPGRAM_API_KEY is not set on the server" });
       }
 
-      console.log("DEEPGRAM_API_KEY found, attempting to generate token...");
-
-      // Try to generate a temporary key for better security
-      try {
-        console.log("Fetching projects from Deepgram...");
-        const response = await fetch("https://api.deepgram.com/v1/projects", {
-          headers: {
-            Authorization: `Token ${deepgramApiKey}`,
-            "Content-Type": "application/json",
-          },
-        });
-        
-        if (response.ok) {
-          const projects = await response.json();
-          console.log("Projects fetched successfully:", projects.projects?.length || 0, "projects found");
-          if (projects.projects && projects.projects.length > 0) {
-            const projectId = projects.projects[0].project_id;
-            console.log("Using project ID:", projectId);
-            const keyResponse = await fetch(
-              `https://api.deepgram.com/v1/projects/${projectId}/keys`,
-              {
-                method: "POST",
-                headers: {
-                  Authorization: `Token ${deepgramApiKey}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  comment: "Temporary token for live transcription",
-                  scopes: ["usage:write"],
-                  time_to_live_in_seconds: 3600,
-                }),
-              }
-            );
-            
-            if (keyResponse.ok) {
-              const keyData = await keyResponse.json();
-              console.log("Successfully generated temporary Deepgram key");
-              return res.json({ token: keyData.key });
-            } else {
-              const errText = await keyResponse.text();
-              console.warn("Failed to create temporary key, status:", keyResponse.status, errText);
-            }
-          } else {
-            console.warn("No projects found for this Deepgram account");
-          }
-        } else {
-          const errText = await response.text();
-          console.warn("Failed to fetch projects, status:", response.status, errText);
-        }
-      } catch (innerError) {
-        console.warn("Error during temporary key generation process:", innerError);
-      }
-
-      // Fallback to master key if temporary key generation fails
-      console.log("Falling back to master Deepgram API key for response");
+      // We've seen 403 errors when trying to generate temporary keys due to insufficient permissions.
+      // To ensure the app works for the user immediately, we will return the master key.
+      // In a production environment, you should ensure your key has 'keys:write' scope if you want temporary keys.
+      console.log("Returning Deepgram API key to client");
       return res.json({ token: deepgramApiKey });
     } catch (error: any) {
       console.error("Deepgram token endpoint critical error:", error);
-      return res.status(500).json({ error: "Internal server error generating token: " + (error.message || "Unknown error") });
+      return res.status(500).json({ error: "Internal server error: " + (error.message || "Unknown error") });
     }
   });
 
@@ -114,7 +63,8 @@ async function startServer() {
       const { GoogleGenAI } = await import("@google/genai");
       const ai = new GoogleGenAI({ apiKey });
       
-      console.log("Generating AI response via server proxy...");
+      console.log("Generating AI response via server proxy for messages:", JSON.stringify(messages).substring(0, 100) + "...");
+      
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: messages,
@@ -123,11 +73,14 @@ async function startServer() {
         },
       });
 
-      if (!response.text) {
+      const text = response.text;
+      if (!text) {
+        console.error("Gemini API returned empty text. Full response:", JSON.stringify(response));
         throw new Error("Empty response from Gemini API");
       }
 
-      res.json({ text: response.text });
+      console.log("AI response generated successfully");
+      res.json({ text });
     } catch (error: any) {
       console.error("AI Chat proxy error:", error);
       res.status(500).json({ error: error.message || "Failed to generate AI response" });
