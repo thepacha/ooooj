@@ -30,6 +30,7 @@ async function startServer() {
 
   // Deepgram Token Route
   app.get("/api/deepgram/token", async (req, res) => {
+    console.log("GET /api/deepgram/token request received");
     try {
       const deepgramApiKey = process.env.DEEPGRAM_API_KEY;
       if (!deepgramApiKey) {
@@ -37,8 +38,11 @@ async function startServer() {
         return res.status(500).json({ error: "DEEPGRAM_API_KEY is not set on the server" });
       }
 
+      console.log("DEEPGRAM_API_KEY found, attempting to generate token...");
+
       // Try to generate a temporary key for better security
       try {
+        console.log("Fetching projects from Deepgram...");
         const response = await fetch("https://api.deepgram.com/v1/projects", {
           headers: {
             Authorization: `Token ${deepgramApiKey}`,
@@ -48,8 +52,10 @@ async function startServer() {
         
         if (response.ok) {
           const projects = await response.json();
+          console.log("Projects fetched successfully:", projects.projects?.length || 0, "projects found");
           if (projects.projects && projects.projects.length > 0) {
             const projectId = projects.projects[0].project_id;
+            console.log("Using project ID:", projectId);
             const keyResponse = await fetch(
               `https://api.deepgram.com/v1/projects/${projectId}/keys`,
               {
@@ -74,6 +80,8 @@ async function startServer() {
               const errText = await keyResponse.text();
               console.warn("Failed to create temporary key, status:", keyResponse.status, errText);
             }
+          } else {
+            console.warn("No projects found for this Deepgram account");
           }
         } else {
           const errText = await response.text();
@@ -84,11 +92,11 @@ async function startServer() {
       }
 
       // Fallback to master key if temporary key generation fails
-      console.log("Falling back to master Deepgram API key");
-      res.json({ token: deepgramApiKey });
+      console.log("Falling back to master Deepgram API key for response");
+      return res.json({ token: deepgramApiKey });
     } catch (error: any) {
       console.error("Deepgram token endpoint critical error:", error);
-      res.status(500).json({ error: "Internal server error generating token: " + (error.message || "Unknown error") });
+      return res.status(500).json({ error: "Internal server error generating token: " + (error.message || "Unknown error") });
     }
   });
 

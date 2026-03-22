@@ -130,12 +130,12 @@ const LiveTranscriptionTab = () => {
       setError(null);
       
       const response = await fetch('/api/deepgram/token');
+      const responseText = await response.text();
       let data = null;
       try {
-        data = await response.json();
+        data = JSON.parse(responseText);
       } catch (e) {
-        const text = await response.text().catch(() => 'No response body');
-        throw new Error(`Server returned non-JSON response (${response.status}): ${text.substring(0, 100)}`);
+        throw new Error(`Server returned non-JSON response (${response.status}): ${responseText.substring(0, 100) || '[Empty Response]'}`);
       }
       
       if (!response.ok) {
@@ -329,12 +329,12 @@ const TextToVoiceTab = () => {
       }
 
       const response = await fetch('/api/deepgram/token');
+      const responseText = await response.text();
       let data = null;
       try {
-        data = await response.json();
+        data = JSON.parse(responseText);
       } catch (e) {
-        const text = await response.text().catch(() => 'No response body');
-        throw new Error(`Server returned non-JSON response (${response.status}): ${text.substring(0, 100)}`);
+        throw new Error(`Server returned non-JSON response (${response.status}): ${responseText.substring(0, 100) || '[Empty Response]'}`);
       }
       
       if (!response.ok) throw new Error(data?.error || `Server error (${response.status})`);
@@ -505,12 +505,12 @@ const AIRoleplayTab = () => {
       isProcessingRef.current = false;
       
       const response = await fetch('/api/deepgram/token');
+      const responseText = await response.text();
       let data = null;
       try {
-        data = await response.json();
+        data = JSON.parse(responseText);
       } catch (e) {
-        const text = await response.text().catch(() => 'No response body');
-        throw new Error(`Server returned non-JSON response (${response.status}): ${text.substring(0, 100)}`);
+        throw new Error(`Server returned non-JSON response (${response.status}): ${responseText.substring(0, 100) || '[Empty Response]'}`);
       }
       
       if (!response.ok) throw new Error(data?.error || `Server error (${response.status})`);
@@ -685,12 +685,12 @@ const AIRoleplayTab = () => {
       
       try {
         const tokenResponse = await fetch('/api/deepgram/token');
+        const tokenText = await tokenResponse.text();
         let tokenData = null;
         try {
-          tokenData = await tokenResponse.json();
+          tokenData = JSON.parse(tokenText);
         } catch (e) {
-          const text = await tokenResponse.text().catch(() => 'No response body');
-          throw new Error(`Server returned non-JSON response (${tokenResponse.status}): ${text.substring(0, 100)}`);
+          throw new Error(`Server returned non-JSON response (${tokenResponse.status}): ${tokenText.substring(0, 100) || '[Empty Response]'}`);
         }
         
         if (!tokenResponse.ok) throw new Error(tokenData?.error || `Server error (${tokenResponse.status})`);
