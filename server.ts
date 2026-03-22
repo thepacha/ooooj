@@ -39,8 +39,8 @@ async function startServer() {
         return res.status(500).json({ error: "DEEPGRAM_API_KEY is not set on the server" });
       }
 
-      const { createClient } = await import("@deepgram/sdk");
-      const deepgram = createClient(deepgramApiKey);
+      const { DeepgramClient } = await import("@deepgram/sdk");
+      const deepgram = new DeepgramClient(deepgramApiKey);
 
       // Try to generate a temporary key
       try {

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from "@deepgram/sdk";
+import { DeepgramClient } from "@deepgram/sdk";
 
 export default async function handler(
   request: VercelRequest,
@@ -17,7 +17,7 @@ export default async function handler(
   }
 
   try {
-    const deepgram = createClient(deepgramApiKey);
+    const deepgram = new DeepgramClient(deepgramApiKey);
 
     // If project ID is provided, use it. Otherwise, try to get the first project.
     let targetProjectId = projectId;
