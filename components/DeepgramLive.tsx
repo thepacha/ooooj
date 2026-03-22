@@ -107,11 +107,12 @@ const LiveTranscriptionTab = () => {
       setError(null);
       
       const response = await fetch('/api/deepgram/token');
-      if (!response.ok) {
-        const errData = await response.json().catch(() => null);
-        throw new Error(errData?.error || 'Failed to get Deepgram token');
+      const data = await response.json().catch(() => null);
+      
+      if (!response.ok || !data) {
+        throw new Error(data?.error || 'Failed to get Deepgram token');
       }
-      const { token } = await response.json();
+      const { token } = data;
       if (!token) throw new Error('Received empty token from server');
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -299,8 +300,10 @@ const TextToVoiceTab = () => {
       }
 
       const response = await fetch('/api/deepgram/token');
-      if (!response.ok) throw new Error('Failed to get Deepgram token');
-      const { token } = await response.json();
+      const data = await response.json().catch(() => null);
+      
+      if (!response.ok || !data) throw new Error(data?.error || 'Failed to get Deepgram token');
+      const { token } = data;
 
       const chunks = chunkText(text);
       
@@ -467,8 +470,10 @@ const AIRoleplayTab = () => {
       isProcessingRef.current = false;
       
       const response = await fetch('/api/deepgram/token');
-      if (!response.ok) throw new Error('Failed to get Deepgram token');
-      const { token } = await response.json();
+      const data = await response.json().catch(() => null);
+      
+      if (!response.ok || !data) throw new Error(data?.error || 'Failed to get Deepgram token');
+      const { token } = data;
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -628,7 +633,10 @@ const AIRoleplayTab = () => {
       
       try {
         const tokenResponse = await fetch('/api/deepgram/token');
-        const { token } = await tokenResponse.json();
+        const tokenData = await tokenResponse.json().catch(() => null);
+        
+        if (!tokenResponse.ok || !tokenData) throw new Error(tokenData?.error || 'Failed to get Deepgram token');
+        const { token } = tokenData;
 
         const chunks = chunkText(aiText);
         
