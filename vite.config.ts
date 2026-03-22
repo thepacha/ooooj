@@ -23,6 +23,7 @@ export default defineConfig(({ mode }) => {
     // Define process.env for client-side usage
     define: {
       'process.env.API_KEY': JSON.stringify(env.API_KEY || env.VITE_API_KEY || env.GEMINI_API_KEY || ''),
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.API_KEY || env.VITE_API_KEY || ''),
       'process.env.NODE_ENV': JSON.stringify(mode),
     }
   };

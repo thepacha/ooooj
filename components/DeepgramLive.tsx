@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, Loader2, AlertCircle, Play, Send, MessageSquare, Volume2, Radio } from 'lucide-react';
-import { GoogleGenAI } from "@google/genai";
 import { User } from '../types';
 
 interface DeepgramLiveProps {
@@ -46,8 +45,32 @@ const SCENARIOS: Scenario[] = [
 export const DeepgramLive: React.FC<DeepgramLiveProps> = ({ user }) => {
   const [activeTab, setActiveTab] = useState<Tab>('transcription');
 
+  const [configStatus, setConfigStatus] = useState<{deepgram: boolean, gemini: boolean} | null>(null);
+
+  useEffect(() => {
+    fetch('/api/config-check')
+      .then(res => res.json())
+      .then(data => setConfigStatus(data))
+      .catch(() => setConfigStatus(null));
+  }, []);
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      {configStatus && (!configStatus.deepgram || !configStatus.gemini) && (
+        <div className="p-4 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-xl border border-amber-100 dark:border-amber-800/30 flex items-center gap-3">
+          <AlertCircle size={20} />
+          <div className="text-sm">
+            <p className="font-bold">Configuration Warning</p>
+            <p>
+              {!configStatus.deepgram && "DEEPGRAM_API_KEY "}
+              {!configStatus.deepgram && !configStatus.gemini && "and "}
+              {!configStatus.gemini && "GEMINI_API_KEY "}
+              is missing. Please set them in the AI Studio Settings.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center space-x-2 border-b border-slate-200 dark:border-slate-800 pb-4">
         <button
           onClick={() => setActiveTab('transcription')}
@@ -107,10 +130,16 @@ const LiveTranscriptionTab = () => {
       setError(null);
       
       const response = await fetch('/api/deepgram/token');
-      const data = await response.json().catch(() => null);
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (e) {
+        const text = await response.text().catch(() => 'No response body');
+        throw new Error(`Server returned non-JSON response (${response.status}): ${text.substring(0, 100)}`);
+      }
       
-      if (!response.ok || !data) {
-        throw new Error(data?.error || 'Failed to get Deepgram token');
+      if (!response.ok) {
+        throw new Error(data?.error || `Server error (${response.status})`);
       }
       const { token } = data;
       if (!token) throw new Error('Received empty token from server');
@@ -300,9 +329,15 @@ const TextToVoiceTab = () => {
       }
 
       const response = await fetch('/api/deepgram/token');
-      const data = await response.json().catch(() => null);
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (e) {
+        const text = await response.text().catch(() => 'No response body');
+        throw new Error(`Server returned non-JSON response (${response.status}): ${text.substring(0, 100)}`);
+      }
       
-      if (!response.ok || !data) throw new Error(data?.error || 'Failed to get Deepgram token');
+      if (!response.ok) throw new Error(data?.error || `Server error (${response.status})`);
       const { token } = data;
 
       const chunks = chunkText(text);
@@ -470,16 +505,22 @@ const AIRoleplayTab = () => {
       isProcessingRef.current = false;
       
       const response = await fetch('/api/deepgram/token');
-      const data = await response.json().catch(() => null);
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (e) {
+        const text = await response.text().catch(() => 'No response body');
+        throw new Error(`Server returned non-JSON response (${response.status}): ${text.substring(0, 100)}`);
+      }
       
-      if (!response.ok || !data) throw new Error(data?.error || 'Failed to get Deepgram token');
+      if (!response.ok) throw new Error(data?.error || `Server error (${response.status})`);
       const { token } = data;
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
       // Use endpointing to detect when user stops speaking
-      const url = 'wss://api.deepgram.com/v1/listen?model=nova-2&smart_format=true&endpointing=500';
+      const url = 'wss://api.deepgram.com/v1/listen?model=nova-2&smart_format=true&endpointing=1000';
       const socket = new WebSocket(url, ['token', token]);
 
       socket.onopen = () => {
@@ -490,6 +531,7 @@ const AIRoleplayTab = () => {
         mediaRecorder.addEventListener('dataavailable', (event) => {
           // Only send audio if AI isn't speaking and we aren't processing to avoid feedback/echo
           if (event.data.size > 0 && socket.readyState === WebSocket.OPEN && !isAiSpeakingRef.current && !isProcessingRef.current) {
+            console.log('Sending audio data to Deepgram:', event.data.size, 'bytes');
             socket.send(event.data);
           }
         });
@@ -501,6 +543,8 @@ const AIRoleplayTab = () => {
         const received = JSON.parse(message.data);
         const newTranscript = received.channel?.alternatives[0]?.transcript;
         
+        console.log('Deepgram message:', { is_final: received.is_final, speech_final: received.speech_final, transcript: newTranscript });
+
         if (!isAiSpeakingRef.current && !isProcessingRef.current) {
           if (newTranscript) {
             const currentFull = accumulatedTranscriptRef.current + (accumulatedTranscriptRef.current ? ' ' : '') + newTranscript;
@@ -544,7 +588,7 @@ const AIRoleplayTab = () => {
     const finalTranscript = fullTranscriptRef.current.trim();
     
     if (finalTranscript && finalTranscript.length > 0) {
-      console.log('User speech finished, processing:', finalTranscript);
+      console.log('User speech finished, processing transcript:', finalTranscript);
       // Immediately lock and clear
       setIsProcessing(true);
       isProcessingRef.current = true;
@@ -603,24 +647,32 @@ const AIRoleplayTab = () => {
     messagesRef.current = newMessages; // Immediate update
 
     try {
-      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
-      if (!apiKey) throw new Error('Gemini API key is not configured.');
-      
-      const ai = new GoogleGenAI({ apiKey });
       const contents = newMessages.map((msg: any) => ({
         role: msg.role === 'ai' ? 'model' : 'user',
         parts: [{ text: msg.text }]
       }));
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents,
-        config: {
-          systemInstruction: selectedScenario.systemPrompt + " Keep your responses very short and conversational (1-2 sentences max) to maintain a natural flow. You are speaking to a customer support agent.",
-        },
-      });
+      console.log('Generating AI response for:', text);
+      console.log('Conversation history:', contents);
       
-      const aiText = response.text;
+      const aiResponse = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: contents,
+          systemInstruction: selectedScenario.systemPrompt + " Keep your responses very short and conversational (1-2 sentences max) to maintain a natural flow. You are speaking to a customer support agent."
+        })
+      });
+
+      if (!aiResponse.ok) {
+        const errData = await aiResponse.json().catch(() => ({ error: 'AI Proxy failed' }));
+        throw new Error(errData.error || 'Failed to get AI response');
+      }
+
+      const data = await aiResponse.json();
+      const aiText = data.text;
+      
+      console.log('AI Response received:', aiText);
       if (!aiText) throw new Error('Received empty response from AI');
       
       const updatedMessages = [...newMessages, { role: 'ai' as const, text: aiText }];
@@ -633,9 +685,15 @@ const AIRoleplayTab = () => {
       
       try {
         const tokenResponse = await fetch('/api/deepgram/token');
-        const tokenData = await tokenResponse.json().catch(() => null);
+        let tokenData = null;
+        try {
+          tokenData = await tokenResponse.json();
+        } catch (e) {
+          const text = await tokenResponse.text().catch(() => 'No response body');
+          throw new Error(`Server returned non-JSON response (${tokenResponse.status}): ${text.substring(0, 100)}`);
+        }
         
-        if (!tokenResponse.ok || !tokenData) throw new Error(tokenData?.error || 'Failed to get Deepgram token');
+        if (!tokenResponse.ok) throw new Error(tokenData?.error || `Server error (${tokenResponse.status})`);
         const { token } = tokenData;
 
         const chunks = chunkText(aiText);
@@ -659,6 +717,7 @@ const AIRoleplayTab = () => {
             const audio = new Audio(url);
             audioRef.current = audio;
             
+            console.log('Playing AI audio chunk', i + 1);
             await new Promise((resolve) => {
               const timeout = setTimeout(() => {
                 console.warn('Audio playback timed out');
@@ -681,6 +740,10 @@ const AIRoleplayTab = () => {
               });
             });
             URL.revokeObjectURL(url);
+          } else {
+            const errData = await ttsResponse.json().catch(() => ({ error: 'Unknown TTS error' }));
+            console.error('TTS Chunk Error:', errData);
+            throw new Error(errData.error || `Failed to generate audio for chunk ${i+1}: ${ttsResponse.status}`);
           }
         }
       } finally {

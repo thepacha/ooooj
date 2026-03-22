@@ -21,16 +21,23 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  app.get("/api/config-check", (req, res) => {
+    res.json({
+      deepgram: !!process.env.DEEPGRAM_API_KEY,
+      gemini: !!process.env.GEMINI_API_KEY,
+    });
+  });
+
   // Deepgram Token Route
   app.get("/api/deepgram/token", async (req, res) => {
     try {
       const deepgramApiKey = process.env.DEEPGRAM_API_KEY;
       if (!deepgramApiKey) {
-        return res.status(500).json({ error: "DEEPGRAM_API_KEY is not set" });
+        console.error("DEEPGRAM_API_KEY is missing in environment variables");
+        return res.status(500).json({ error: "DEEPGRAM_API_KEY is not set on the server" });
       }
 
-      // If we can't generate a temporary key, we'll return the master key
-      // This is less secure but more reliable if the project/keys API fails
+      // Try to generate a temporary key for better security
       try {
         const response = await fetch("https://api.deepgram.com/v1/projects", {
           headers: {
@@ -61,19 +68,61 @@ async function startServer() {
             
             if (keyResponse.ok) {
               const keyData = await keyResponse.json();
+              console.log("Successfully generated temporary Deepgram key");
               return res.json({ token: keyData.key });
+            } else {
+              const errText = await keyResponse.text();
+              console.warn("Failed to create temporary key, status:", keyResponse.status, errText);
             }
           }
+        } else {
+          const errText = await response.text();
+          console.warn("Failed to fetch projects, status:", response.status, errText);
         }
       } catch (innerError) {
-        console.warn("Failed to generate temporary Deepgram key:", innerError);
+        console.warn("Error during temporary key generation process:", innerError);
       }
 
-      // Fallback to master key
+      // Fallback to master key if temporary key generation fails
+      console.log("Falling back to master Deepgram API key");
       res.json({ token: deepgramApiKey });
-    } catch (error) {
-      console.error("Deepgram token error:", error);
-      res.status(500).json({ error: "Failed to generate token" });
+    } catch (error: any) {
+      console.error("Deepgram token endpoint critical error:", error);
+      res.status(500).json({ error: "Internal server error generating token: " + (error.message || "Unknown error") });
+    }
+  });
+
+  // AI Chat Proxy Route
+  app.post("/api/ai/chat", async (req, res) => {
+    try {
+      const { messages, systemInstruction } = req.body;
+      const apiKey = process.env.GEMINI_API_KEY;
+      
+      if (!apiKey) {
+        console.error("GEMINI_API_KEY is missing in environment variables");
+        return res.status(500).json({ error: "GEMINI_API_KEY is not set on the server" });
+      }
+
+      const { GoogleGenAI } = await import("@google/genai");
+      const ai = new GoogleGenAI({ apiKey });
+      
+      console.log("Generating AI response via server proxy...");
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: messages,
+        config: {
+          systemInstruction: systemInstruction,
+        },
+      });
+
+      if (!response.text) {
+        throw new Error("Empty response from Gemini API");
+      }
+
+      res.json({ text: response.text });
+    } catch (error: any) {
+      console.error("AI Chat proxy error:", error);
+      res.status(500).json({ error: error.message || "Failed to generate AI response" });
     }
   });
 
