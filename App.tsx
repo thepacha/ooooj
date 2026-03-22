@@ -23,6 +23,7 @@ import { Terms } from './components/Terms';
 import { Privacy } from './components/Privacy';
 import { RefundPolicy } from './components/RefundPolicy';
 import { PartnersPage } from './components/PartnersPage';
+import { DeepgramLive } from './components/DeepgramLive';
 import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA, User } from './types';
 import { Loader2, Trash2, AlertTriangle, Sparkles, MessageSquare, TrendingUp, Info } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
@@ -44,7 +45,8 @@ const APP_ROUTES: Record<string, ViewState> = {
   '/history': 'history',
   '/team': 'roster',
   '/admin': 'admin',
-  '/notifications': 'notifications'
+  '/notifications': 'notifications',
+  '/deepgram': 'deepgram'
 };
 
 const VIEW_TO_PATH: Record<string, string> = {
@@ -57,7 +59,8 @@ const VIEW_TO_PATH: Record<string, string> = {
   'history': '/history',
   'roster': '/team',
   'admin': '/admin',
-  'notifications': '/notifications'
+  'notifications': '/notifications',
+  'deepgram': '/deepgram'
 };
 
 // Safe History Wrappers
@@ -883,6 +886,8 @@ function AppContent() {
             );
         }
         return <Admin user={user} />;
+      case 'deepgram':
+        return <DeepgramLive user={user} />;
       case 'pricing':
         return <Pricing onPlanSelect={handlePlanSelect} isLoggedIn={true} />;
       case 'evaluation':
@@ -1115,6 +1120,7 @@ function AppContent() {
                     currentView === 'settings' ? t('nav.settings') : 
                     currentView === 'account' ? t('account.title') :
                     currentView === 'admin' ? t('nav.admin') :
+                    currentView === 'deepgram' ? 'Deepgram Testing' :
                     currentView === 'pricing' ? 'Subscription Plans' : 
                     currentView === 'dashboard' ? t('nav.dashboard') : 
                     currentView === 'history' ? t('nav.history') : currentView}
