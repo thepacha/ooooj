@@ -48,6 +48,7 @@ export interface TrainingResult {
   feedback: string;
   criteriaResults: CriteriaResult[];
   sentiment: 'Positive' | 'Neutral' | 'Negative';
+  nextSteps?: string[];
 }
 
 export interface User {
@@ -81,7 +82,7 @@ export interface UsageHistory {
   chat_messages_count: number;
 }
 
-export type ViewState = 'dashboard' | 'analyze' | 'history' | 'settings' | 'evaluation' | 'usage' | 'roster' | 'pricing' | 'training' | 'admin' | 'terms' | 'privacy' | 'account' | 'notifications' | 'deepgram';
+export type ViewState = 'dashboard' | 'analyze' | 'history' | 'settings' | 'evaluation' | 'usage' | 'roster' | 'pricing' | 'training' | 'admin' | 'terms' | 'privacy' | 'account' | 'notifications' | 'assembly-test' | 'deepgram-tts' | 'gemini-arabic-tts';
 
 export const DEFAULT_CRITERIA: Criteria[] = [
   { id: '1', name: 'Empathy & Tone', description: 'Did the agent demonstrate empathy and maintain a professional tone?', weight: 9 },

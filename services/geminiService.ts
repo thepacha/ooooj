@@ -3,11 +3,25 @@ import { AnalysisResult, Criteria, TrainingResult, TrainingScenario } from "../t
 import { incrementUsage, checkLimit, COSTS } from "../lib/usageService";
 
 // Helper to initialize AI with environment API key
-const getAI = () => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-      throw new Error("API Key is missing. Please configure your environment.");
+export const getAI = () => {
+  const isPlaceholder = (val: string | undefined) => {
+    if (!val) return true;
+    const v = val.toUpperCase();
+    return v.includes("YOUR_") || v.includes("MY_") || v.includes("REPLACE") || val.length < 10;
+  };
+
+  let apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey || isPlaceholder(apiKey)) {
+    const fallbackKey = process.env.API_KEY;
+    if (fallbackKey && !isPlaceholder(fallbackKey)) {
+      apiKey = fallbackKey;
+    }
   }
+
+  if (!apiKey || isPlaceholder(apiKey)) {
+      throw new Error("Gemini API Key is missing or invalid. Please configure GEMINI_API_KEY in your environment Settings.");
+  }
+  
   return new GoogleGenAI({ apiKey });
 };
 
@@ -513,6 +527,34 @@ export const evaluateTrainingSession = async (transcript: string, scenario: Trai
             sentiment: 'Neutral'
         };
     }
+};
+
+export const generateArabicTTS = async (text: string, dialect: string, voice: string = 'Kore'): Promise<string> => {
+    const ai = getAI();
+    
+    // We prompt the model to speak in the specific dialect
+    const prompt = `Speak this text in ${dialect} Arabic: ${text}`;
+
+    const response = await retryWithBackoff(async () => {
+        return await ai.models.generateContent({
+            model: "gemini-2.5-flash-preview-tts",
+            contents: [{ parts: [{ text: prompt }] }],
+            config: {
+                responseModalities: [Modality.AUDIO],
+                speechConfig: {
+                    voiceConfig: {
+                        prebuiltVoiceConfig: { voiceName: voice as any },
+                    },
+                },
+            },
+        });
+    });
+
+    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (!base64Audio) {
+        throw new Error("Failed to generate audio from Gemini TTS");
+    }
+    return base64Audio;
 };
 
 export const connectLiveTraining = (scenario: TrainingScenario, callbacks: {

@@ -19,11 +19,13 @@ import { Roster } from './components/Roster';
 import { Pricing } from './components/Pricing';
 import { Training } from './components/Training';
 import { Admin } from './components/Admin';
+import { AssemblyAITest } from './components/AssemblyAITest';
+import { DeepgramTTS } from './components/DeepgramTTS';
+import { GeminiArabicTTS } from './components/GeminiArabicTTS';
 import { Terms } from './components/Terms';
 import { Privacy } from './components/Privacy';
 import { RefundPolicy } from './components/RefundPolicy';
 import { PartnersPage } from './components/PartnersPage';
-import { DeepgramLive } from './components/DeepgramLive';
 import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA, User } from './types';
 import { Loader2, Trash2, AlertTriangle, Sparkles, MessageSquare, TrendingUp, Info } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
@@ -45,8 +47,10 @@ const APP_ROUTES: Record<string, ViewState> = {
   '/history': 'history',
   '/team': 'roster',
   '/admin': 'admin',
-  '/notifications': 'notifications',
-  '/deepgram': 'deepgram'
+  '/assembly-test': 'assembly-test',
+  '/deepgram-tts': 'deepgram-tts',
+  '/gemini-arabic-tts': 'gemini-arabic-tts',
+  '/notifications': 'notifications'
 };
 
 const VIEW_TO_PATH: Record<string, string> = {
@@ -55,12 +59,14 @@ const VIEW_TO_PATH: Record<string, string> = {
   'account': '/account',
   'analyze': '/analyze',
   'training': '/ai-training',
+  'assembly-test': '/assembly-test',
+  'deepgram-tts': '/deepgram-tts',
+  'gemini-arabic-tts': '/gemini-arabic-tts',
   'usage': '/usageandlimits',
   'history': '/history',
   'roster': '/team',
   'admin': '/admin',
-  'notifications': '/notifications',
-  'deepgram': '/deepgram'
+  'notifications': '/notifications'
 };
 
 // Safe History Wrappers
@@ -677,6 +683,12 @@ function AppContent() {
         return <Analyzer criteria={criteria} onAnalysisComplete={handleAnalysisComplete} user={user} addNotification={addNotification} />;
       case 'training':
         return <Training user={user} history={history.filter(h => !h.isDeleted)} onAnalysisComplete={handleAnalysisComplete} addNotification={addNotification} />;
+      case 'assembly-test':
+        return <AssemblyAITest user={user} history={history.filter(h => !h.isDeleted)} onAnalysisComplete={handleAnalysisComplete} addNotification={addNotification} />;
+      case 'deepgram-tts':
+        return <DeepgramTTS />;
+      case 'gemini-arabic-tts':
+        return <GeminiArabicTTS />;
       case 'history':
         return (
           <History 
@@ -886,8 +898,6 @@ function AppContent() {
             );
         }
         return <Admin user={user} />;
-      case 'deepgram':
-        return <DeepgramLive user={user} />;
       case 'pricing':
         return <Pricing onPlanSelect={handlePlanSelect} isLoggedIn={true} />;
       case 'evaluation':
@@ -1120,7 +1130,6 @@ function AppContent() {
                     currentView === 'settings' ? t('nav.settings') : 
                     currentView === 'account' ? t('account.title') :
                     currentView === 'admin' ? t('nav.admin') :
-                    currentView === 'deepgram' ? 'Deepgram Testing' :
                     currentView === 'pricing' ? 'Subscription Plans' : 
                     currentView === 'dashboard' ? t('nav.dashboard') : 
                     currentView === 'history' ? t('nav.history') : currentView}

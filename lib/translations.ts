@@ -16,6 +16,9 @@ export const translations = {
     'nav.dark_mode': 'Dark Mode',
     'nav.logout': 'Log out',
     'nav.guest': 'Guest User',
+    'nav.deepgram_tts': 'Deepgram TTS',
+    'nav.gemini_arabic_tts': 'Gemini Arabic TTS',
+    'nav.notifications': 'Notifications',
 
     // Dashboard
     'dash.welcome': 'Welcome back',
@@ -498,6 +501,9 @@ export const translations = {
     'nav.dark_mode': 'الوضع الليلي',
     'nav.logout': 'تسجيل الخروج',
     'nav.guest': 'مستخدم زائر',
+    'nav.deepgram_tts': 'Deepgram TTS',
+    'nav.gemini_arabic_tts': 'Gemini Arabic TTS',
+    'nav.notifications': 'التنبيهات',
 
     // Dashboard
     'dash.welcome': 'مرحباً بعودتك',

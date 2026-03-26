@@ -57,11 +57,39 @@ export const Dashboard: React.FC<DashboardProps> = ({ history, setView, onFilter
     vol: Math.floor(Math.random() * 100) + 50 
   }));
 
-  // Mock delta calculations (in a real app, compare vs previous period)
-  const scoreDelta = "+2.4%";
-  const evalDelta = "+12%";
-  const highDelta = "+5%";
-  const lowDelta = "-2%";
+  // Real delta calculations
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+  const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+  const getHistoryForPeriod = (month: number, year: number) => history.filter(h => {
+    const d = new Date(h.timestamp);
+    return d.getMonth() === month && d.getFullYear() === year;
+  });
+
+  const currentMonthHistory = getHistoryForPeriod(currentMonth, currentYear);
+  const previousMonthHistory = getHistoryForPeriod(previousMonth, previousYear);
+
+  const calculateAvg = (h: AnalysisResult[]) => h.length > 0 ? h.reduce((acc, curr) => acc + curr.overallScore, 0) / h.length : 0;
+  const avgCurrent = calculateAvg(currentMonthHistory);
+  const avgPrevious = calculateAvg(previousMonthHistory);
+  const scoreDeltaValue = avgPrevious === 0 ? 0 : ((avgCurrent - avgPrevious) / avgPrevious) * 100;
+  const scoreDelta = (scoreDeltaValue >= 0 ? '+' : '') + scoreDeltaValue.toFixed(1) + '%';
+
+  const evalDeltaValue = previousMonthHistory.length === 0 ? 0 : ((currentMonthHistory.length - previousMonthHistory.length) / previousMonthHistory.length) * 100;
+  const evalDelta = (evalDeltaValue >= 0 ? '+' : '') + evalDeltaValue.toFixed(0) + '%';
+
+  const highCurrent = currentMonthHistory.filter(h => h.overallScore >= 90).length;
+  const highPrevious = previousMonthHistory.filter(h => h.overallScore >= 90).length;
+  const highDeltaValue = highPrevious === 0 ? 0 : ((highCurrent - highPrevious) / highPrevious) * 100;
+  const highDelta = (highDeltaValue >= 0 ? '+' : '') + highDeltaValue.toFixed(0) + '%';
+
+  const lowCurrent = currentMonthHistory.filter(h => h.overallScore < 75).length;
+  const lowPrevious = previousMonthHistory.filter(h => h.overallScore < 75).length;
+  const lowDeltaValue = lowPrevious === 0 ? 0 : ((lowCurrent - lowPrevious) / lowPrevious) * 100;
+  const lowDelta = (lowDeltaValue >= 0 ? '+' : '') + lowDeltaValue.toFixed(0) + '%';
 
   const agentPerformance: Record<string, { total: number, count: number }> = {};
   history.forEach(h => {

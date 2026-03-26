@@ -28,17 +28,7 @@ export const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
   const chatRef = useRef<any | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    // Initialize chat session once
-    if (!chatRef.current) {
-      try {
-        chatRef.current = createChatSession();
-      } catch (err: any) {
-        console.error("Failed to initialize ChatBot:", err);
-        setError("Chat unavailable");
-      }
-    }
-  }, []);
+
 
   useEffect(() => {
     // Auto scroll to bottom
