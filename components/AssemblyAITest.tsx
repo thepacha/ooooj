@@ -131,7 +131,8 @@ export const AssemblyAITest: React.FC<AssemblyAITestProps> = ({ user, history, o
             addLog("Fetching temporary authentication token...");
             const tokenResponse = await fetch('/api/assemblyai/token');
             if (!tokenResponse.ok) {
-                throw new Error("Failed to fetch AssemblyAI token");
+                const errData = await tokenResponse.json().catch(() => ({}));
+                throw new Error(errData.error || "Failed to fetch AssemblyAI token");
             }
             const { token } = await tokenResponse.json();
 
@@ -223,9 +224,9 @@ export const AssemblyAITest: React.FC<AssemblyAITestProps> = ({ user, history, o
                 setSessionStatus('Disconnected');
             };
 
-        } catch (e) {
+        } catch (e: any) {
             console.error("Failed to start AssemblyAI session:", e);
-            setConnectionError("Failed to initialize session");
+            setConnectionError(`Failed to initialize session: ${e.message || "Unknown error"}`);
         }
     };
 
