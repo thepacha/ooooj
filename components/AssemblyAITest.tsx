@@ -127,14 +127,22 @@ export const AssemblyAITest: React.FC<AssemblyAITestProps> = ({ user, history, o
         setView('active');
 
         try {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/api/assemblyai`;
+            // Fetch temporary token from our Vercel Serverless Function
+            addLog("Fetching temporary authentication token...");
+            const tokenResponse = await fetch('/api/assemblyai/token');
+            if (!tokenResponse.ok) {
+                throw new Error("Failed to fetch AssemblyAI token");
+            }
+            const { token } = await tokenResponse.json();
+
+            // Connect directly to AssemblyAI using the token
+            const wsUrl = `wss://speech-to-speech.us.assemblyai.com/v1/realtime?token=${token}`;
             const socket = new WebSocket(wsUrl);
             socketRef.current = socket;
 
             socket.onopen = () => {
-                console.log("Connected to local AssemblyAI proxy");
-                addLog("Connected to local proxy", 'success');
+                console.log("Connected to AssemblyAI");
+                addLog("Connected to AssemblyAI", 'success');
                 // Send session update immediately
                 const config = {
                     type: "session.update",

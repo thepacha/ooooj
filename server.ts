@@ -224,6 +224,34 @@ async function startServer() {
     }
   });
 
+  app.get("/api/assemblyai/token", async (req, res) => {
+    try {
+        const apiKey = process.env.ASSEMBLYAI_API_KEY;
+        if (!apiKey) {
+            return res.status(500).json({ error: "ASSEMBLYAI_API_KEY is not configured" });
+        }
+
+        const response = await fetch('https://api.assemblyai.com/v2/realtime/token', {
+            method: 'POST',
+            headers: {
+                'Authorization': apiKey,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ expires_in: 3600 })
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to generate AssemblyAI token");
+        }
+
+        const data = await response.json();
+        res.status(200).json({ token: data.token });
+    } catch (error: any) {
+        console.error("Error generating token:", error);
+        res.status(500).json({ error: error.message });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

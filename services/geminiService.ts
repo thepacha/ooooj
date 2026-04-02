@@ -10,16 +10,16 @@ export const getAI = () => {
     return v.includes("YOUR_") || v.includes("MY_") || v.includes("REPLACE") || val.length < 10;
   };
 
-  let apiKey = process.env.GEMINI_API_KEY;
+  let apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey || isPlaceholder(apiKey)) {
-    const fallbackKey = process.env.API_KEY;
+    const fallbackKey = (import.meta as any).env?.VITE_API_KEY || process.env.API_KEY;
     if (fallbackKey && !isPlaceholder(fallbackKey)) {
       apiKey = fallbackKey;
     }
   }
 
   if (!apiKey || isPlaceholder(apiKey)) {
-      throw new Error("Gemini API Key is missing or invalid. Please configure GEMINI_API_KEY in your environment Settings.");
+      throw new Error("Gemini API Key is missing or invalid. Please configure VITE_GEMINI_API_KEY in your environment Settings.");
   }
   
   return new GoogleGenAI({ apiKey });
