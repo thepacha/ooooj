@@ -231,24 +231,14 @@ async function startServer() {
             return res.status(500).json({ error: "ASSEMBLYAI_API_KEY is not configured" });
         }
 
-        const response = await fetch('https://api.assemblyai.com/v2/realtime/token', {
-            method: 'POST',
-            headers: {
-                'Authorization': apiKey,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ expires_in: 3600 })
-        });
-
-        if (!response.ok) {
-            throw new Error("Failed to generate AssemblyAI token");
-        }
-
-        const data = await response.json();
-        res.status(200).json({ token: data.token });
+        const { AssemblyAI } = await import('assemblyai');
+        const client = new AssemblyAI({ apiKey });
+        const token = await client.realtime.createTemporaryToken({ expires_in: 3600 });
+        
+        res.status(200).json({ token });
     } catch (error: any) {
         console.error("Error generating token:", error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: `AssemblyAI Token Error: ${error.message || "Unknown error"}` });
     }
   });
 

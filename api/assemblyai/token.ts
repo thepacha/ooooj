@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { AssemblyAI } from 'assemblyai';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'GET' && req.method !== 'POST') {
@@ -11,30 +12,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(500).json({ error: "ASSEMBLYAI_API_KEY is not configured" });
         }
 
-        // Generate a temporary token for AssemblyAI Realtime/Speech-to-Speech
-        const response = await fetch('https://api.assemblyai.com/v2/realtime/token', {
-            method: 'POST',
-            headers: {
-                'Authorization': apiKey,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ expires_in: 3600 })
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error("AssemblyAI Token Error:", errorText);
-            throw new Error("Failed to generate AssemblyAI token");
-        }
-
-        const data = await response.json();
+        const client = new AssemblyAI({ apiKey });
+        const token = await client.realtime.createTemporaryToken({ expires_in: 3600 });
         
-        res.status(200).json({ token: data.token });
+        res.status(200).json({ token });
 
     } catch (error: any) {
         console.error("Error in AssemblyAI token route:", error);
         res.status(500).json({ 
-            error: error.message || "Internal server error"
+            error: `AssemblyAI Token Error: ${error.message || "Unknown error"}`
         });
     }
 }
