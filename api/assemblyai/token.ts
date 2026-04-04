@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { AssemblyAI } from 'assemblyai';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'GET' && req.method !== 'POST') {
@@ -12,10 +11,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(500).json({ error: "ASSEMBLYAI_API_KEY is not configured" });
         }
 
-        const client = new AssemblyAI({ apiKey });
-        const token = await client.realtime.createTemporaryToken({ expires_in: 3600 });
-        
-        res.status(200).json({ token });
+        // AssemblyAI Speech-to-Speech API currently requires passing the API key directly
+        // since it doesn't have a temporary token endpoint yet.
+        // We return the API key to be used as the token query parameter.
+        res.status(200).json({ token: apiKey });
 
     } catch (error: any) {
         console.error("Error in AssemblyAI token route:", error);

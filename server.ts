@@ -231,11 +231,7 @@ async function startServer() {
             return res.status(500).json({ error: "ASSEMBLYAI_API_KEY is not configured" });
         }
 
-        const { AssemblyAI } = await import('assemblyai');
-        const client = new AssemblyAI({ apiKey });
-        const token = await client.realtime.createTemporaryToken({ expires_in: 3600 });
-        
-        res.status(200).json({ token });
+        res.status(200).json({ token: apiKey });
     } catch (error: any) {
         console.error("Error generating token:", error);
         res.status(500).json({ error: `AssemblyAI Token Error: ${error.message || "Unknown error"}` });
