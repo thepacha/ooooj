@@ -137,7 +137,7 @@ export const AssemblyAITest: React.FC<AssemblyAITestProps> = ({ user, history, o
             const { token } = await tokenResponse.json();
 
             // Connect directly to AssemblyAI using the token
-            const wsUrl = `wss://speech-to-speech.us.assemblyai.com/v1/realtime?token=${token}`;
+            const wsUrl = `wss://api.assemblyai.com/v2/realtime/ws?token=${token}&sample_rate=24000`;
             const socket = new WebSocket(wsUrl);
             socketRef.current = socket;
 
