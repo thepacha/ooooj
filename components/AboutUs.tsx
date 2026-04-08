@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Linkedin, Mail } from 'lucide-react';
+import { MohamedAvatar } from './MohamedAvatar';
 import { PublicNavigation } from './PublicNavigation';
 import { Footer } from './Footer';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -91,22 +92,7 @@ export const AboutUs: React.FC<AboutUsProps> = ({
               <h2 className="text-3xl font-bold mb-8 text-slate-900 dark:text-white">Our Team</h2>
               <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-8 items-start">
                 <div className="w-24 h-24 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center shrink-0 overflow-hidden">
-                  <img 
-                    src="/mohamed_ibrahim.jpeg" 
-                    alt="Mohamed Ibrahim" 
-                    className="w-full h-full object-cover" 
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      if (target.src.includes('/public/')) {
-                        if (target.src.endsWith('.jpeg')) {
-                          target.src = target.src.replace('.jpeg', '.jpg');
-                        }
-                        return;
-                      }
-                      target.src = '/public/mohamed_ibrahim.jpeg';
-                    }}
-                  />
+                  <img src="/mohamed.jpeg" />
                 </div>
                 <div className="flex-1">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
