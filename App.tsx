@@ -26,6 +26,7 @@ import { Terms } from './components/Terms';
 import { Privacy } from './components/Privacy';
 import { RefundPolicy } from './components/RefundPolicy';
 import { PartnersPage } from './components/PartnersPage';
+import { AboutUs } from './components/AboutUs';
 import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA, User } from './types';
 import { Loader2, Trash2, AlertTriangle, Sparkles, MessageSquare, TrendingUp, Info } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
@@ -34,7 +35,7 @@ import { useLanguage, LanguageProvider } from './contexts/LanguageContext';
 import mixpanel from './lib/mixpanel';
 import { useNotifications } from './hooks/useNotifications';
 
-type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 'privacy' | 'refund' | 'partners';
+type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 'privacy' | 'refund' | 'partners' | 'about';
 
 // URL Routing Configuration
 const APP_ROUTES: Record<string, ViewState> = {
@@ -108,6 +109,7 @@ function AppContent() {
       if (path === '/pricing') return { auth: 'pricing', view: 'dashboard' };
       if (path === '/login') return { auth: 'login', view: 'dashboard' };
       if (path === '/signup') return { auth: 'signup', view: 'dashboard' };
+      if (path === '/about') return { auth: 'about', view: 'dashboard' };
       
       // App Pages
       if (APP_ROUTES[path]) {
@@ -165,6 +167,7 @@ function AppContent() {
           if (path === '/partners') { setAuthView('partners'); return; }
           if (path === '/login') { setAuthView('login'); return; }
           if (path === '/signup') { setAuthView('signup'); return; }
+          if (path === '/about') { setAuthView('about'); return; }
           
           // App Routes
           if (APP_ROUTES[path]) {
@@ -209,6 +212,7 @@ function AppContent() {
       else if (view === 'partners') path = '/partners';
       else if (view === 'login') path = '/login';
       else if (view === 'signup') path = '/signup';
+      else if (view === 'about') path = '/about';
       
       if (typeof window !== 'undefined' && window.location.pathname !== path) {
           safePushState({}, '', path);
@@ -940,6 +944,11 @@ function AppContent() {
                 onLogin={handleLandingLoginClick} 
                 onSignup={handleLandingSignupClick} 
                 onPricing={() => navigateAuth('pricing')}
+                onAbout={() => navigateAuth('about')}
+                onPartners={() => navigateAuth('partners')}
+                onTermsClick={() => navigateAuth('terms')}
+                onPrivacyClick={() => navigateAuth('privacy')}
+                onRefundClick={() => navigateAuth('refund')}
               />
           </div>
       )
@@ -953,6 +962,11 @@ function AppContent() {
                 onLogin={handleLandingLoginClick} 
                 onSignup={handleLandingSignupClick} 
                 onPricing={() => navigateAuth('pricing')}
+                onAbout={() => navigateAuth('about')}
+                onPartners={() => navigateAuth('partners')}
+                onTermsClick={() => navigateAuth('terms')}
+                onPrivacyClick={() => navigateAuth('privacy')}
+                onRefundClick={() => navigateAuth('refund')}
               />
           </div>
       )
@@ -966,6 +980,11 @@ function AppContent() {
                 onLogin={handleLandingLoginClick} 
                 onSignup={handleLandingSignupClick} 
                 onPricing={() => navigateAuth('pricing')}
+                onAbout={() => navigateAuth('about')}
+                onPartners={() => navigateAuth('partners')}
+                onTermsClick={() => navigateAuth('terms')}
+                onPrivacyClick={() => navigateAuth('privacy')}
+                onRefundClick={() => navigateAuth('refund')}
               />
           </div>
       )
@@ -1006,6 +1025,33 @@ function AppContent() {
                 onPrivacyClick={() => navigateAuth('privacy')}
                 onRefundClick={() => navigateAuth('refund')}
                 onPartnersClick={() => navigateAuth('partners')}
+                onAboutClick={() => navigateAuth('about')}
+              />
+          </motion.div>
+        </AnimatePresence>
+      );
+  }
+
+  if (authView === 'about' && !isRecoveryMode) {
+      return (
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key="about"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="w-full min-h-screen"
+          >
+              <AboutUs 
+                onLogin={() => navigateAuth('login')} 
+                onSignup={() => navigateAuth('signup')} 
+                onPricing={() => navigateAuth('pricing')}
+                onBack={handleBackToHome}
+                onTermsClick={() => navigateAuth('terms')}
+                onPrivacyClick={() => navigateAuth('privacy')}
+                onRefundClick={() => navigateAuth('refund')}
+                onPartnersClick={() => navigateAuth('partners')}
               />
           </motion.div>
         </AnimatePresence>
@@ -1032,6 +1078,8 @@ function AppContent() {
                 onTermsClick={() => navigateAuth('terms')}
                 onPrivacyClick={() => navigateAuth('privacy')}
                 onRefundClick={() => navigateAuth('refund')}
+                onAboutClick={() => navigateAuth('about')}
+                onPartnersClick={() => navigateAuth('partners')}
               />
           </motion.div>
         </AnimatePresence>

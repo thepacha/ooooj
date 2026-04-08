@@ -9,7 +9,8 @@ interface PublicNavigationProps {
   onSignup?: () => void;
   onPricing?: () => void;
   onLanding?: () => void;
-  activePage?: 'landing' | 'pricing' | 'login' | 'signup' | 'partners';
+  onAbout?: () => void;
+  activePage?: 'landing' | 'pricing' | 'login' | 'signup' | 'partners' | 'about';
 }
 
 export const PublicNavigation: React.FC<PublicNavigationProps> = ({ 
@@ -17,6 +18,7 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
   onSignup, 
   onPricing, 
   onLanding, 
+  onAbout,
   activePage = 'landing' 
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -74,7 +76,7 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
             
             {/* Desktop Nav Links - Clean & Simple */}
             <div className="hidden lg:flex items-center gap-8 text-sm font-medium text-slate-900 dark:text-slate-200">
-                <button onClick={() => handleNavClick(onLanding)} className="hover:text-[#0500e2] transition-colors">About</button>
+                <button onClick={() => handleNavClick(onAbout)} className={`hover:text-[#0500e2] transition-colors ${activePage === 'about' ? 'text-[#0500e2]' : ''}`}>About</button>
                 <button onClick={() => handleNavClick(onLanding)} className="hover:text-[#0500e2] transition-colors">Features</button>
                 <button onClick={() => handleNavClick(onPricing)} className={`hover:text-[#0500e2] transition-colors ${activePage === 'pricing' ? 'text-[#0500e2]' : ''}`}>Pricing</button>
             </div>

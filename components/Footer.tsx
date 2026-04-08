@@ -2,15 +2,17 @@
 import React from 'react';
 import { RevuLogo } from './RevuLogo';
 import { useLanguage } from '../contexts/LanguageContext';
+import { Linkedin, Twitter, Facebook, Instagram } from 'lucide-react';
 
 interface FooterProps {
   onTermsClick?: () => void;
   onPrivacyClick?: () => void;
   onRefundClick?: () => void;
   onPartnersClick?: () => void;
+  onAboutClick?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, onRefundClick, onPartnersClick }) => {
+export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, onRefundClick, onPartnersClick, onAboutClick }) => {
   const { t } = useLanguage();
 
   return (
@@ -24,6 +26,40 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, on
                     <p className="text-slate-500 text-sm max-w-xs mb-6 leading-relaxed">
                         {t('landing.footer.desc')}
                     </p>
+                    <div className="flex items-center gap-3 mt-8">
+                        <a 
+                            href="https://www.linkedin.com/company/revuqai" 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-500 hover:bg-[#0077b5] hover:border-[#0077b5] hover:text-white hover:-translate-y-1 transition-all duration-300 shadow-sm"
+                            aria-label="LinkedIn"
+                        >
+                            <Linkedin size={20} />
+                        </a>
+                        <a 
+                            href="https://x.com/revuqai1" 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-500 hover:bg-black hover:border-black hover:text-white hover:-translate-y-1 transition-all duration-300 shadow-sm"
+                            aria-label="X (Twitter)"
+                        >
+                            <Twitter size={20} />
+                        </a>
+                        <a 
+                            href="#" 
+                            className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-500 hover:bg-[#1877f2] hover:border-[#1877f2] hover:text-white hover:-translate-y-1 transition-all duration-300 shadow-sm"
+                            aria-label="Facebook"
+                        >
+                            <Facebook size={20} />
+                        </a>
+                        <a 
+                            href="#" 
+                            className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-500 hover:bg-[#E4405F] hover:border-[#E4405F] hover:text-white hover:-translate-y-1 transition-all duration-300 shadow-sm"
+                            aria-label="Instagram"
+                        >
+                            <Instagram size={20} />
+                        </a>
+                    </div>
                 </div>
                 
                 {/* Product Column */}
@@ -41,7 +77,11 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, on
                 <div>
                     <h4 className="font-bold text-slate-900 dark:text-white mb-4 text-sm">{t('landing.footer.company')}</h4>
                     <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
-                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">About Us</a></li>
+                        <li>
+                            <button onClick={onAboutClick} className="hover:text-[#0500e2] transition-colors text-start">
+                                About Us
+                            </button>
+                        </li>
                         <li><a href="#" className="hover:text-[#0500e2] transition-colors">Careers</a></li>
                         <li><a href="#" className="hover:text-[#0500e2] transition-colors">Blog</a></li>
                         <li>
