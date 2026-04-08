@@ -91,7 +91,7 @@ const safeReplaceState = (data: any, unused: string, url: string) => {
 function AppContent() {
   // Domain Detection
   const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-  const isAppDomain = hostname.startsWith('app.');
+  const isAppDomain = hostname.startsWith('app.') && !hostname.includes('localhost') && !hostname.includes('.run.app') && !hostname.includes('127.0.0.1');
   const isProductionLanding = hostname === 'revuqai.com' || hostname === 'www.revuqai.com';
 
   const [user, setUser] = useState<User | null>(null);
@@ -326,7 +326,8 @@ function AppContent() {
         if (!session) {
             if (mounted) {
                 // If on public pages, stay there. Otherwise go to login/landing.
-                if (authView !== 'pricing' && authView !== 'signup' && authView !== 'terms' && authView !== 'privacy' && authView !== 'refund' && authView !== 'partners') {
+                const publicViews: AuthState[] = ['landing', 'pricing', 'signup', 'terms', 'privacy', 'refund', 'partners', 'about'];
+                if (!publicViews.includes(authView)) {
                     navigateAuth(isAppDomain ? 'login' : 'landing');
                 }
                 setUser(null);
@@ -425,7 +426,7 @@ function AppContent() {
         if (mounted && isLoadingUser) {
             console.warn("Auth check timed out, forcing default view.");
             setIsLoadingUser(false);
-            if (authView !== 'pricing' && authView !== 'terms' && authView !== 'privacy' && authView !== 'refund' && authView !== 'partners') {
+            if (authView !== 'landing' && authView !== 'pricing' && authView !== 'signup' && authView !== 'terms' && authView !== 'privacy' && authView !== 'refund' && authView !== 'partners' && authView !== 'about') {
                navigateAuth(isAppDomain ? 'login' : 'landing');
             }
         }
