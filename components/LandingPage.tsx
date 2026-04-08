@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight, Play, Mic, Shield, Zap, TrendingUp, Phone, Check, MessageSquare, AlertCircle, BarChart3, Star, Search, Bell, ChevronDown, Edit2, MoreVertical } from 'lucide-react';
+import { User } from '../types';
 import { PublicNavigation } from './PublicNavigation';
 import { Footer } from './Footer';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -24,6 +25,7 @@ import { ReplyLogo } from './ReplyLogo';
 import { EmergentLogo } from './EmergentLogo';
 
 interface LandingPageProps {
+  user?: User | null;
   onLoginClick: () => void;
   onSignupClick: () => void;
   onPricingClick: () => void;
@@ -34,7 +36,7 @@ interface LandingPageProps {
   onAboutClick: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignupClick, onPricingClick, onTermsClick, onPrivacyClick, onRefundClick, onPartnersClick, onAboutClick }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ user, onLoginClick, onSignupClick, onPricingClick, onTermsClick, onPrivacyClick, onRefundClick, onPartnersClick, onAboutClick }) => {
   const { t, isRTL } = useLanguage();
   
   // Marquee Animation Logic
@@ -111,6 +113,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
       
       {/* Navigation */}
       <PublicNavigation 
+        user={user}
         onLogin={onLoginClick}
         onSignup={onSignupClick}
         onPricing={onPricingClick}
@@ -140,20 +143,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
 
                 <div className="flex flex-col sm:flex-row items-center gap-4">
                     <button 
-                        onClick={onSignupClick}
+                        onClick={user ? () => window.location.href = 'https://app.revuqai.com' : onSignupClick}
                         className="px-8 py-4 bg-[#0500e2] text-white rounded-full font-bold text-lg hover:bg-[#0400c0] transition-all flex items-center justify-center gap-4 group shadow-lg shadow-blue-500/20"
                     >
-                        {t('nav.get_started')} 
+                        {user ? 'Go to Dashboard' : t('nav.get_started')} 
                         <div className="w-8 h-8 rounded-full bg-white text-[#0500e2] flex items-center justify-center group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform">
                             <ArrowRight size={18} className={isRTL ? 'rotate-180' : ''} />
                         </div>
                     </button>
-                    <button 
-                        onClick={onLoginClick}
-                        className="px-10 py-4 bg-transparent border-2 border-[#0500e2] text-[#0500e2] dark:text-blue-400 dark:border-blue-400 rounded-full font-bold text-lg hover:bg-[#0500e2] hover:text-white dark:hover:bg-blue-400 dark:hover:text-slate-900 transition-all"
-                    >
-                        Contact us
-                    </button>
+                    {!user && (
+                        <button 
+                            onClick={onLoginClick}
+                            className="px-10 py-4 bg-transparent border-2 border-[#0500e2] text-[#0500e2] dark:text-blue-400 dark:border-blue-400 rounded-full font-bold text-lg hover:bg-[#0500e2] hover:text-white dark:hover:bg-blue-400 dark:hover:text-slate-900 transition-all"
+                        >
+                            Contact us
+                        </button>
+                    )}
                 </div>
             </div>
 

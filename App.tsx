@@ -337,7 +337,10 @@ function AppContent() {
         }
 
         if (isProductionLanding) {
-            window.location.href = 'https://app.revuqai.com';
+            // We no longer automatically redirect to app domain.
+            // This prevents loops and allows users to view the landing page even if logged in.
+            // They can still click "Login" or "Dashboard" to go to the app.
+            setIsLoadingUser(false);
             return;
         }
 
@@ -1019,6 +1022,7 @@ function AppContent() {
             className="w-full min-h-screen"
           >
               <LandingPage 
+                user={user}
                 onLoginClick={handleLandingLoginClick} 
                 onSignupClick={handleLandingSignupClick} 
                 onPricingClick={() => navigateAuth('pricing')}

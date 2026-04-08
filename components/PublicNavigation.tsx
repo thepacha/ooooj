@@ -1,10 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { Menu, X, ArrowRight, Globe } from 'lucide-react';
+import { User } from '../types';
 import { RevuLogo } from './RevuLogo';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface PublicNavigationProps {
+  user?: User | null;
   onLogin?: () => void;
   onSignup?: () => void;
   onPricing?: () => void;
@@ -14,6 +16,7 @@ interface PublicNavigationProps {
 }
 
 export const PublicNavigation: React.FC<PublicNavigationProps> = ({ 
+  user,
   onLogin, 
   onSignup, 
   onPricing, 
@@ -92,28 +95,39 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
                 </button>
 
                 <div className="flex items-center gap-2">
-                    <button 
-                        onClick={() => handleNavClick(onLogin)} 
-                        className={`text-sm font-medium transition-colors px-4 py-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 ${
-                            activePage === 'login' 
-                            ? 'text-slate-900 dark:text-white cursor-default bg-slate-100 dark:bg-slate-800' 
-                            : 'text-slate-900 dark:text-slate-200'
-                        }`}
-                    >
-                        {t('nav.login')}
-                    </button>
-                    
-                    <button 
-                        onClick={() => handleNavClick(onSignup)}
-                        className={`px-5 py-2.5 text-sm font-medium rounded-full transition-all flex items-center gap-2 ${
-                            activePage === 'signup'
-                            ? 'bg-[#0500e2] dark:bg-white text-white dark:text-slate-900 cursor-default'
-                            : 'bg-[#0500e2] dark:bg-white text-white dark:text-slate-900 hover:scale-105'
-                        }`}
-                    >
-                        {t('nav.get_started')}
-                        <ArrowRight size={16} className={isRTL ? 'rotate-180' : ''} />
-                    </button>
+                    {user ? (
+                        <button 
+                            onClick={() => window.location.href = 'https://app.revuqai.com'}
+                            className="px-6 py-2.5 bg-[#0500e2] dark:bg-white text-white dark:text-slate-900 rounded-full font-bold text-sm hover:scale-105 transition-all shadow-lg shadow-blue-500/20"
+                        >
+                            Dashboard
+                        </button>
+                    ) : (
+                        <>
+                            <button 
+                                onClick={() => handleNavClick(onLogin)} 
+                                className={`text-sm font-medium transition-colors px-4 py-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 ${
+                                    activePage === 'login' 
+                                    ? 'text-slate-900 dark:text-white cursor-default bg-slate-100 dark:bg-slate-800' 
+                                    : 'text-slate-900 dark:text-slate-200'
+                                }`}
+                            >
+                                {t('nav.login')}
+                            </button>
+                            
+                            <button 
+                                onClick={() => handleNavClick(onSignup)}
+                                className={`px-5 py-2.5 text-sm font-medium rounded-full transition-all flex items-center gap-2 ${
+                                    activePage === 'signup'
+                                    ? 'bg-[#0500e2] dark:bg-white text-white dark:text-slate-900 cursor-default'
+                                    : 'bg-[#0500e2] dark:bg-white text-white dark:text-slate-900 hover:scale-105'
+                                }`}
+                            >
+                                {t('nav.get_started')}
+                                <ArrowRight size={16} className={isRTL ? 'rotate-180' : ''} />
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 

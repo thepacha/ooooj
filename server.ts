@@ -305,6 +305,19 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), "dist");
+    
+    // Serve static landing page for main domain root
+    app.get("/", (req, res, next) => {
+      const hostname = req.hostname;
+      if (hostname === 'revuqai.com' || hostname === 'www.revuqai.com') {
+        // Serve the static landing page HTML
+        // We can reuse the landing-v2 logic or just send a file if we had one
+        // For now, let's redirect to /landing-v2 or serve it directly
+        return res.redirect('/landing-v2');
+      }
+      next();
+    });
+
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
