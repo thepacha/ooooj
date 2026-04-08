@@ -2,7 +2,6 @@
 import React from 'react';
 import { RevuLogo } from './RevuLogo';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Linkedin, Twitter, Facebook, Instagram } from 'lucide-react';
 
 interface FooterProps {
   onTermsClick?: () => void;
@@ -26,40 +25,6 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, on
                     <p className="text-slate-500 text-sm max-w-xs mb-6 leading-relaxed">
                         {t('landing.footer.desc')}
                     </p>
-                    <div className="flex items-center gap-3 mt-8">
-                        <a 
-                            href="https://www.linkedin.com/company/revuqai" 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-500 hover:bg-[#0077b5] hover:border-[#0077b5] hover:text-white hover:-translate-y-1 transition-all duration-300 shadow-sm"
-                            aria-label="LinkedIn"
-                        >
-                            <Linkedin size={20} />
-                        </a>
-                        <a 
-                            href="https://x.com/revuqai1" 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-500 hover:bg-black hover:border-black hover:text-white hover:-translate-y-1 transition-all duration-300 shadow-sm"
-                            aria-label="X (Twitter)"
-                        >
-                            <Twitter size={20} />
-                        </a>
-                        <a 
-                            href="#" 
-                            className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-500 hover:bg-[#1877f2] hover:border-[#1877f2] hover:text-white hover:-translate-y-1 transition-all duration-300 shadow-sm"
-                            aria-label="Facebook"
-                        >
-                            <Facebook size={20} />
-                        </a>
-                        <a 
-                            href="#" 
-                            className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-500 hover:bg-[#E4405F] hover:border-[#E4405F] hover:text-white hover:-translate-y-1 transition-all duration-300 shadow-sm"
-                            aria-label="Instagram"
-                        >
-                            <Instagram size={20} />
-                        </a>
-                    </div>
                 </div>
                 
                 {/* Product Column */}

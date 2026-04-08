@@ -91,7 +91,7 @@ const safeReplaceState = (data: any, unused: string, url: string) => {
 function AppContent() {
   // Domain Detection
   const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-  const isAppDomain = hostname.startsWith('app.') || hostname.includes('localhost') || hostname.includes('stackblitz') || hostname.includes('run.app');
+  const isAppDomain = hostname.startsWith('app.');
   const isProductionLanding = hostname === 'revuqai.com' || hostname === 'www.revuqai.com';
 
   const [user, setUser] = useState<User | null>(null);
@@ -325,8 +325,8 @@ function AppContent() {
     const processSession = async (session: any) => {
         if (!session) {
             if (mounted) {
-                // If trying to access protected app pages without session, redirect to login/landing
-                if (authView === 'app') {
+                // If on public pages, stay there. Otherwise go to login/landing.
+                if (authView !== 'pricing' && authView !== 'signup' && authView !== 'terms' && authView !== 'privacy' && authView !== 'refund' && authView !== 'partners') {
                     navigateAuth(isAppDomain ? 'login' : 'landing');
                 }
                 setUser(null);
@@ -425,7 +425,7 @@ function AppContent() {
         if (mounted && isLoadingUser) {
             console.warn("Auth check timed out, forcing default view.");
             setIsLoadingUser(false);
-            if (authView === 'app') {
+            if (authView !== 'pricing' && authView !== 'terms' && authView !== 'privacy' && authView !== 'refund' && authView !== 'partners') {
                navigateAuth(isAppDomain ? 'login' : 'landing');
             }
         }
@@ -437,9 +437,7 @@ function AppContent() {
             supabase.auth.signOut().then(() => {
                 if(mounted) {
                     setIsLoadingUser(false);
-                    if (authView === 'app') {
-                        navigateAuth(isAppDomain ? 'login' : 'landing');
-                    }
+                    navigateAuth(isAppDomain ? 'login' : 'landing');
                 }
             });
             return;
@@ -450,9 +448,7 @@ function AppContent() {
         supabase.auth.signOut();
         if(mounted) {
             setIsLoadingUser(false);
-            if (authView === 'app') {
-                navigateAuth(isAppDomain ? 'login' : 'landing');
-            }
+            navigateAuth(isAppDomain ? 'login' : 'landing');
         }
     });
 
