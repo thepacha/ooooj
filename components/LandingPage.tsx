@@ -31,9 +31,10 @@ interface LandingPageProps {
   onPrivacyClick: () => void;
   onRefundClick: () => void;
   onPartnersClick: () => void;
+  onAboutClick: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignupClick, onPricingClick, onTermsClick, onPrivacyClick, onRefundClick, onPartnersClick }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignupClick, onPricingClick, onTermsClick, onPrivacyClick, onRefundClick, onPartnersClick, onAboutClick }) => {
   const { t, isRTL } = useLanguage();
   
   // Marquee Animation Logic
@@ -114,6 +115,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
         onSignup={onSignupClick}
         onPricing={onPricingClick}
         onLanding={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onAbout={onAboutClick}
         activePage="landing"
       />
 
@@ -732,6 +734,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignup
         onPrivacyClick={onPrivacyClick} 
         onRefundClick={onRefundClick}
         onPartnersClick={onPartnersClick}
+        onAboutClick={onAboutClick}
       />
     </div>
   );

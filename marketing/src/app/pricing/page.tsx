@@ -1,38 +1,11 @@
+"use client";
 
 import React, { useState } from 'react';
-import { Check, X, Zap, ChevronDown, ChevronUp, Users, Sparkles, Shield, Globe, Brain, Info, CreditCard, Star, ArrowRight, Crown } from 'lucide-react';
-import { PublicNavigation } from './PublicNavigation';
-import { Footer } from './Footer';
-import { useLanguage } from '../contexts/LanguageContext';
+import { Check, Star, ArrowRight, Crown, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 
-interface PricingProps {
-  onPlanSelect?: (plan: string) => void;
-  isLoggedIn?: boolean;
-  onBack?: () => void;
-  onLogin?: () => void;
-  onSignup?: () => void;
-  onTermsClick?: () => void;
-  onPrivacyClick?: () => void;
-  onRefundClick?: () => void;
-  onAboutClick?: () => void;
-  onPartnersClick?: () => void;
-}
-
-export const Pricing: React.FC<PricingProps> = ({ 
-  onPlanSelect, 
-  isLoggedIn = false, 
-  onBack, 
-  onLogin, 
-  onSignup, 
-  onTermsClick, 
-  onPrivacyClick, 
-  onRefundClick,
-  onAboutClick,
-  onPartnersClick
-}) => {
+export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const { t, isRTL } = useLanguage();
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -45,126 +18,111 @@ export const Pricing: React.FC<PricingProps> = ({
   const plans = [
     {
       id: 'trial',
-      name: t('pricing.plans.trial.name'),
-      subtitle: t('pricing.plans.trial.subtitle'),
-      description: t('pricing.plans.trial.desc'),
-      price: 1,
+      name: 'Free Trial',
+      subtitle: 'Try before you buy',
+      description: 'Experience the power of AI training with our 14-day free trial.',
+      price: 0,
       period: 'one-time',
-      seats: t('pricing.plans.trial.seats'),
-      volume: t('pricing.plans.trial.volume'),
+      seats: '1 Seat',
+      volume: '10 Scenarios',
       features: [
-        t('pricing.plans.trial.features.0'),
-        t('pricing.plans.trial.features.1'),
-        t('pricing.plans.trial.features.2'),
-        t('pricing.plans.trial.features.3'),
-        t('pricing.plans.trial.features.4')
+        'Access to basic scenarios',
+        'Standard voice models',
+        'Basic analytics',
+        'Email support',
+        '14-day duration'
       ],
-      cta: t('pricing.plans.trial.cta'),
+      cta: 'Start Free Trial',
       style: 'trial',
       minSeats: 1
     },
     {
       id: 'starter',
-      name: t('pricing.plans.starter.name'),
-      subtitle: t('pricing.plans.starter.subtitle'),
-      description: t('pricing.plans.starter.desc'),
+      name: 'Starter',
+      subtitle: 'For small teams',
+      description: 'Perfect for small teams getting started with AI training.',
       price: calculatePrice(20),
       period: '/mo',
-      seats: t('pricing.plans.starter.seats'),
-      volume: t('pricing.plans.starter.volume'),
+      seats: 'Up to 5 Seats',
+      volume: '50 Scenarios/mo',
       features: [
-        t('pricing.plans.starter.features.0'),
-        t('pricing.plans.starter.features.1'),
-        t('pricing.plans.starter.features.2'),
-        t('pricing.plans.starter.features.3'),
-        t('pricing.plans.starter.features.4')
+        'All Trial features',
+        'Custom scenario builder',
+        'Advanced analytics',
+        'Priority email support',
+        'Team management'
       ],
-      cta: isLoggedIn ? t('pricing.plans.starter.cta_logged_in') : t('pricing.plans.starter.cta_logged_out'),
+      cta: 'Get Started',
       style: 'standard',
       minSeats: 1
     },
     {
       id: 'pro',
-      name: t('pricing.plans.pro.name'),
-      subtitle: t('pricing.plans.pro.subtitle'),
-      description: t('pricing.plans.pro.desc'),
+      name: 'Professional',
+      subtitle: 'Most Popular',
+      description: 'For growing teams that need advanced capabilities.',
       price: calculatePrice(59),
       period: '/seat/mo',
-      seats: t('pricing.plans.pro.seats'),
-      volume: t('pricing.plans.pro.volume'),
+      seats: 'Unlimited Seats',
+      volume: 'Unlimited Scenarios',
       features: [
-        t('pricing.plans.pro.features.0'),
-        t('pricing.plans.pro.features.1'),
-        t('pricing.plans.pro.features.2'),
-        t('pricing.plans.pro.features.3'),
-        t('pricing.plans.pro.features.4'),
-        t('pricing.plans.pro.features.5')
+        'All Starter features',
+        'AI Auto-generation',
+        'Local accents & dialects',
+        'API access',
+        'Custom branding',
+        'Dedicated success manager'
       ],
-      cta: isLoggedIn ? t('pricing.plans.pro.cta_logged_in') : t('pricing.plans.pro.cta_logged_out'),
+      cta: 'Get Professional',
       style: 'popular',
       highlight: true,
       minSeats: 3
     },
     {
       id: 'enterprise',
-      name: t('pricing.plans.enterprise.name'),
-      subtitle: t('pricing.plans.enterprise.subtitle'),
-      description: t('pricing.plans.enterprise.desc'),
+      name: 'Enterprise',
+      subtitle: 'For large organizations',
+      description: 'Custom solutions for enterprise-scale deployments.',
       price: calculatePrice(199),
       period: '/seat/mo',
-      seats: t('pricing.plans.enterprise.seats'),
-      volume: t('pricing.plans.enterprise.volume'),
+      seats: 'Unlimited Seats',
+      volume: 'Unlimited Scenarios',
       features: [
-        t('pricing.plans.enterprise.features.0'),
-        t('pricing.plans.enterprise.features.1'),
-        t('pricing.plans.enterprise.features.2'),
-        t('pricing.plans.enterprise.features.3'),
-        t('pricing.plans.enterprise.features.4'),
-        t('pricing.plans.enterprise.features.5')
+        'All Pro features',
+        'SSO & Advanced Security',
+        'On-premise deployment options',
+        'Custom AI model training',
+        '24/7 phone support',
+        'SLA guarantees'
       ],
-      cta: t('pricing.plans.enterprise.cta'),
+      cta: 'Contact Sales',
       style: 'enterprise',
       minSeats: 5
     }
   ];
 
   const faqs = [
-    { q: t('pricing.faq.1.q'), a: t('pricing.faq.1.a') },
-    { q: t('pricing.faq.2.q'), a: t('pricing.faq.2.a') },
-    { q: t('pricing.faq.3.q'), a: t('pricing.faq.3.a') },
-    { q: t('pricing.faq.4.q'), a: t('pricing.faq.4.a') },
+    { q: 'Can I change my plan later?', a: 'Yes, you can upgrade or downgrade your plan at any time. Changes will be reflected in your next billing cycle.' },
+    { q: 'What payment methods do you accept?', a: 'We accept all major credit cards, PayPal, and wire transfers for annual enterprise plans.' },
+    { q: 'Is there a discount for non-profits?', a: 'Yes, we offer a 50% discount for registered non-profit organizations. Please contact our sales team for more information.' },
+    { q: 'Do you offer refunds?', a: 'We offer a 30-day money-back guarantee for all our paid plans. If you are not satisfied, simply contact our support team.' },
   ];
 
   return (
-    <div 
-        className={`animate-fade-in ${onBack ? 'min-h-screen bg-white dark:bg-slate-950' : ''} ${isRTL ? 'rtl' : ''}`}
-        dir={isRTL ? 'rtl' : 'ltr'}
-    >
-      
-      {onBack && (
-        <PublicNavigation 
-            onLanding={onBack}
-            onPricing={() => {}} 
-            onLogin={onLogin} 
-            onSignup={onSignup}
-            onAbout={onAboutClick}
-            activePage="pricing"
-        />
-      )}
-
-      <div className={`py-12 md:py-24 ${onBack ? 'pt-32' : ''}`}>
+    <div className="min-h-screen bg-white dark:bg-slate-950">
+      <div className="py-12 md:py-24 pt-32">
         
         {/* Header Content */}
         <div className="max-w-4xl mx-auto text-center mb-20 px-6">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-sm font-bold mb-8 border border-emerald-100 dark:border-emerald-900/50 shadow-sm">
-                <Star size={14} fill="currentColor" /> {t('pricing.priority_support')}
+                <Star size={14} fill="currentColor" /> Priority Support Included
             </div>
             
             <h2 className="text-5xl md:text-7xl font-serif font-bold text-slate-900 dark:text-white mb-6 tracking-tight">
-                {t('pricing.title')}
+                Simple, transparent pricing
             </h2>
             <p className="text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto mb-12 font-light">
-                {t('pricing.subtitle')}
+                Choose the perfect plan for your team. No hidden fees.
             </p>
 
             {/* Toggle */}
@@ -177,20 +135,20 @@ export const Pricing: React.FC<PricingProps> = ({
                     start-1.5 
                     ${billingCycle === 'monthly' 
                         ? 'translate-x-0' 
-                        : (isRTL ? '-translate-x-[calc(100%+4px)]' : 'translate-x-[calc(100%+4px)]')
+                        : 'translate-x-[calc(100%+4px)]'
                     }`}
                 ></div>
                 <button 
                     onClick={(e) => { e.stopPropagation(); setBillingCycle('monthly'); }}
                     className={`relative z-10 w-36 py-2.5 rounded-full text-sm font-bold transition-colors text-center ${billingCycle === 'monthly' ? 'text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                    {t('pricing.monthly')}
+                    Monthly
                 </button>
                 <button 
                     onClick={(e) => { e.stopPropagation(); setBillingCycle('yearly'); }}
                     className={`relative z-10 w-36 py-2.5 rounded-full text-sm font-bold transition-colors flex items-center justify-center gap-2 ${billingCycle === 'yearly' ? 'text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                    {t('pricing.yearly')} <span className="text-[10px] text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-md">{t('pricing.save_text')}</span>
+                    Yearly <span className="text-[10px] text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-md">Save 25%</span>
                 </button>
             </div>
         </div>
@@ -213,7 +171,7 @@ export const Pricing: React.FC<PricingProps> = ({
                     >
                         {plan.highlight && (
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0500e2] text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
-                                {t('pricing.most_popular')}
+                                Most Popular
                             </div>
                         )}
 
@@ -245,11 +203,11 @@ export const Pricing: React.FC<PricingProps> = ({
                                 <div className={`mt-4 p-3 rounded-xl text-xs font-medium text-center w-full ${
                                     plan.style === 'enterprise' ? 'bg-slate-800 text-slate-300' : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
                                 }`}>
-                                    {t('pricing.starts_at')} <strong dir="ltr">${plan.price * plan.minSeats}/mo</strong>
-                                    <br/>({t('pricing.includes_seats').replace('{n}', plan.minSeats.toString())})
+                                    Starts at <strong dir="ltr">${plan.price * plan.minSeats}/mo</strong>
+                                    <br/>(Includes {plan.minSeats} seats)
                                 </div>
                             ) : (
-                                <div className="mt-4 h-[42px]"></div> // Spacer
+                                <div className="mt-4 h-[42px]"></div>
                             )}
                         </div>
 
@@ -268,8 +226,8 @@ export const Pricing: React.FC<PricingProps> = ({
                             ))}
                         </div>
 
-                        <button
-                            onClick={() => onPlanSelect && onPlanSelect(plan.id)}
+                        <a
+                            href="https://ais-dev-i3rbxweh47euyezi3wnvsb-312452967229.europe-west2.run.app"
                             className={`w-full py-4 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 group ${
                                 plan.style === 'enterprise'
                                 ? 'bg-white text-slate-900 hover:bg-slate-100'
@@ -278,8 +236,8 @@ export const Pricing: React.FC<PricingProps> = ({
                                 : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90'
                             }`}
                         >
-                            {plan.cta} <ArrowRight size={16} className={`transition-transform ${isRTL ? 'rotate-180 group-hover:-translate-x-1' : 'group-hover:translate-x-1'}`} />
-                        </button>
+                            {plan.cta} <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+                        </a>
                     </div>
                 ))}
             </div>
@@ -287,74 +245,69 @@ export const Pricing: React.FC<PricingProps> = ({
 
         {/* Feature Table (Desktop) */}
         <div className="max-w-7xl mx-auto px-6 mb-32 hidden lg:block">
-            <h3 className="text-3xl font-serif font-bold text-center mb-16 text-slate-900 dark:text-white">{t('pricing.compare.title')}</h3>
+            <h3 className="text-3xl font-serif font-bold text-center mb-16 text-slate-900 dark:text-white">Compare Plans</h3>
             
             <div className="overflow-hidden">
                 <table className="w-full border-collapse">
                     <thead>
                         <tr>
                             <th className="text-start p-6 w-1/3"></th>
-                            <th className="p-6 text-center text-lg font-bold text-slate-900 dark:text-white">{t('pricing.plans.starter.name')}</th>
-                            <th className="p-6 text-center text-lg font-bold text-[#0500e2]">{t('pricing.plans.pro.name')}</th>
-                            <th className="p-6 text-center text-lg font-bold text-slate-900 dark:text-white">{t('pricing.plans.enterprise.name')}</th>
+                            <th className="p-6 text-center text-lg font-bold text-slate-900 dark:text-white">Starter</th>
+                            <th className="p-6 text-center text-lg font-bold text-[#0500e2]">Professional</th>
+                            <th className="p-6 text-center text-lg font-bold text-slate-900 dark:text-white">Enterprise</th>
                         </tr>
                     </thead>
                     <tbody className="text-sm">
-                        {/* Section Header */}
-                        <tr><td colSpan={4} className="p-6 bg-slate-50 dark:bg-slate-900/50 font-bold text-slate-500 uppercase tracking-wider rounded-xl text-start">{t('pricing.compare.core_usage')}</td></tr>
+                        <tr><td colSpan={4} className="p-6 bg-slate-50 dark:bg-slate-900/50 font-bold text-slate-500 uppercase tracking-wider rounded-xl text-start">Core Usage</td></tr>
                         
                         <tr className="border-b border-slate-100 dark:border-slate-800">
-                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300 text-start">{t('pricing.compare.training_sessions')}</td>
+                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300 text-start">Training Sessions</td>
                             <td className="p-6 text-center text-slate-600 dark:text-slate-400">80 / mo</td>
                             <td className="p-6 text-center font-bold text-[#0500e2]">300 / mo</td>
-                            <td className="p-6 text-center font-bold text-slate-900 dark:text-white">{t('pricing.val.unlimited')}</td>
+                            <td className="p-6 text-center font-bold text-slate-900 dark:text-white">Unlimited</td>
                         </tr>
                         <tr className="border-b border-slate-100 dark:border-slate-800">
-                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300 text-start">{t('pricing.compare.active_scenarios')}</td>
+                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300 text-start">Active Scenarios</td>
                             <td className="p-6 text-center text-slate-600 dark:text-slate-400">15</td>
                             <td className="p-6 text-center font-bold text-[#0500e2]">80</td>
                             <td className="p-6 text-center font-bold text-slate-900 dark:text-white">250+</td>
                         </tr>
                         
-                        {/* Spacer */}
                         <tr><td className="h-8"></td></tr>
 
-                        {/* Section Header */}
-                        <tr><td colSpan={4} className="p-6 bg-slate-50 dark:bg-slate-900/50 font-bold text-slate-500 uppercase tracking-wider rounded-xl text-start">{t('pricing.compare.ai_capabilities')}</td></tr>
+                        <tr><td colSpan={4} className="p-6 bg-slate-50 dark:bg-slate-900/50 font-bold text-slate-500 uppercase tracking-wider rounded-xl text-start">AI Capabilities</td></tr>
 
                         <tr className="border-b border-slate-100 dark:border-slate-800">
-                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300 text-start">{t('pricing.compare.scenario_builder')}</td>
-                            <td className="p-6 text-center text-slate-600 dark:text-slate-400">{t('pricing.val.manual_only')}</td>
-                            <td className="p-6 text-center text-slate-600 dark:text-slate-400">{t('pricing.val.manual_only')}</td>
-                            <td className="p-6 text-center font-bold text-slate-900 dark:text-white flex items-center justify-center gap-2"><Sparkles size={14} className="text-[#0500e2]"/> {t('pricing.val.ai_auto_gen')}</td>
+                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300 text-start">Scenario Builder</td>
+                            <td className="p-6 text-center text-slate-600 dark:text-slate-400">Manual Only</td>
+                            <td className="p-6 text-center text-slate-600 dark:text-slate-400">Manual Only</td>
+                            <td className="p-6 text-center font-bold text-slate-900 dark:text-white flex items-center justify-center gap-2"><Sparkles size={14} className="text-[#0500e2]"/> AI Auto-Gen</td>
                         </tr>
                         <tr className="border-b border-slate-100 dark:border-slate-800">
-                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300 text-start">{t('pricing.compare.voice_dialects')}</td>
-                            <td className="p-6 text-center text-slate-600 dark:text-slate-400">{t('pricing.val.standard_neural')}</td>
-                            <td className="p-6 text-center text-slate-600 dark:text-slate-400">{t('pricing.val.standard_neural')}</td>
-                            <td className="p-6 text-center font-bold text-slate-900 dark:text-white">{t('pricing.val.local_accents')}</td>
+                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300 text-start">Voice Dialects</td>
+                            <td className="p-6 text-center text-slate-600 dark:text-slate-400">Standard Neural</td>
+                            <td className="p-6 text-center text-slate-600 dark:text-slate-400">Standard Neural</td>
+                            <td className="p-6 text-center font-bold text-slate-900 dark:text-white">Local Accents</td>
                         </tr>
                         
-                        {/* Spacer */}
                         <tr><td className="h-8"></td></tr>
 
-                        {/* Section Header */}
-                        <tr><td colSpan={4} className="p-6 bg-slate-50 dark:bg-slate-900/50 font-bold text-slate-500 uppercase tracking-wider rounded-xl text-start">{t('pricing.compare.admin_support')}</td></tr>
+                        <tr><td colSpan={4} className="p-6 bg-slate-50 dark:bg-slate-900/50 font-bold text-slate-500 uppercase tracking-wider rounded-xl text-start">Admin & Support</td></tr>
 
                         <tr className="border-b border-slate-100 dark:border-slate-800">
-                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300 text-start">{t('pricing.compare.customer_support')}</td>
+                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300 text-start">Customer Support</td>
                             <td className="p-6 text-center font-bold text-slate-700 dark:text-slate-300">
-                                <div className="flex items-center justify-center gap-2"><Star size={14} className="text-emerald-500" fill="currentColor" /> {t('pricing.val.priority')}</div>
+                                <div className="flex items-center justify-center gap-2"><Star size={14} className="text-emerald-500" fill="currentColor" /> Priority</div>
                             </td>
                             <td className="p-6 text-center text-[#0500e2] font-bold">
-                                <div className="flex items-center justify-center gap-2"><Star size={14} fill="currentColor" /> {t('pricing.val.priority')}</div>
+                                <div className="flex items-center justify-center gap-2"><Star size={14} fill="currentColor" /> Priority</div>
                             </td>
                             <td className="p-6 text-center text-slate-900 dark:text-white font-bold">
-                                <div className="flex items-center justify-center gap-2"><Crown size={14} className="text-yellow-500" fill="currentColor"/> {t('pricing.val.priority_dedicated')}</div>
+                                <div className="flex items-center justify-center gap-2"><Crown size={14} className="text-yellow-500" fill="currentColor"/> Dedicated</div>
                             </td>
                         </tr>
                         <tr className="border-b border-slate-100 dark:border-slate-800">
-                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300 text-start">{t('pricing.compare.sso')}</td>
+                            <td className="p-6 font-medium text-slate-700 dark:text-slate-300 text-start">SSO</td>
                             <td className="p-6 text-center"><div className="w-1 h-1 bg-slate-300 rounded-full mx-auto"></div></td>
                             <td className="p-6 text-center"><div className="w-1 h-1 bg-slate-300 rounded-full mx-auto"></div></td>
                             <td className="p-6 text-center"><div className="flex justify-center"><Check size={20} className="text-emerald-500"/></div></td>
@@ -366,7 +319,7 @@ export const Pricing: React.FC<PricingProps> = ({
 
         {/* FAQ */}
         <div className="max-w-3xl mx-auto px-6">
-            <h3 className="text-3xl font-serif font-bold text-center mb-12 text-slate-900 dark:text-white">{t('pricing.faq.title')}</h3>
+            <h3 className="text-3xl font-serif font-bold text-center mb-12 text-slate-900 dark:text-white">Frequently Asked Questions</h3>
             <div className="space-y-4">
                 {faqs.map((faq, i) => (
                     <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-300 hover:shadow-md">
@@ -387,16 +340,6 @@ export const Pricing: React.FC<PricingProps> = ({
             </div>
         </div>
       </div>
-
-      {onBack && (
-        <Footer 
-            onTermsClick={onTermsClick} 
-            onPrivacyClick={onPrivacyClick} 
-            onRefundClick={onRefundClick}
-            onAboutClick={onAboutClick}
-            onPartnersClick={onPartnersClick}
-        />
-      )}
     </div>
   );
-};
+}
