@@ -18,64 +18,6 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
-  // SEO-friendly Landing V2 route
-  app.get("/landing-v2", (req, res) => {
-    const html = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Revu AI - Quality Assurance & Coaching Insights</title>
-    <meta name="description" content="Revu AI automates transcript scoring and provides actionable coaching insights for modern support teams. Get started for free today.">
-    <meta name="keywords" content="AI QA, Quality Assurance, Transcript Scoring, Coaching Insights, Support Team Performance">
-    <meta property="og:title" content="Revu AI - Quality Assurance & Coaching Insights">
-    <meta property="og:description" content="Revu AI automates transcript scoring and provides actionable coaching insights for modern support teams.">
-    <meta property="og:type" content="website">
-    <link rel="stylesheet" href="/index.css">
-</head>
-<body>
-    <div id="root">
-        <main>
-            <nav>
-                <div>REVU</div>
-                <ul>
-                    <li>Features</li>
-                    <li>Solutions</li>
-                    <li>Pricing</li>
-                </ul>
-            </nav>
-            <header>
-                <h1>Quality Assurance Automated by AI</h1>
-                <p>Stop manually reviewing transcripts. Revu AI analyzes every interaction, scores them against your rubrics, and identifies coaching opportunities in seconds.</p>
-                <a href="/signup">Start Your Free Trial</a>
-            </header>
-            <section id="features">
-                <h2>Everything you need to scale QA</h2>
-                <article>
-                    <h3>Automated Scoring</h3>
-                    <p>Upload transcripts and get instant scores based on your custom quality rubrics.</p>
-                </article>
-                <article>
-                    <h3>Coaching Insights</h3>
-                    <p>AI identifies specific areas for improvement and provides actionable feedback for agents.</p>
-                </article>
-                <article>
-                    <h3>Trend Analysis</h3>
-                    <p>Track performance over time across teams, agents, and specific quality metrics.</p>
-                </article>
-            </section>
-            <footer>
-                <p>&copy; 2026 Revu AI. Built with Gemini 3 Flash.</p>
-            </footer>
-        </main>
-    </div>
-    <script type="module" src="/src/main.tsx"></script>
-</body>
-</html>`;
-    res.send(html);
-  });
-
   // Helper to split text into chunks of max length (1900 to be safe under 2000 limit)
   const splitText = (str: string, maxLength: number): string[] => {
       const chunks: string[] = [];

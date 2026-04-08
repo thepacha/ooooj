@@ -8,10 +8,9 @@ interface FooterProps {
   onPrivacyClick?: () => void;
   onRefundClick?: () => void;
   onPartnersClick?: () => void;
-  onAboutClick?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, onRefundClick, onPartnersClick, onAboutClick }) => {
+export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, onRefundClick, onPartnersClick }) => {
   const { t } = useLanguage();
 
   return (
@@ -42,11 +41,7 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, on
                 <div>
                     <h4 className="font-bold text-slate-900 dark:text-white mb-4 text-sm">{t('landing.footer.company')}</h4>
                     <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
-                        <li>
-                            <button onClick={onAboutClick} className="hover:text-[#0500e2] transition-colors text-start">
-                                About Us
-                            </button>
-                        </li>
+                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">About Us</a></li>
                         <li><a href="#" className="hover:text-[#0500e2] transition-colors">Careers</a></li>
                         <li><a href="#" className="hover:text-[#0500e2] transition-colors">Blog</a></li>
                         <li>
