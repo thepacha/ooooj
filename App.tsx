@@ -944,11 +944,6 @@ function AppContent() {
                 onLogin={handleLandingLoginClick} 
                 onSignup={handleLandingSignupClick} 
                 onPricing={() => navigateAuth('pricing')}
-                onAbout={() => navigateAuth('about')}
-                onPartners={() => navigateAuth('partners')}
-                onTermsClick={() => navigateAuth('terms')}
-                onPrivacyClick={() => navigateAuth('privacy')}
-                onRefundClick={() => navigateAuth('refund')}
               />
           </div>
       )
@@ -962,11 +957,6 @@ function AppContent() {
                 onLogin={handleLandingLoginClick} 
                 onSignup={handleLandingSignupClick} 
                 onPricing={() => navigateAuth('pricing')}
-                onAbout={() => navigateAuth('about')}
-                onPartners={() => navigateAuth('partners')}
-                onTermsClick={() => navigateAuth('terms')}
-                onPrivacyClick={() => navigateAuth('privacy')}
-                onRefundClick={() => navigateAuth('refund')}
               />
           </div>
       )
@@ -980,11 +970,6 @@ function AppContent() {
                 onLogin={handleLandingLoginClick} 
                 onSignup={handleLandingSignupClick} 
                 onPricing={() => navigateAuth('pricing')}
-                onAbout={() => navigateAuth('about')}
-                onPartners={() => navigateAuth('partners')}
-                onTermsClick={() => navigateAuth('terms')}
-                onPrivacyClick={() => navigateAuth('privacy')}
-                onRefundClick={() => navigateAuth('refund')}
               />
           </div>
       )
@@ -1078,8 +1063,6 @@ function AppContent() {
                 onTermsClick={() => navigateAuth('terms')}
                 onPrivacyClick={() => navigateAuth('privacy')}
                 onRefundClick={() => navigateAuth('refund')}
-                onAboutClick={() => navigateAuth('about')}
-                onPartnersClick={() => navigateAuth('partners')}
               />
           </motion.div>
         </AnimatePresence>

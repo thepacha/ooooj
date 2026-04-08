@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { PublicNavigation } from './PublicNavigation';
-import { Footer } from './Footer';
 import { ArrowLeft } from 'lucide-react';
 
 interface TermsProps {
@@ -9,24 +8,9 @@ interface TermsProps {
   onLogin: () => void;
   onSignup: () => void;
   onPricing: () => void;
-  onAbout?: () => void;
-  onPartners?: () => void;
-  onTermsClick?: () => void;
-  onPrivacyClick?: () => void;
-  onRefundClick?: () => void;
 }
 
-export const Terms: React.FC<TermsProps> = ({ 
-  onBack, 
-  onLogin, 
-  onSignup, 
-  onPricing,
-  onAbout,
-  onPartners,
-  onTermsClick,
-  onPrivacyClick,
-  onRefundClick
-}) => {
+export const Terms: React.FC<TermsProps> = ({ onBack, onLogin, onSignup, onPricing }) => {
   return (
     <div className="min-h-screen bg-[#f5f4f0] dark:bg-[#0a0a0a] font-sans text-slate-900 dark:text-slate-100 animate-fade-in">
       <PublicNavigation 
@@ -34,7 +18,6 @@ export const Terms: React.FC<TermsProps> = ({
         onLogin={onLogin}
         onSignup={onSignup}
         onPricing={onPricing}
-        onAbout={onAbout}
         activePage="landing" // Keep generic
       />
 
@@ -151,13 +134,6 @@ export const Terms: React.FC<TermsProps> = ({
             </section>
         </div>
       </div>
-      <Footer 
-        onTermsClick={onTermsClick}
-        onPrivacyClick={onPrivacyClick}
-        onRefundClick={onRefundClick}
-        onAboutClick={onAbout}
-        onPartnersClick={onPartners}
-      />
     </div>
   );
 };

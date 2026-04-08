@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { PublicNavigation } from './PublicNavigation';
-import { Footer } from './Footer';
 import { ArrowLeft } from 'lucide-react';
 
 interface RefundPolicyProps {
@@ -9,24 +8,9 @@ interface RefundPolicyProps {
   onLogin: () => void;
   onSignup: () => void;
   onPricing: () => void;
-  onAbout?: () => void;
-  onPartners?: () => void;
-  onTermsClick?: () => void;
-  onPrivacyClick?: () => void;
-  onRefundClick?: () => void;
 }
 
-export const RefundPolicy: React.FC<RefundPolicyProps> = ({ 
-  onBack, 
-  onLogin, 
-  onSignup, 
-  onPricing,
-  onAbout,
-  onPartners,
-  onTermsClick,
-  onPrivacyClick,
-  onRefundClick
-}) => {
+export const RefundPolicy: React.FC<RefundPolicyProps> = ({ onBack, onLogin, onSignup, onPricing }) => {
   return (
     <div className="min-h-screen bg-[#f5f4f0] dark:bg-[#0a0a0a] font-sans text-slate-900 dark:text-slate-100 animate-fade-in">
       <PublicNavigation 
@@ -34,7 +18,6 @@ export const RefundPolicy: React.FC<RefundPolicyProps> = ({
         onLogin={onLogin}
         onSignup={onSignup}
         onPricing={onPricing}
-        onAbout={onAbout}
         activePage="landing" 
       />
 
@@ -100,13 +83,6 @@ export const RefundPolicy: React.FC<RefundPolicyProps> = ({
             </section>
         </div>
       </div>
-      <Footer 
-        onTermsClick={onTermsClick}
-        onPrivacyClick={onPrivacyClick}
-        onRefundClick={onRefundClick}
-        onAboutClick={onAbout}
-        onPartnersClick={onPartners}
-      />
     </div>
   );
 };

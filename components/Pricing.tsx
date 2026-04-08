@@ -14,22 +14,9 @@ interface PricingProps {
   onTermsClick?: () => void;
   onPrivacyClick?: () => void;
   onRefundClick?: () => void;
-  onAboutClick?: () => void;
-  onPartnersClick?: () => void;
 }
 
-export const Pricing: React.FC<PricingProps> = ({ 
-  onPlanSelect, 
-  isLoggedIn = false, 
-  onBack, 
-  onLogin, 
-  onSignup, 
-  onTermsClick, 
-  onPrivacyClick, 
-  onRefundClick,
-  onAboutClick,
-  onPartnersClick
-}) => {
+export const Pricing: React.FC<PricingProps> = ({ onPlanSelect, isLoggedIn = false, onBack, onLogin, onSignup, onTermsClick, onPrivacyClick, onRefundClick }) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const { t, isRTL } = useLanguage();
@@ -147,7 +134,6 @@ export const Pricing: React.FC<PricingProps> = ({
             onPricing={() => {}} 
             onLogin={onLogin} 
             onSignup={onSignup}
-            onAbout={onAboutClick}
             activePage="pricing"
         />
       )}
@@ -393,8 +379,6 @@ export const Pricing: React.FC<PricingProps> = ({
             onTermsClick={onTermsClick} 
             onPrivacyClick={onPrivacyClick} 
             onRefundClick={onRefundClick}
-            onAboutClick={onAboutClick}
-            onPartnersClick={onPartnersClick}
         />
       )}
     </div>
