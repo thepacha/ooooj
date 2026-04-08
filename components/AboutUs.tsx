@@ -92,7 +92,7 @@ export const AboutUs: React.FC<AboutUsProps> = ({
               <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-8 items-start">
                 <div className="w-24 h-24 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center shrink-0 overflow-hidden">
                   <img
-  src="/Mohamed.png"
+  src="/mohamed.png"
   alt="Mohamed Ibrahim"
   className="w-full h-full object-cover"
 />
