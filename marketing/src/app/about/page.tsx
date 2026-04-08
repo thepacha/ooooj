@@ -1,46 +1,23 @@
+"use client";
+
 import React from 'react';
 import { motion } from 'motion/react';
 import { Linkedin, Mail } from 'lucide-react';
-import { PublicNavigation } from './PublicNavigation';
-import { Footer } from './Footer';
-import { useLanguage } from '../contexts/LanguageContext';
+import Link from 'next/link';
+import Image from 'next/image';
 
-interface AboutUsProps {
-  onLogin: () => void;
-  onSignup: () => void;
-  onPricing: () => void;
-  onBack: () => void;
-  onTermsClick?: () => void;
-  onPrivacyClick?: () => void;
-  onRefundClick?: () => void;
-  onPartnersClick?: () => void;
-}
-
-export const AboutUs: React.FC<AboutUsProps> = ({ 
-  onLogin, 
-  onSignup, 
-  onPricing, 
-  onBack,
-  onTermsClick,
-  onPrivacyClick,
-  onRefundClick,
-  onPartnersClick
-}) => {
-  const { isRTL } = useLanguage();
-
+export default function AboutPage() {
   return (
-    <div 
-      className={`min-h-screen bg-[#f8faff] dark:bg-[#020617] font-sans text-slate-900 dark:text-white overflow-x-hidden ${isRTL ? 'rtl' : ''}`}
-      dir={isRTL ? 'rtl' : 'ltr'}
-    >
-      <PublicNavigation 
-        onLogin={onLogin}
-        onSignup={onSignup}
-        onPricing={onPricing}
-        onLanding={onBack}
-        onAbout={() => {}}
-        activePage="about"
-      />
+    <div className="min-h-screen bg-[#f8faff] dark:bg-[#020617] font-sans text-slate-900 dark:text-white overflow-x-hidden">
+      <nav className="max-w-7xl mx-auto px-6 py-8 flex justify-between items-center fixed top-0 left-0 right-0 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md z-50 border-b border-slate-100 dark:border-slate-800">
+        <Link href="/" className="text-2xl font-bold tracking-tighter">REVU</Link>
+        <div className="flex gap-8 items-center font-medium">
+          <Link href="/pricing" className="hover:text-blue-600 transition-colors">Pricing</Link>
+          <Link href="https://app.revuqai.com/login" className="bg-slate-900 text-white px-5 py-2.5 rounded-full hover:bg-slate-800 transition-all">
+            Sign In
+          </Link>
+        </div>
+      </nav>
 
       <main className="pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 max-w-4xl mx-auto">
         <motion.div
@@ -90,11 +67,14 @@ export const AboutUs: React.FC<AboutUsProps> = ({
             <div className="mb-16">
               <h2 className="text-3xl font-bold mb-8 text-slate-900 dark:text-white">Our Team</h2>
               <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-8 items-start">
-                <div className="w-24 h-24 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center shrink-0 overflow-hidden">
-                  <img 
+                <div className="w-24 h-24 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center shrink-0 overflow-hidden relative">
+                  <Image 
                     src="/mohamed_ibrahim.jpeg" 
                     alt="Mohamed Ibrahim" 
-                    className="w-full h-full object-cover" 
+                    width={96}
+                    height={96}
+                    className="w-full h-full object-cover"
+                    unoptimized
                     referrerPolicy="no-referrer"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
@@ -138,7 +118,7 @@ export const AboutUs: React.FC<AboutUsProps> = ({
               </p>
               <a 
                 href="mailto:mohamed@revuqai.com" 
-                className="inline-flex items-center gap-3 px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white hover:border-[#0500e2] dark:hover:border-[#4b53fa] hover:text-[#0500e2] dark:hover:text-[#4b53fa] transition-all shadow-sm"
+                className="inline-flex items-center gap-3 px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white hover:border-[#0500e2] dark:hover:border-[#4b53fa] hover:text-[#0500e2] dark:hover:border-[#4b53fa] transition-all shadow-sm"
               >
                 <Mail size={20} />
                 <span className="font-medium">mohamed@revuqai.com</span>
@@ -151,25 +131,27 @@ export const AboutUs: React.FC<AboutUsProps> = ({
                 We're building the future of quality assurance and team training. Discover how our platform can transform your operations today.
               </p>
               <div className="flex justify-center">
-                <button 
-                  onClick={onSignup}
+                <Link 
+                  href="https://app.revuqai.com/signup"
                   className="px-8 py-4 bg-[#0500e2] text-white rounded-full font-bold text-lg hover:bg-[#0400c0] transition-all shadow-lg shadow-blue-500/20"
                 >
                   Get Started Now
-                </button>
+                </Link>
               </div>
             </div>
           </div>
         </motion.div>
       </main>
 
-      <Footer 
-        onTermsClick={onTermsClick} 
-        onPrivacyClick={onPrivacyClick} 
-        onRefundClick={onRefundClick}
-        onPartnersClick={onPartnersClick}
-        onAboutClick={() => {}}
-      />
+      <footer className="border-t border-slate-100 py-12 bg-white dark:bg-slate-950">
+        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center text-sm text-slate-500">
+          <div>© 2026 Revu AI. All rights reserved.</div>
+          <div className="flex gap-6">
+            <Link href="/privacy" className="hover:text-slate-900">Privacy</Link>
+            <Link href="/terms" className="hover:text-slate-900">Terms</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
-};
+}
