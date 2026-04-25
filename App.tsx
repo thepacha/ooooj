@@ -91,7 +91,7 @@ const safeReplaceState = (data: any, unused: string, url: string) => {
 };
 
 // Inner App Component to use the Language Context
-function AppContent({ initialRoute, ssrMode }: { initialRoute?: string, ssrMode?: boolean }) {
+function AppContent({ initialRoute }: { initialRoute?: string }) {
   // Domain Detection
   const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
   const isAppDomain = hostname.startsWith('app.') && !hostname.includes('localhost') && !hostname.includes('.run.app') && !hostname.includes('127.0.0.1');
@@ -931,7 +931,7 @@ function AppContent({ initialRoute, ssrMode }: { initialRoute?: string, ssrMode?
     }
   };
 
-  if (isLoadingUser && !isRecoveryMode && !ssrMode) {
+  if (isLoadingUser && !isRecoveryMode) {
       return (
           <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 animate-fade-in">
               <Loader2 className="animate-spin text-[#0500e2]" size={40} />
@@ -1244,10 +1244,10 @@ function AppContent({ initialRoute, ssrMode }: { initialRoute?: string, ssrMode?
   );
 }
 
-function App({ initialRoute, ssrMode }: { initialRoute?: string, ssrMode?: boolean }) {
+function App({ initialRoute }: { initialRoute?: string }) {
   return (
     <LanguageProvider>
-      <AppContent initialRoute={initialRoute} ssrMode={ssrMode} />
+      <AppContent initialRoute={initialRoute} />
     </LanguageProvider>
   );
 }

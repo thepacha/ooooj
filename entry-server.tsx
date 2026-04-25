@@ -3,6 +3,6 @@ import { renderToString } from 'react-dom/server';
 import App from './App';
 
 export function render(url: string) {
-  const html = renderToString(<App initialRoute={url} ssrMode={true} />);
+  const html = renderToString(<App initialRoute={url} />);
   return { html };
 }
