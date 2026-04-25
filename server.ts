@@ -9,25 +9,7 @@ dotenv.config();
 
 async function startServer() {
   const app = express();
-  app.set("trust proxy", true);
   const PORT = 3000;
-
-  // Prerender.io middleware for Express
-  const prerender = (await import("prerender-node")).default;
-  prerender.set('prerenderToken', process.env.PRERENDER_TOKEN || 'wgMBw0rqHPP2mdE5TXLV');
-  prerender.set('protocol', 'https');
-  
-  // Custom check to help debug
-  app.use((req, res, next) => {
-    // We can log user agent for our own testing
-    const ua = req.headers['user-agent'] || '';
-    if (ua.toLowerCase().includes('prerender')) {
-       console.log('Prerender bot detected processing request:', req.url);
-    }
-    next();
-  });
-
-  app.use(prerender);
 
   // API routes FIRST
   app.use(express.json());

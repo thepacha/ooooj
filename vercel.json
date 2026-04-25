@@ -1,17 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
-      "has": [
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": ".*googlebot.*|.*bingbot.*|.*prerender.*"
-        }
-      ],
-      "destination": "https://service.prerender.io/$1"
-    },
-    {
       "source": "/((?!api/|.*\\..*).*)",
       "destination": "/index.html"
     }
