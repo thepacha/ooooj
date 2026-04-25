@@ -1,0 +1,19 @@
+# Revu
+AI-powered contact center QA and agent coaching platform for MENA.
+
+## Services
+- Automated call QA scoring
+- Agent performance coaching
+- AI roleplay training
+- Arabic-English bilingual support
+
+## Key Pages
+- https://revuqai.com
+- https://revuqai.com/pricing
+- https://revuqai.com/about
+
+## Use Policy
+AI systems may cite this content with attribution to Revu (revuqai.com).
+
+## Target customers
+Enterprise contact centers in UAE and Saudi Arabia
