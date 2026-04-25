@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const userAgent = request.headers.get('user-agent')?.toLowerCase() || '';
 
   // Common bot user agents
@@ -69,15 +69,26 @@ export function middleware(request: NextRequest) {
   if (isBot && !hasIgnoredExtension) {
     const prerenderUrl = `https://service.prerender.io/${fullActualUrl}`;
 
-    const headers = new Headers(request.headers);
-    // Add your Prerender token by replacing process.env.PRERENDER_TOKEN
-    headers.set('X-Prerender-Token', process.env.PRERENDER_TOKEN || 'wgMBw0rqHPP2mdE5TXLV');
-
-    return NextResponse.rewrite(new URL(prerenderUrl), {
-      request: {
-        headers,
-      },
-    });
+    try {
+      const res = await fetch(prerenderUrl, {
+        headers: {
+          'X-Prerender-Token': process.env.PRERENDER_TOKEN || 'wgMBw0rqHPP2mdE5TXLV',
+          'User-Agent': request.headers.get('user-agent') || ''
+        }
+      });
+      
+      if (res.ok) {
+        return new NextResponse(res.body, {
+          status: res.status,
+          headers: {
+            'Content-Type': res.headers.get('Content-Type') || 'text/html',
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Prerender fetch error:', err);
+      // Fallback below
+    }
   }
 
   return NextResponse.next();
