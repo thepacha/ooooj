@@ -11,6 +11,11 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  // Prerender.io middleware for Express
+  const prerender = (await import("prerender-node")).default;
+  prerender.set('prerenderToken', process.env.PRERENDER_TOKEN || 'wgMBw0rqHPP2mdE5TXLV');
+  app.use(prerender);
+
   // API routes FIRST
   app.use(express.json());
   

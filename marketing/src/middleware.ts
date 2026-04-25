@@ -40,6 +40,7 @@ export function middleware(request: NextRequest) {
     'xing-contenttabreceiver',
     'chrome-lighthouse',
     'telegrambot',
+    'prerender'
   ];
 
   // Static file extensions to ignore
@@ -53,13 +54,20 @@ export function middleware(request: NextRequest) {
 
   const isBot = botAgents.some(bot => userAgent.includes(bot));
   const url = new URL(request.url);
+  const fullActualUrl = request.url;
 
   const hasIgnoredExtension = ignoreExtensions.some(ext => 
     url.pathname.toLowerCase().endsWith(ext)
   );
 
+  console.log('Middleware URL check:', {
+    requestUrl: request.url,
+    fullActualUrl,
+    isBot
+  });
+
   if (isBot && !hasIgnoredExtension) {
-    const prerenderUrl = `https://service.prerender.io/${request.url}`;
+    const prerenderUrl = `https://service.prerender.io/${fullActualUrl}`;
 
     const headers = new Headers(request.headers);
     // Add your Prerender token by replacing process.env.PRERENDER_TOKEN
