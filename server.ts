@@ -330,7 +330,7 @@ async function startServer() {
     });
     app.use(vite.middlewares);
 
-    app.use("*", async (req, res, next) => {
+    app.use(async (req, res, next) => {
       try {
         const url = req.originalUrl;
         let template = fs.readFileSync(path.resolve(process.cwd(), 'index.html'), 'utf-8');
@@ -351,7 +351,7 @@ async function startServer() {
     // Serve static files from dist/client
     app.use(express.static(distPath, { index: false }));
     
-    app.use("*", async (req, res, next) => {
+    app.use(async (req, res, next) => {
       try {
         const templatePath = path.join(distPath, "index.html");
         // Fallback for when SSR is not built properly yet
