@@ -91,7 +91,7 @@ const safeReplaceState = (data: any, unused: string, url: string) => {
 };
 
 // Inner App Component to use the Language Context
-function AppContent() {
+function AppContent({ initialRoute, ssrMode }: { initialRoute?: string, ssrMode?: boolean }) {
   // Domain Detection
   const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
   const isAppDomain = hostname.startsWith('app.') && !hostname.includes('localhost') && !hostname.includes('.run.app') && !hostname.includes('127.0.0.1');
@@ -102,7 +102,7 @@ function AppContent() {
   
   // Initialize State based on URL
   const getInitialState = () => {
-      const path = typeof window !== 'undefined' ? window.location.pathname.replace(/\/$/, '') : '';
+      const path = typeof window !== 'undefined' ? window.location.pathname.replace(/\/$/, '') : (initialRoute || '');
       
       // Explicit Public/Auth Pages
       if (path === '/termsandconditions') return { auth: 'terms', view: 'dashboard' };
@@ -250,6 +250,7 @@ function AppContent() {
   
   // Theme state
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window === 'undefined') return 'light';
     const saved = localStorage.getItem('theme');
     if (saved === 'dark' || saved === 'light') return saved;
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -930,7 +931,7 @@ function AppContent() {
     }
   };
 
-  if (isLoadingUser && !isRecoveryMode) {
+  if (isLoadingUser && !isRecoveryMode && !ssrMode) {
       return (
           <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 animate-fade-in">
               <Loader2 className="animate-spin text-[#0500e2]" size={40} />
@@ -1243,10 +1244,10 @@ function AppContent() {
   );
 }
 
-function App() {
+function App({ initialRoute, ssrMode }: { initialRoute?: string, ssrMode?: boolean }) {
   return (
     <LanguageProvider>
-      <AppContent />
+      <AppContent initialRoute={initialRoute} ssrMode={ssrMode} />
     </LanguageProvider>
   );
 }
