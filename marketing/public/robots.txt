@@ -1,23 +1,23 @@
 User-agent: *
 Allow: /
 
-# Block AI Training Bots
+# Allow AI Training Bots
 User-agent: CCBot
-Disallow: /
+Allow: /
 User-agent: GPTBot
-Disallow: /
+Allow: /
 User-agent: Google-Extended
-Disallow: /
+Allow: /
 User-agent: Omgilibot
-Disallow: /
+Allow: /
 User-agent: FacebookBot
-Disallow: /
+Allow: /
 User-agent: anthropic-ai
-Disallow: /
+Allow: /
 User-agent: ClaudeBot
-Disallow: /
+Allow: /
 User-agent: bytespider
-Disallow: /
+Allow: /
 
 # Allow AI Search / Browse Bots
 User-agent: ChatGPT-User
