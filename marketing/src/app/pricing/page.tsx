@@ -108,8 +108,25 @@ export default function PricingPage() {
     { q: 'Do you offer refunds?', a: 'We offer a 30-day money-back guarantee for all our paid plans. If you are not satisfied, simply contact our support team.' },
   ];
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map(faq => ({
+      "@type": "Question",
+      "name": faq.q,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.a
+      }
+    }))
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <div className="py-12 md:py-24 pt-32">
         
         {/* Header Content */}
