@@ -14,6 +14,7 @@ interface AboutUsProps {
   onPrivacyClick?: () => void;
   onRefundClick?: () => void;
   onPartnersClick?: () => void;
+  onContactClick?: () => void;
 }
 
 export const AboutUs: React.FC<AboutUsProps> = ({ 
@@ -24,7 +25,8 @@ export const AboutUs: React.FC<AboutUsProps> = ({
   onTermsClick,
   onPrivacyClick,
   onRefundClick,
-  onPartnersClick
+  onPartnersClick,
+  onContactClick
 }) => {
   const { isRTL } = useLanguage();
 
@@ -39,6 +41,7 @@ export const AboutUs: React.FC<AboutUsProps> = ({
         onPricing={onPricing}
         onLanding={onBack}
         onAbout={() => {}}
+        onContact={onContactClick}
         activePage="about"
       />
 
@@ -54,7 +57,7 @@ export const AboutUs: React.FC<AboutUsProps> = ({
           
           <div className="prose prose-lg dark:prose-invert max-w-none">
             <p className="text-xl text-slate-600 dark:text-slate-300 leading-relaxed mb-12">
-              We are on a mission to revolutionize how businesses evaluate and improve their customer interactions. By leveraging advanced AI, we provide deep insights that were previously impossible to capture at scale.
+              We are on a mission to revolutionize how businesses evaluate and improve their customer interactions. Founded on 13 January 2026, we leverage advanced AI to provide deep insights that were previously impossible to capture at scale.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
@@ -158,6 +161,7 @@ export const AboutUs: React.FC<AboutUsProps> = ({
         onRefundClick={onRefundClick}
         onPartnersClick={onPartnersClick}
         onAboutClick={() => {}}
+        onContactClick={onContactClick}
       />
     </div>
   );

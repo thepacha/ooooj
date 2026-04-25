@@ -12,7 +12,8 @@ interface PublicNavigationProps {
   onPricing?: () => void;
   onLanding?: () => void;
   onAbout?: () => void;
-  activePage?: 'landing' | 'pricing' | 'login' | 'signup' | 'partners' | 'about';
+  onContact?: () => void;
+  activePage?: 'landing' | 'pricing' | 'login' | 'signup' | 'partners' | 'about' | 'contact';
 }
 
 export const PublicNavigation: React.FC<PublicNavigationProps> = ({ 
@@ -22,6 +23,7 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
   onPricing, 
   onLanding, 
   onAbout,
+  onContact,
   activePage = 'landing' 
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -82,6 +84,7 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
                 <button onClick={() => handleNavClick(onAbout)} className={`hover:text-[#0500e2] transition-colors ${activePage === 'about' ? 'text-[#0500e2]' : ''}`}>About</button>
                 <button onClick={() => handleNavClick(onLanding)} className="hover:text-[#0500e2] transition-colors">Features</button>
                 <button onClick={() => handleNavClick(onPricing)} className={`hover:text-[#0500e2] transition-colors ${activePage === 'pricing' ? 'text-[#0500e2]' : ''}`}>Pricing</button>
+                <button onClick={() => handleNavClick(onContact)} className={`hover:text-[#0500e2] transition-colors ${activePage === 'contact' ? 'text-[#0500e2]' : ''}`}>Contact</button>
             </div>
 
             {/* Desktop Auth Buttons */}
@@ -164,6 +167,7 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
                     <button onClick={() => handleNavClick(onLanding)} className="text-start hover:text-[#0500e2] transition-colors border-b border-slate-100 dark:border-slate-800 pb-4">{t('nav.features')}</button>
                     <button onClick={() => handleNavClick(onLanding)} className="text-start hover:text-[#0500e2] transition-colors border-b border-slate-100 dark:border-slate-800 pb-4">{t('nav.how_it_works')}</button>
                     <button onClick={() => handleNavClick(onPricing)} className={`text-start hover:text-[#0500e2] transition-colors border-b border-slate-100 dark:border-slate-800 pb-4 ${activePage === 'pricing' ? 'text-[#0500e2]' : ''}`}>{t('nav.pricing')}</button>
+                    <button onClick={() => handleNavClick(onContact)} className={`text-start hover:text-[#0500e2] transition-colors border-b border-slate-100 dark:border-slate-800 pb-4 ${activePage === 'contact' ? 'text-[#0500e2]' : ''}`}>Contact Us</button>
                 </div>
 
                 <div className="mt-auto space-y-4">

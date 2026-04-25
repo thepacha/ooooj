@@ -43,6 +43,7 @@ export const PublicNavigation = () => {
                 <Link href="/" className="hover:text-[#0500e2] transition-colors">About</Link>
                 <Link href="/" className="hover:text-[#0500e2] transition-colors">Features</Link>
                 <Link href="/pricing" className="hover:text-[#0500e2] transition-colors">Pricing</Link>
+                <Link href="/contact" className="hover:text-[#0500e2] transition-colors">Contact</Link>
             </div>
 
             <div className="hidden lg:flex items-center gap-3 pe-1">
@@ -87,6 +88,7 @@ export const PublicNavigation = () => {
                     <Link href="/" onClick={() => setIsMenuOpen(false)} className="text-start hover:text-[#0500e2] transition-colors border-b border-slate-100 dark:border-slate-800 pb-4">Features</Link>
                     <Link href="/" onClick={() => setIsMenuOpen(false)} className="text-start hover:text-[#0500e2] transition-colors border-b border-slate-100 dark:border-slate-800 pb-4">How it works</Link>
                     <Link href="/pricing" onClick={() => setIsMenuOpen(false)} className="text-start hover:text-[#0500e2] transition-colors border-b border-slate-100 dark:border-slate-800 pb-4">Pricing</Link>
+                    <Link href="/contact" onClick={() => setIsMenuOpen(false)} className="text-start hover:text-[#0500e2] transition-colors border-b border-slate-100 dark:border-slate-800 pb-4">Contact us</Link>
                 </div>
 
                 <div className="mt-auto space-y-4">

@@ -14,6 +14,7 @@ interface PrivacyProps {
   onTermsClick?: () => void;
   onPrivacyClick?: () => void;
   onRefundClick?: () => void;
+  onContactClick?: () => void;
 }
 
 export const Privacy: React.FC<PrivacyProps> = ({ 
@@ -25,7 +26,8 @@ export const Privacy: React.FC<PrivacyProps> = ({
   onPartners,
   onTermsClick,
   onPrivacyClick,
-  onRefundClick
+  onRefundClick,
+  onContactClick
 }) => {
   return (
     <div className="min-h-screen bg-[#f5f4f0] dark:bg-[#0a0a0a] font-sans text-slate-900 dark:text-slate-100 animate-fade-in">
@@ -35,6 +37,7 @@ export const Privacy: React.FC<PrivacyProps> = ({
         onSignup={onSignup}
         onPricing={onPricing}
         onAbout={onAbout}
+        onContact={onContactClick}
         activePage="landing" 
       />
 
@@ -167,6 +170,7 @@ export const Privacy: React.FC<PrivacyProps> = ({
         onRefundClick={onRefundClick}
         onAboutClick={onAbout}
         onPartnersClick={onPartners}
+        onContactClick={onContactClick}
       />
     </div>
   );

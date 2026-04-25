@@ -187,6 +187,26 @@ create policy "Users update own evaluations" on evaluations for update using (au
 drop policy if exists "Users insert own evaluations" on evaluations;
 create policy "Users insert own evaluations" on evaluations for insert with check (auth.uid() = user_id);
 
+-- CONTACT MESSAGES
+create table if not exists contact_messages (
+  id uuid default uuid_generate_v4() primary key,
+  name text not null,
+  email text not null,
+  company text not null,
+  topic text not null,
+  message text not null,
+  created_at timestamp with time zone default now()
+);
+
+-- Enable RLS on contact_messages
+alter table contact_messages enable row level security;
+
+drop policy if exists "Anyone can insert contact messages" on contact_messages;
+create policy "Anyone can insert contact messages" on contact_messages for insert with check (true);
+
+drop policy if exists "Admins can read all contact messages" on contact_messages;
+create policy "Admins can read all contact messages" on contact_messages for select using (is_admin());
+
 -- ==========================================
 -- DATA SEEDING (Run once)
 -- ==========================================

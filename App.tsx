@@ -27,6 +27,7 @@ import { Privacy } from './components/Privacy';
 import { RefundPolicy } from './components/RefundPolicy';
 import { PartnersPage } from './components/PartnersPage';
 import { AboutUs } from './components/AboutUs';
+import { ContactUs } from './components/ContactUs';
 import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA, User } from './types';
 import { Loader2, Trash2, AlertTriangle, Sparkles, MessageSquare, TrendingUp, Info } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
@@ -35,7 +36,7 @@ import { useLanguage, LanguageProvider } from './contexts/LanguageContext';
 import mixpanel from './lib/mixpanel';
 import { useNotifications } from './hooks/useNotifications';
 
-type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 'privacy' | 'refund' | 'partners' | 'about';
+type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 'privacy' | 'refund' | 'partners' | 'about' | 'contact';
 
 // URL Routing Configuration
 const APP_ROUTES: Record<string, ViewState> = {
@@ -51,7 +52,8 @@ const APP_ROUTES: Record<string, ViewState> = {
   '/assembly-test': 'assembly-test',
   '/deepgram-tts': 'deepgram-tts',
   '/gemini-arabic-tts': 'gemini-arabic-tts',
-  '/notifications': 'notifications'
+  '/notifications': 'notifications',
+  '/contact': 'contact'
 };
 
 const VIEW_TO_PATH: Record<string, string> = {
@@ -67,7 +69,8 @@ const VIEW_TO_PATH: Record<string, string> = {
   'history': '/history',
   'roster': '/team',
   'admin': '/admin',
-  'notifications': '/notifications'
+  'notifications': '/notifications',
+  'contact': '/contact'
 };
 
 // Safe History Wrappers
@@ -110,6 +113,7 @@ function AppContent() {
       if (path === '/login') return { auth: 'login', view: 'dashboard' };
       if (path === '/signup') return { auth: 'signup', view: 'dashboard' };
       if (path === '/about') return { auth: 'about', view: 'dashboard' };
+      if (path === '/contact') return { auth: 'contact', view: 'dashboard' };
       
       // App Pages
       if (APP_ROUTES[path]) {
@@ -168,6 +172,7 @@ function AppContent() {
           if (path === '/login') { setAuthView('login'); return; }
           if (path === '/signup') { setAuthView('signup'); return; }
           if (path === '/about') { setAuthView('about'); return; }
+          if (path === '/contact') { setAuthView('contact'); return; }
           
           // App Routes
           if (APP_ROUTES[path]) {
@@ -213,6 +218,7 @@ function AppContent() {
       else if (view === 'login') path = '/login';
       else if (view === 'signup') path = '/signup';
       else if (view === 'about') path = '/about';
+      else if (view === 'contact') path = '/contact';
       
       if (typeof window !== 'undefined' && window.location.pathname !== path) {
           safePushState({}, '', path);
@@ -326,7 +332,7 @@ function AppContent() {
         if (!session) {
             if (mounted) {
                 // If on public pages, stay there. Otherwise go to login/landing.
-                const publicViews: AuthState[] = ['landing', 'pricing', 'signup', 'terms', 'privacy', 'refund', 'partners', 'about'];
+                const publicViews: AuthState[] = ['landing', 'pricing', 'signup', 'terms', 'privacy', 'refund', 'partners', 'about', 'contact'];
                 if (!publicViews.includes(authView)) {
                     navigateAuth(isAppDomain ? 'login' : 'landing');
                 }
@@ -429,7 +435,7 @@ function AppContent() {
         if (mounted && isLoadingUser) {
             console.warn("Auth check timed out, forcing default view.");
             setIsLoadingUser(false);
-            if (authView !== 'landing' && authView !== 'pricing' && authView !== 'signup' && authView !== 'terms' && authView !== 'privacy' && authView !== 'refund' && authView !== 'partners' && authView !== 'about') {
+            if (authView !== 'landing' && authView !== 'pricing' && authView !== 'signup' && authView !== 'terms' && authView !== 'privacy' && authView !== 'refund' && authView !== 'partners' && authView !== 'about' && authView !== 'contact') {
                navigateAuth(isAppDomain ? 'login' : 'landing');
             }
         }
@@ -953,6 +959,7 @@ function AppContent() {
                 onTermsClick={() => navigateAuth('terms')}
                 onPrivacyClick={() => navigateAuth('privacy')}
                 onRefundClick={() => navigateAuth('refund')}
+                onContactClick={() => navigateAuth('contact')}
               />
           </div>
       )
@@ -971,6 +978,7 @@ function AppContent() {
                 onTermsClick={() => navigateAuth('terms')}
                 onPrivacyClick={() => navigateAuth('privacy')}
                 onRefundClick={() => navigateAuth('refund')}
+                onContactClick={() => navigateAuth('contact')}
               />
           </div>
       )
@@ -989,6 +997,7 @@ function AppContent() {
                 onTermsClick={() => navigateAuth('terms')}
                 onPrivacyClick={() => navigateAuth('privacy')}
                 onRefundClick={() => navigateAuth('refund')}
+                onContactClick={() => navigateAuth('contact')}
               />
           </div>
       )
@@ -1005,6 +1014,7 @@ function AppContent() {
                 onTermsClick={() => navigateAuth('terms')}
                 onPrivacyClick={() => navigateAuth('privacy')}
                 onRefundClick={() => navigateAuth('refund')}
+                onContactClick={() => navigateAuth('contact')}
               />
           </div>
       )
@@ -1031,6 +1041,7 @@ function AppContent() {
                 onRefundClick={() => navigateAuth('refund')}
                 onPartnersClick={() => navigateAuth('partners')}
                 onAboutClick={() => navigateAuth('about')}
+                onContactClick={() => navigateAuth('contact')}
               />
           </motion.div>
         </AnimatePresence>
@@ -1057,6 +1068,7 @@ function AppContent() {
                 onPrivacyClick={() => navigateAuth('privacy')}
                 onRefundClick={() => navigateAuth('refund')}
                 onPartnersClick={() => navigateAuth('partners')}
+                onContactClick={() => navigateAuth('contact')}
               />
           </motion.div>
         </AnimatePresence>
@@ -1085,6 +1097,7 @@ function AppContent() {
                 onRefundClick={() => navigateAuth('refund')}
                 onAboutClick={() => navigateAuth('about')}
                 onPartnersClick={() => navigateAuth('partners')}
+                onContactClick={() => navigateAuth('contact')}
               />
           </motion.div>
         </AnimatePresence>
@@ -1129,6 +1142,33 @@ function AppContent() {
                 onSwitchToLogin={() => navigateAuth('login')}
                 onPricing={() => navigateAuth('pricing')}
                 onBackToHome={handleBackToHome}
+              />
+          </motion.div>
+        </AnimatePresence>
+      );
+  }
+
+  if (authView === 'contact' && !isRecoveryMode) {
+      return (
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key="contact"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="w-full min-h-screen"
+          >
+              <ContactUs 
+                user={user}
+                onLoginClick={handleLandingLoginClick} 
+                onSignupClick={handleLandingSignupClick} 
+                onPricingClick={() => navigateAuth('pricing')}
+                onTermsClick={() => navigateAuth('terms')}
+                onPrivacyClick={() => navigateAuth('privacy')}
+                onRefundClick={() => navigateAuth('refund')}
+                onPartnersClick={() => navigateAuth('partners')}
+                onAboutClick={() => navigateAuth('about')}
               />
           </motion.div>
         </AnimatePresence>
