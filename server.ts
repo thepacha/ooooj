@@ -381,7 +381,12 @@ async function startServer() {
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: { 
+        middlewareMode: true,
+        hmr: {
+          port: 0,
+        }
+      },
       appType: "spa",
     });
     app.use(vite.middlewares);
@@ -557,8 +562,31 @@ async function startServer() {
     });
   });
 
-  server.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  const startListening = () => {
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    }).on('error', (err: any) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is in use, retrying...`);
+        setTimeout(() => {
+          server.close();
+          startListening();
+        }, 1000);
+      } else {
+        console.error("Server error:", err);
+      }
+    });
+  };
+
+  startListening();
+
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM signal received. Closing servers...');
+    ttsWss.close();
+    assemblyWss.close();
+    server.close(() => {
+      process.exit(0);
+    });
   });
 }
 
