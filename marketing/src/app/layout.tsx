@@ -95,6 +95,38 @@ export default function RootLayout({
             })
           }}
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              "mainEntity": [{
+                "@type": "Question",
+                "name": "What is Revu?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Revu is an AI-powered QA scoring and agent coaching platform built for Arabic-English contact centers in MENA."
+                }
+              }]
+            })
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "BreadcrumbList",
+              "itemListElement": [{
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://revuqai.com"
+              }]
+            })
+          }}
+        />
       </head>
       <body className={inter.className}>{children}</body>
     </html>
