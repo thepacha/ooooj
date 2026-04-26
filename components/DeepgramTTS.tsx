@@ -253,7 +253,7 @@ export const DeepgramTTS: React.FC = () => {
                     blob = new Blob([wavData], { type: 'audio/wav' });
                 }
             } else {
-                const response = await fetch('/api/deepgram/tts', {
+                const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/deepgram/tts`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
