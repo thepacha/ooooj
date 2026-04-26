@@ -419,6 +419,7 @@ export const translations = {
     'pricing.val.priority': 'Priority',
     'pricing.val.priority_dedicated': 'Priority + Dedicated Mgr',
     'pricing.val.unlimited': 'Unlimited',
+    'pricing.book_demo': 'Book a Demo',
 
     'pricing.faq.title': 'Frequently Asked Questions',
     'pricing.faq.1.q': 'How do the seat minimums work?',
@@ -904,6 +905,7 @@ export const translations = {
     'pricing.val.priority': 'أولوية',
     'pricing.val.priority_dedicated': 'أولوية + مدير مخصص',
     'pricing.val.unlimited': 'غير محدود',
+    'pricing.book_demo': 'حجز عرض تجريبي',
 
     'pricing.faq.title': 'الأسئلة الشائعة',
     'pricing.faq.1.q': 'كيف يعمل الحد الأدنى للمقاعد؟',

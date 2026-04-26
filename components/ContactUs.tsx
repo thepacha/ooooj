@@ -13,6 +13,7 @@ interface ContactUsProps {
   onRefundClick: () => void;
   onPartnersClick: () => void;
   onAboutClick: () => void;
+  onLandingClick?: () => void;
 }
 
 export const ContactUs: React.FC<ContactUsProps> = ({
@@ -24,7 +25,8 @@ export const ContactUs: React.FC<ContactUsProps> = ({
   onPrivacyClick,
   onRefundClick,
   onPartnersClick,
-  onAboutClick
+  onAboutClick,
+  onLandingClick
 }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -74,9 +76,10 @@ export const ContactUs: React.FC<ContactUsProps> = ({
         onLogin={onLoginClick}
         onSignup={onSignupClick}
         onPricing={onPricingClick}
-        onLanding={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onLanding={onLandingClick}
         onAbout={onAboutClick}
-        activePage="landing"
+        onContact={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        activePage="contact"
       />
 
       <div className="flex-1 w-full pt-44 lg:pt-48 pb-24 px-6 relative overflow-hidden">
@@ -123,7 +126,7 @@ export const ContactUs: React.FC<ContactUsProps> = ({
                 <div>
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Headquarters</h3>
                   <p className="text-xl font-semibold text-slate-900 dark:text-white">
-                    Remote Based
+                    Cairo, Egypt
                   </p>
                   <p className="text-sm text-slate-500 mt-1">Serving modern QA teams globally.</p>
                 </div>

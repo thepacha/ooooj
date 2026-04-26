@@ -28,6 +28,7 @@ import { RefundPolicy } from './components/RefundPolicy';
 import { PartnersPage } from './components/PartnersPage';
 import { AboutUs } from './components/AboutUs';
 import { ContactUs } from './components/ContactUs';
+import { Blog } from './components/Blog';
 import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA, User } from './types';
 import { Loader2, Trash2, AlertTriangle, Sparkles, MessageSquare, TrendingUp, Info } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
@@ -36,7 +37,7 @@ import { useLanguage, LanguageProvider } from './contexts/LanguageContext';
 import mixpanel from './lib/mixpanel';
 import { useNotifications } from './hooks/useNotifications';
 
-type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 'privacy' | 'refund' | 'partners' | 'about' | 'contact';
+type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 'privacy' | 'refund' | 'partners' | 'about' | 'contact' | 'blog';
 
 // URL Routing Configuration
 const APP_ROUTES: Record<string, ViewState> = {
@@ -114,6 +115,7 @@ function AppContent() {
       if (path === '/signup') return { auth: 'signup', view: 'dashboard' };
       if (path === '/about') return { auth: 'about', view: 'dashboard' };
       if (path === '/contact') return { auth: 'contact', view: 'dashboard' };
+      if (path === '/blog') return { auth: 'blog', view: 'dashboard' };
       
       // App Pages
       if (APP_ROUTES[path]) {
@@ -173,6 +175,7 @@ function AppContent() {
           if (path === '/signup') { setAuthView('signup'); return; }
           if (path === '/about') { setAuthView('about'); return; }
           if (path === '/contact') { setAuthView('contact'); return; }
+          if (path === '/blog') { setAuthView('blog'); return; }
           
           // App Routes
           if (APP_ROUTES[path]) {
@@ -219,6 +222,7 @@ function AppContent() {
       else if (view === 'signup') path = '/signup';
       else if (view === 'about') path = '/about';
       else if (view === 'contact') path = '/contact';
+      else if (view === 'blog') path = '/blog';
       
       if (typeof window !== 'undefined' && window.location.pathname !== path) {
           safePushState({}, '', path);
@@ -332,7 +336,7 @@ function AppContent() {
         if (!session) {
             if (mounted) {
                 // If on public pages, stay there. Otherwise go to login/landing.
-                const publicViews: AuthState[] = ['landing', 'pricing', 'signup', 'terms', 'privacy', 'refund', 'partners', 'about', 'contact'];
+                const publicViews: AuthState[] = ['landing', 'pricing', 'signup', 'terms', 'privacy', 'refund', 'partners', 'about', 'contact', 'blog'];
                 if (!publicViews.includes(authView)) {
                     navigateAuth(isAppDomain ? 'login' : 'landing');
                 }
@@ -435,7 +439,7 @@ function AppContent() {
         if (mounted && isLoadingUser) {
             console.warn("Auth check timed out, forcing default view.");
             setIsLoadingUser(false);
-            if (authView !== 'landing' && authView !== 'pricing' && authView !== 'signup' && authView !== 'terms' && authView !== 'privacy' && authView !== 'refund' && authView !== 'partners' && authView !== 'about' && authView !== 'contact') {
+            if (authView !== 'landing' && authView !== 'pricing' && authView !== 'signup' && authView !== 'terms' && authView !== 'privacy' && authView !== 'refund' && authView !== 'partners' && authView !== 'about' && authView !== 'contact' && authView !== 'blog') {
                navigateAuth(isAppDomain ? 'login' : 'landing');
             }
         }
@@ -1015,6 +1019,7 @@ function AppContent() {
                 onPrivacyClick={() => navigateAuth('privacy')}
                 onRefundClick={() => navigateAuth('refund')}
                 onContactClick={() => navigateAuth('contact')}
+                onBlogClick={() => navigateAuth('blog')}
               />
           </div>
       )
@@ -1042,6 +1047,7 @@ function AppContent() {
                 onPartnersClick={() => navigateAuth('partners')}
                 onAboutClick={() => navigateAuth('about')}
                 onContactClick={() => navigateAuth('contact')}
+                onBlogClick={() => navigateAuth('blog')}
               />
           </motion.div>
         </AnimatePresence>
@@ -1069,6 +1075,7 @@ function AppContent() {
                 onRefundClick={() => navigateAuth('refund')}
                 onPartnersClick={() => navigateAuth('partners')}
                 onContactClick={() => navigateAuth('contact')}
+                onBlogClick={() => navigateAuth('blog')}
               />
           </motion.div>
         </AnimatePresence>
@@ -1098,6 +1105,7 @@ function AppContent() {
                 onAboutClick={() => navigateAuth('about')}
                 onPartnersClick={() => navigateAuth('partners')}
                 onContactClick={() => navigateAuth('contact')}
+                onBlogClick={() => navigateAuth('blog')}
               />
           </motion.div>
         </AnimatePresence>
@@ -1169,6 +1177,36 @@ function AppContent() {
                 onRefundClick={() => navigateAuth('refund')}
                 onPartnersClick={() => navigateAuth('partners')}
                 onAboutClick={() => navigateAuth('about')}
+                onLandingClick={handleBackToHome}
+              />
+          </motion.div>
+        </AnimatePresence>
+      );
+  }
+
+  if (authView === 'blog' && !isRecoveryMode) {
+      return (
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key="blog"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="w-full min-h-screen"
+          >
+              <Blog 
+                onBack={handleBackToHome}
+                onLogin={handleLandingLoginClick} 
+                onSignup={handleLandingSignupClick} 
+                onPricing={() => navigateAuth('pricing')}
+                onTermsClick={() => navigateAuth('terms')}
+                onPrivacyClick={() => navigateAuth('privacy')}
+                onRefundClick={() => navigateAuth('refund')}
+                onPartners={() => navigateAuth('partners')}
+                onAbout={() => navigateAuth('about')}
+                onContactClick={() => navigateAuth('contact')}
+                onBlogClick={() => {}}
               />
           </motion.div>
         </AnimatePresence>

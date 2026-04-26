@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Check, X, Zap, ChevronDown, ChevronUp, Users, Sparkles, Shield, Globe, Brain, Info, CreditCard, Star, ArrowRight, Crown } from 'lucide-react';
+import { Check, X, Zap, ChevronDown, ChevronUp, Users, Sparkles, Shield, Globe, Brain, Info, CreditCard, Star, ArrowRight, Crown, Calendar } from 'lucide-react';
 import { PublicNavigation } from './PublicNavigation';
 import { Footer } from './Footer';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -17,6 +17,7 @@ interface PricingProps {
   onAboutClick?: () => void;
   onPartnersClick?: () => void;
   onContactClick?: () => void;
+  onBlogClick?: () => void;
 }
 
 export const Pricing: React.FC<PricingProps> = ({ 
@@ -30,7 +31,8 @@ export const Pricing: React.FC<PricingProps> = ({
   onRefundClick,
   onAboutClick,
   onPartnersClick,
-  onContactClick
+  onContactClick,
+  onBlogClick
 }) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -151,6 +153,7 @@ export const Pricing: React.FC<PricingProps> = ({
             onSignup={onSignup}
             onAbout={onAboutClick}
             onContact={onContactClick}
+            onBlogClick={onBlogClick}
             activePage="pricing"
         />
       )}
@@ -170,31 +173,50 @@ export const Pricing: React.FC<PricingProps> = ({
                 {t('pricing.subtitle')}
             </p>
 
-            {/* Toggle */}
-            <div 
-                className="relative inline-flex bg-slate-100 dark:bg-slate-900 rounded-full border border-slate-200 dark:border-slate-800 p-1.5 cursor-pointer" 
-                onClick={() => setBillingCycle(prev => prev === 'monthly' ? 'yearly' : 'monthly')}
-            >
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                {/* Toggle */}
                 <div 
-                    className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white dark:bg-slate-800 rounded-full shadow-sm transition-transform duration-300 ease-out 
-                    start-1.5 
-                    ${billingCycle === 'monthly' 
-                        ? 'translate-x-0' 
-                        : (isRTL ? '-translate-x-[calc(100%+4px)]' : 'translate-x-[calc(100%+4px)]')
-                    }`}
-                ></div>
-                <button 
-                    onClick={(e) => { e.stopPropagation(); setBillingCycle('monthly'); }}
-                    className={`relative z-10 w-36 py-2.5 rounded-full text-sm font-bold transition-colors text-center ${billingCycle === 'monthly' ? 'text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700'}`}
+                    className="relative inline-flex bg-slate-100 dark:bg-slate-900 rounded-full border border-slate-200 dark:border-slate-800 p-1.5 cursor-pointer" 
+                    onClick={() => setBillingCycle(prev => prev === 'monthly' ? 'yearly' : 'monthly')}
                 >
-                    {t('pricing.monthly')}
-                </button>
-                <button 
-                    onClick={(e) => { e.stopPropagation(); setBillingCycle('yearly'); }}
-                    className={`relative z-10 w-36 py-2.5 rounded-full text-sm font-bold transition-colors flex items-center justify-center gap-2 ${billingCycle === 'yearly' ? 'text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700'}`}
+                    <div 
+                        className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white dark:bg-slate-800 rounded-full shadow-sm transition-transform duration-300 ease-out 
+                        start-1.5 
+                        ${billingCycle === 'monthly' 
+                            ? 'translate-x-0' 
+                            : (isRTL ? '-translate-x-[calc(100%+4px)]' : 'translate-x-[calc(100%+4px)]')
+                        }`}
+                    ></div>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setBillingCycle('monthly'); }}
+                        className={`relative z-10 w-36 py-2.5 rounded-full text-sm font-bold transition-colors text-center ${billingCycle === 'monthly' ? 'text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                        {t('pricing.monthly')}
+                    </button>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setBillingCycle('yearly'); }}
+                        className={`relative z-10 w-36 py-2.5 rounded-full text-sm font-bold transition-colors flex items-center justify-center gap-2 ${billingCycle === 'yearly' ? 'text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                        {t('pricing.yearly')} <span className="text-[10px] text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-md">{t('pricing.save_text')}</span>
+                    </button>
+                </div>
+                
+                <div className="hidden sm:block w-px h-10 bg-slate-200 dark:bg-slate-800"></div>
+                
+                <a 
+                    href="#contact" 
+                    onClick={(e) => {
+                        if (onContactClick) {
+                            e.preventDefault();
+                            onContactClick();
+                        }
+                    }}
+                    className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all bg-white dark:bg-slate-900"
                 >
-                    {t('pricing.yearly')} <span className="text-[10px] text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-md">{t('pricing.save_text')}</span>
-                </button>
+                    <Calendar size={18} />
+                    {t('pricing.book_demo') || 'Book a Demo'}
+                </a>
             </div>
         </div>
 
@@ -399,6 +421,7 @@ export const Pricing: React.FC<PricingProps> = ({
             onAboutClick={onAboutClick}
             onPartnersClick={onPartnersClick}
             onContactClick={onContactClick}
+            onBlogClick={onBlogClick}
         />
       )}
     </div>

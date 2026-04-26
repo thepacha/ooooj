@@ -31,6 +31,7 @@ interface PartnersPageProps {
   onPrivacyClick: () => void;
   onRefundClick: () => void;
   onContactClick?: () => void;
+  onBlogClick?: () => void;
 }
 
 export const PartnersPage: React.FC<PartnersPageProps> = ({ 
@@ -41,7 +42,8 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({
   onTermsClick,
   onPrivacyClick,
   onRefundClick,
-  onContactClick
+  onContactClick,
+  onBlogClick
 }) => {
   const { t, isRTL } = useLanguage();
 
@@ -245,6 +247,7 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({
         onPricing={onPricing}
         onLanding={onBack}
         onContact={onContactClick}
+        onBlogClick={onBlogClick}
         activePage="partners"
       />
 
@@ -341,6 +344,7 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({
         onPrivacyClick={onPrivacyClick} 
         onRefundClick={onRefundClick}
         onContactClick={onContactClick}
+        onBlogClick={onBlogClick}
       />
     </div>
   );

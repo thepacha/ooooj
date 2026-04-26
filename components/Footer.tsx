@@ -11,9 +11,12 @@ interface FooterProps {
   onPartnersClick?: () => void;
   onAboutClick?: () => void;
   onContactClick?: () => void;
+  onBlogClick?: () => void;
+  onHomeClick?: () => void;
+  onPricingClick?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, onRefundClick, onPartnersClick, onAboutClick, onContactClick }) => {
+export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, onRefundClick, onPartnersClick, onAboutClick, onContactClick, onBlogClick, onHomeClick, onPricingClick }) => {
   const { t } = useLanguage();
 
   return (
@@ -76,8 +79,8 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, on
                 <div>
                     <h4 className="font-bold text-slate-900 dark:text-white mb-4 text-sm">{t('landing.footer.product')}</h4>
                     <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
-                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Features</a></li>
-                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Pricing</a></li>
+                        <li><button onClick={onHomeClick} className="hover:text-[#0500e2] transition-colors">Features</button></li>
+                        <li><button onClick={onPricingClick} className="hover:text-[#0500e2] transition-colors">Pricing</button></li>
                         <li><a href="#" className="hover:text-[#0500e2] transition-colors">Security</a></li>
                         <li><a href="#" className="hover:text-[#0500e2] transition-colors">Roadmap</a></li>
                     </ul>
@@ -93,7 +96,11 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, on
                             </button>
                         </li>
                         <li><a href="#" className="hover:text-[#0500e2] transition-colors">Careers</a></li>
-                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Blog</a></li>
+                        <li>
+                            <button onClick={onBlogClick} className="hover:text-[#0500e2] transition-colors text-start">
+                                Blog
+                            </button>
+                        </li>
                         <li>
                             <button onClick={onPartnersClick} className="hover:text-[#0500e2] transition-colors text-start">
                                 Partners

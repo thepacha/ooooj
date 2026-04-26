@@ -15,6 +15,7 @@ interface AboutUsProps {
   onRefundClick?: () => void;
   onPartnersClick?: () => void;
   onContactClick?: () => void;
+  onBlogClick?: () => void;
 }
 
 export const AboutUs: React.FC<AboutUsProps> = ({ 
@@ -26,7 +27,8 @@ export const AboutUs: React.FC<AboutUsProps> = ({
   onPrivacyClick,
   onRefundClick,
   onPartnersClick,
-  onContactClick
+  onContactClick,
+  onBlogClick
 }) => {
   const { isRTL } = useLanguage();
 
@@ -42,6 +44,7 @@ export const AboutUs: React.FC<AboutUsProps> = ({
         onLanding={onBack}
         onAbout={() => {}}
         onContact={onContactClick}
+        onBlogClick={onBlogClick}
         activePage="about"
       />
 
@@ -117,7 +120,7 @@ export const AboutUs: React.FC<AboutUsProps> = ({
                     </a>
                   </div>
                   <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                    AI SaaS builder and Web3 BD with experience in partnerships and growth across multiple ecosystems. Currently building Revu, an AI platform for training customer service and sales teams through realistic roleplay simulations.
+                    AI SaaS builder and Web3 BD with experience in partnerships and growth across multiple ecosystems, including working at big companies like Oasis Protocol. Currently building Revu, an AI platform for training customer service and sales teams through realistic roleplay simulations.
                   </p>
                 </div>
               </div>

@@ -76,6 +76,48 @@ async function startServer() {
     res.send(html);
   });
 
+  // SEO-friendly Blog SSR route
+  app.get("/blog", (req, res, next) => {
+    // If it's the Vite SPA route pattern, we can send back static HTML but in production, we should try to inject into index.html
+    // For simplicity, we implement it exactly like landing-v2 to fulfill the SEO requirements explicitly.
+    try {
+        let indexHtml = '';
+        if (process.env.NODE_ENV === "production") {
+            const fs = require('fs');
+            indexHtml = fs.readFileSync(path.join(process.cwd(), "dist", "index.html"), "utf-8");
+        } else {
+            // In dev, we can just send a basic shell
+            indexHtml = `<!DOCTYPE html><html lang="en"><head><script type="module" src="/@vite/client"></script><script type="module" src="/src/main.tsx"></script></head><body><div id="root"></div></body></html>`;
+        }
+
+        const seoContent = `
+        <div style="padding: 40px; text-align: center;">
+            <h1 style="font-size: 3rem; margin-bottom: 20px;">The Revu AI Blog</h1>
+            <p>Insights, strategies, and updates on AI-powered quality assurance and contact center performance.</p>
+            <ul>
+                <li><h2>The Future of QA in Contact Centers</h2><p>How AI is transforming the way we evaluate agent performance and ensure quality at scale.</p></li>
+                <li><h2>5 Ways to Improve First Call Resolution</h2><p>Actionable tips and strategies to help your support team solve customer issues on the very first interaction.</p></li>
+                <li><h2>Introducing Revu AI Roleplay Coaching</h2><p>Learn about our newest feature that allows agents to practice with AI before talking to real customers.</p></li>
+            </ul>
+        </div>
+        `;
+        
+        // Inject SEO meta tags
+        const metaTags = `
+            <title>Revu AI Blog - Contact Center Insights</title>
+            <meta name="description" content="Insights, strategies, and updates on AI-powered quality assurance and contact center performance.">
+            <meta property="og:title" content="Revu AI Blog">
+        `;
+        
+        let finalHtml = indexHtml.replace('</head>', `${metaTags}</head>`);
+        finalHtml = finalHtml.replace('<div id="root"></div>', `<div id="root">${seoContent}</div>`);
+        
+        res.send(finalHtml);
+    } catch (e) {
+        next();
+    }
+  });
+
   // Helper to split text into chunks of max length (1900 to be safe under 2000 limit)
   const splitText = (str: string, maxLength: number): string[] => {
       const chunks: string[] = [];
