@@ -129,7 +129,7 @@ export const AssemblyAITest: React.FC<AssemblyAITestProps> = ({ user, history, o
         try {
             // Fetch temporary token from our Vercel Serverless Function
             addLog("Fetching temporary authentication token...");
-            const tokenResponse = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/assemblyai/token`);
+            const tokenResponse = await fetch('/api/assemblyai/token');
             if (!tokenResponse.ok) {
                 const errData = await tokenResponse.json().catch(() => ({}));
                 throw new Error(errData.error || "Failed to fetch AssemblyAI token");
