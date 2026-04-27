@@ -124,11 +124,33 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
             
             await supabase.from('criteria').insert(criteriaRecords);
 
+            mixpanel.alias(authData.user!.id);
+            mixpanel.identify(authData.user!.id);
+            mixpanel.people.set({
+                 $name: email.split('@')[0],
+                 $email: email,
+                 company: company,
+                 website: website,
+                 plan: "Premium",
+                 $created: new Date().toISOString()
+            });
+
             trackEvent.signUp('email', {
-                user_id: authData.user.id,
+                user_id: authData.user!.id,
                 email: email
             });
         } else if (authData.user && !authData.session) {
+            mixpanel.alias(authData.user.id);
+            mixpanel.identify(authData.user.id);
+            mixpanel.people.set({
+                 $name: email.split('@')[0],
+                 $email: email,
+                 company: company,
+                 website: website,
+                 plan: "Premium",
+                 $created: new Date().toISOString()
+            });
+
             trackEvent.signUp('email', {
                 user_id: authData.user.id,
                 email: email,

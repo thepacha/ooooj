@@ -48,6 +48,12 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
         if (error) throw error;
         
         if (data.user) {
+            mixpanel.identify(data.user.id);
+            mixpanel.people.set({
+                 $name: data.user.user_metadata?.name || email.split('@')[0],
+                 $email: email,
+                 plan: "Premium",
+            });
             trackEvent.signIn('email', {
                 user_id: data.user.id,
                 success: true

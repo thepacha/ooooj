@@ -367,7 +367,8 @@ function AppContent() {
                     $name: basicUser.name,
                     $email: basicUser.email,
                     company: basicUser.company,
-                    website: basicUser.website
+                    website: basicUser.website,
+                    plan: "Premium"
                 });
                 
                 // Logic to set view based on URL if already authenticated
@@ -410,6 +411,7 @@ function AppContent() {
                     website: profile.website,
                     role: profile.role,
                     $avatar: profile.avatar_url,
+                    plan: "Premium",
                     $created: session.user.created_at
                 });
             } else if (!profile) {
