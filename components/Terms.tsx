@@ -15,6 +15,7 @@ interface TermsProps {
   onPrivacyClick?: () => void;
   onRefundClick?: () => void;
   onContactClick?: () => void;
+  onProductClick?: () => void;
 }
 
 export const Terms: React.FC<TermsProps> = ({ 
@@ -27,7 +28,8 @@ export const Terms: React.FC<TermsProps> = ({
   onTermsClick,
   onPrivacyClick,
   onRefundClick,
-  onContactClick
+  onContactClick,
+  onProductClick
 }) => {
   return (
     <div className="min-h-screen bg-[#f5f4f0] dark:bg-[#0a0a0a] font-sans text-slate-900 dark:text-slate-100 animate-fade-in">
@@ -38,6 +40,7 @@ export const Terms: React.FC<TermsProps> = ({
         onPricing={onPricing}
         onAbout={onAbout}
         onContact={onContactClick}
+        onProductClick={onProductClick}
         activePage="landing" // Keep generic
       />
 
@@ -161,6 +164,7 @@ export const Terms: React.FC<TermsProps> = ({
         onAboutClick={onAbout}
         onPartnersClick={onPartners}
         onContactClick={onContactClick}
+        onProductClick={onProductClick}
       />
     </div>
   );

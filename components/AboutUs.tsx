@@ -16,6 +16,7 @@ interface AboutUsProps {
   onPartnersClick?: () => void;
   onContactClick?: () => void;
   onBlogClick?: () => void;
+  onProductClick?: () => void;
 }
 
 export const AboutUs: React.FC<AboutUsProps> = ({ 
@@ -28,7 +29,8 @@ export const AboutUs: React.FC<AboutUsProps> = ({
   onRefundClick,
   onPartnersClick,
   onContactClick,
-  onBlogClick
+  onBlogClick,
+  onProductClick
 }) => {
   const { isRTL } = useLanguage();
 
@@ -45,6 +47,7 @@ export const AboutUs: React.FC<AboutUsProps> = ({
         onAbout={() => {}}
         onContact={onContactClick}
         onBlogClick={onBlogClick}
+        onProductClick={onProductClick}
         activePage="about"
       />
 
@@ -165,6 +168,7 @@ export const AboutUs: React.FC<AboutUsProps> = ({
         onPartnersClick={onPartnersClick}
         onAboutClick={() => {}}
         onContactClick={onContactClick}
+        onProductClick={onProductClick}
       />
     </div>
   );

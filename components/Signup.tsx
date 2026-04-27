@@ -14,9 +14,10 @@ interface SignupProps {
   onSwitchToLogin: () => void;
   onBackToHome: () => void;
   onPricing: () => void;
+  onProduct?: () => void;
 }
 
-export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBackToHome, onPricing }) => {
+export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBackToHome, onPricing, onProduct }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -193,6 +194,7 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
         onLogin={onSwitchToLogin}
         onSignup={() => {}} // Already on signup
         onPricing={onPricing}
+        onProductClick={onProduct}
         activePage="signup"
       />
 

@@ -19,6 +19,9 @@ import { Roster } from './components/Roster';
 import { Pricing } from './components/Pricing';
 import { Training } from './components/Training';
 import { Admin } from './components/Admin';
+import { Blog } from './components/Blog';
+import { PublicNavigation } from './components/PublicNavigation';
+import { Footer } from './components/Footer';
 import { AssemblyAITest } from './components/AssemblyAITest';
 import { DeepgramTTS } from './components/DeepgramTTS';
 import { GeminiArabicTTS } from './components/GeminiArabicTTS';
@@ -28,7 +31,7 @@ import { RefundPolicy } from './components/RefundPolicy';
 import { PartnersPage } from './components/PartnersPage';
 import { AboutUs } from './components/AboutUs';
 import { ContactUs } from './components/ContactUs';
-import { Blog } from './components/Blog';
+import { ProductPage } from './components/ProductPage';
 import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA, User } from './types';
 import { Loader2, Trash2, AlertTriangle, Sparkles, MessageSquare, TrendingUp, Info } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
@@ -37,7 +40,7 @@ import { useLanguage, LanguageProvider } from './contexts/LanguageContext';
 import mixpanel from './lib/mixpanel';
 import { useNotifications } from './hooks/useNotifications';
 
-type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 'privacy' | 'refund' | 'partners' | 'about' | 'contact' | 'blog';
+type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 'privacy' | 'refund' | 'partners' | 'about' | 'contact' | 'blog' | 'product';
 
 // URL Routing Configuration
 const APP_ROUTES: Record<string, ViewState> = {
@@ -116,6 +119,7 @@ function AppContent() {
       if (path === '/about') return { auth: 'about', view: 'dashboard' };
       if (path === '/contact') return { auth: 'contact', view: 'dashboard' };
       if (path === '/blog') return { auth: 'blog', view: 'dashboard' };
+      if (path === '/product') return { auth: 'product', view: 'dashboard' };
       
       // App Pages
       if (APP_ROUTES[path]) {
@@ -176,6 +180,7 @@ function AppContent() {
           if (path === '/about') { setAuthView('about'); return; }
           if (path === '/contact') { setAuthView('contact'); return; }
           if (path === '/blog') { setAuthView('blog'); return; }
+          if (path === '/product') { setAuthView('product'); return; }
           
           // App Routes
           if (APP_ROUTES[path]) {
@@ -223,6 +228,7 @@ function AppContent() {
       else if (view === 'about') path = '/about';
       else if (view === 'contact') path = '/contact';
       else if (view === 'blog') path = '/blog';
+      else if (view === 'product') path = '/product';
       
       if (typeof window !== 'undefined' && window.location.pathname !== path) {
           safePushState({}, '', path);
@@ -336,7 +342,7 @@ function AppContent() {
         if (!session) {
             if (mounted) {
                 // If on public pages, stay there. Otherwise go to login/landing.
-                const publicViews: AuthState[] = ['landing', 'pricing', 'signup', 'terms', 'privacy', 'refund', 'partners', 'about', 'contact', 'blog'];
+                const publicViews: AuthState[] = ['landing', 'pricing', 'signup', 'terms', 'privacy', 'refund', 'partners', 'about', 'contact', 'blog', 'product'];
                 if (!publicViews.includes(authView)) {
                     navigateAuth(isAppDomain ? 'login' : 'landing');
                 }
@@ -964,6 +970,7 @@ function AppContent() {
                 onPrivacyClick={() => navigateAuth('privacy')}
                 onRefundClick={() => navigateAuth('refund')}
                 onContactClick={() => navigateAuth('contact')}
+                onProductClick={() => navigateAuth('product')}
               />
           </div>
       )
@@ -983,6 +990,7 @@ function AppContent() {
                 onPrivacyClick={() => navigateAuth('privacy')}
                 onRefundClick={() => navigateAuth('refund')}
                 onContactClick={() => navigateAuth('contact')}
+                onProductClick={() => navigateAuth('product')}
               />
           </div>
       )
@@ -1002,6 +1010,7 @@ function AppContent() {
                 onPrivacyClick={() => navigateAuth('privacy')}
                 onRefundClick={() => navigateAuth('refund')}
                 onContactClick={() => navigateAuth('contact')}
+                onProductClick={() => navigateAuth('product')}
               />
           </div>
       )
@@ -1020,6 +1029,7 @@ function AppContent() {
                 onRefundClick={() => navigateAuth('refund')}
                 onContactClick={() => navigateAuth('contact')}
                 onBlogClick={() => navigateAuth('blog')}
+                onProductClick={() => navigateAuth('product')}
               />
           </div>
       )
@@ -1048,6 +1058,7 @@ function AppContent() {
                 onAboutClick={() => navigateAuth('about')}
                 onContactClick={() => navigateAuth('contact')}
                 onBlogClick={() => navigateAuth('blog')}
+                onProductClick={() => navigateAuth('product')}
               />
           </motion.div>
         </AnimatePresence>
@@ -1076,6 +1087,7 @@ function AppContent() {
                 onPartnersClick={() => navigateAuth('partners')}
                 onContactClick={() => navigateAuth('contact')}
                 onBlogClick={() => navigateAuth('blog')}
+                onProductClick={() => navigateAuth('product')}
               />
           </motion.div>
         </AnimatePresence>
@@ -1106,6 +1118,7 @@ function AppContent() {
                 onPartnersClick={() => navigateAuth('partners')}
                 onContactClick={() => navigateAuth('contact')}
                 onBlogClick={() => navigateAuth('blog')}
+                onProductClick={() => navigateAuth('product')}
               />
           </motion.div>
         </AnimatePresence>
@@ -1127,6 +1140,7 @@ function AppContent() {
                 onLogin={() => {}} 
                 onSwitchToSignup={() => navigateAuth('signup')}
                 onPricing={() => navigateAuth('pricing')}
+                onProduct={() => navigateAuth('product')}
                 onBackToHome={handleBackToHome}
               />
           </motion.div>
@@ -1149,6 +1163,7 @@ function AppContent() {
                 onSignup={() => {}} 
                 onSwitchToLogin={() => navigateAuth('login')}
                 onPricing={() => navigateAuth('pricing')}
+                onProduct={() => navigateAuth('product')}
                 onBackToHome={handleBackToHome}
               />
           </motion.div>
@@ -1178,6 +1193,8 @@ function AppContent() {
                 onPartnersClick={() => navigateAuth('partners')}
                 onAboutClick={() => navigateAuth('about')}
                 onLandingClick={handleBackToHome}
+                onBlogClick={() => navigateAuth('blog')}
+                onProductClick={() => navigateAuth('product')}
               />
           </motion.div>
         </AnimatePresence>
@@ -1207,7 +1224,49 @@ function AppContent() {
                 onAbout={() => navigateAuth('about')}
                 onContactClick={() => navigateAuth('contact')}
                 onBlogClick={() => {}}
+                onProductClick={() => navigateAuth('product')}
               />
+          </motion.div>
+        </AnimatePresence>
+      );
+  }
+
+  if (authView === 'product' && !isRecoveryMode) {
+      return (
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key="product"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="w-full min-h-screen pt-20"
+          >
+              <PublicNavigation 
+                user={user}
+                onLogin={handleLandingLoginClick} 
+                onSignup={handleLandingSignupClick} 
+                onPricing={() => navigateAuth('pricing')}
+                onLanding={handleBackToHome}
+                onAbout={() => navigateAuth('about')}
+                onContact={() => navigateAuth('contact')}
+                onBlogClick={() => navigateAuth('blog')}
+                onProductClick={() => navigateAuth('product')}
+                activePage="product" 
+              />
+              <ProductPage onSignupClick={() => navigateAuth('signup')} onPricingClick={() => navigateAuth('pricing')} />
+              <Footer 
+                onTermsClick={() => navigateAuth('terms')}
+                onPrivacyClick={() => navigateAuth('privacy')}
+                onRefundClick={() => navigateAuth('refund')}
+                onAboutClick={() => navigateAuth('about')}
+                onPartnersClick={() => navigateAuth('partners')}
+                onContactClick={() => navigateAuth('contact')}
+                onBlogClick={() => navigateAuth('blog')}
+                onHomeClick={handleBackToHome}
+                onPricingClick={() => navigateAuth('pricing')}
+              />
+              <ChatBot user={user} />
           </motion.div>
         </AnimatePresence>
       );

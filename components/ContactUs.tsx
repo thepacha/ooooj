@@ -14,6 +14,8 @@ interface ContactUsProps {
   onPartnersClick: () => void;
   onAboutClick: () => void;
   onLandingClick?: () => void;
+  onBlogClick?: () => void;
+  onProductClick?: () => void;
 }
 
 export const ContactUs: React.FC<ContactUsProps> = ({
@@ -26,7 +28,9 @@ export const ContactUs: React.FC<ContactUsProps> = ({
   onRefundClick,
   onPartnersClick,
   onAboutClick,
-  onLandingClick
+  onLandingClick,
+  onBlogClick,
+  onProductClick
 }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -79,6 +83,8 @@ export const ContactUs: React.FC<ContactUsProps> = ({
         onLanding={onLandingClick}
         onAbout={onAboutClick}
         onContact={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onBlogClick={onBlogClick}
+        onProductClick={onProductClick}
         activePage="contact"
       />
 
@@ -274,6 +280,7 @@ export const ContactUs: React.FC<ContactUsProps> = ({
         onRefundClick={onRefundClick}
         onPartnersClick={onPartnersClick}
         onAboutClick={onAboutClick}
+        onProductClick={onProductClick}
       />
     </div>
   );

@@ -14,14 +14,19 @@ interface FooterProps {
   onBlogClick?: () => void;
   onHomeClick?: () => void;
   onPricingClick?: () => void;
+  onProductClick?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, onRefundClick, onPartnersClick, onAboutClick, onContactClick, onBlogClick, onHomeClick, onPricingClick }) => {
+export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, onRefundClick, onPartnersClick, onAboutClick, onContactClick, onBlogClick, onHomeClick, onPricingClick, onProductClick }) => {
   const { t } = useLanguage();
 
   return (
-      <footer className="bg-[#f5f4f0] dark:bg-[#0a0a0a] pt-20 pb-10 px-6 border-t border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto">
+      <footer className="bg-[#fafbfc] dark:bg-[#0a0a0a] pt-20 pb-10 px-6 border-t border-slate-200 dark:border-slate-800 relative overflow-hidden">
+        {/* Subtle background decoration */}
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[#0500e2]/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-sky-500/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto relative z-10">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 mb-16">
                 <div className="col-span-2 lg:col-span-2">
                     <div className="flex items-center gap-2 text-[#0500e2] dark:text-[#4b53fa] mb-6">
@@ -79,6 +84,7 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, on
                 <div>
                     <h4 className="font-bold text-slate-900 dark:text-white mb-4 text-sm">{t('landing.footer.product')}</h4>
                     <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
+                        <li><button onClick={onProductClick} className="hover:text-[#0500e2] transition-colors">Product</button></li>
                         <li><button onClick={onHomeClick} className="hover:text-[#0500e2] transition-colors">Features</button></li>
                         <li><button onClick={onPricingClick} className="hover:text-[#0500e2] transition-colors">Pricing</button></li>
                         <li><a href="#" className="hover:text-[#0500e2] transition-colors">Security</a></li>
