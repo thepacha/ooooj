@@ -60,4 +60,32 @@ export const trackEvent = {
   }
 };
 
+export const enableLocationTracking = async () => {
+  try {
+    const response = await fetch('https://get.geojs.io/v1/ip/geo.json');
+    const data = await response.json();
+    
+    if (data && data.city && data.country) {
+      const locationData = {
+        $city: data.city,
+        $region: data.region,
+        $country_code: data.country_code,
+        $timezone: data.timezone,
+        City: data.city,
+        Country: data.country,
+        Region: data.region,
+        Continent: data.continent_code
+      };
+      
+      // Register makes these properties attach to all subsequent events tracked
+      mixpanel.register(locationData);
+      
+      // We can also attempt to update the person profile if identified
+      mixpanel.people.set(locationData);
+    }
+  } catch (error) {
+    console.warn("Could not fetch location data for Mixpanel", error);
+  }
+};
+
 export default mixpanel;

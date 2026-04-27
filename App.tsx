@@ -38,7 +38,7 @@ import { Loader2, Trash2, AlertTriangle, Sparkles, MessageSquare, TrendingUp, In
 import { RevuLogo } from './components/RevuLogo';
 import { supabase } from './lib/supabase';
 import { useLanguage, LanguageProvider } from './contexts/LanguageContext';
-import mixpanel, { trackEvent } from './lib/mixpanel';
+import mixpanel, { trackEvent, enableLocationTracking } from './lib/mixpanel';
 import { useNotifications } from './hooks/useNotifications';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 
@@ -1370,6 +1370,10 @@ function AppContent() {
 }
 
 function App() {
+  useEffect(() => {
+    enableLocationTracking();
+  }, []);
+
   return (
     <LanguageProvider>
       <AppContent />
