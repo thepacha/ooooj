@@ -14,6 +14,7 @@ interface BlogProps {
   onRefundClick: () => void;
   onContactClick: () => void;
   onBlogClick: () => void;
+  onCareersClick?: () => void;
   onProductClick?: () => void;
 }
 
@@ -56,6 +57,7 @@ export function Blog({
   onRefundClick,
   onContactClick,
   onBlogClick,
+  onCareersClick,
   onProductClick
 }: BlogProps) {
   return (
@@ -117,6 +119,7 @@ export function Blog({
         onContactClick={onContactClick}
         onBlogClick={onBlogClick}
         onProductClick={onProductClick}
+        onCareersClick={onCareersClick}
         onAboutClick={onAbout}
         onPartnersClick={onPartners}
         onPricingClick={onPricing}

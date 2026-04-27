@@ -15,6 +15,7 @@ interface ContactUsProps {
   onAboutClick: () => void;
   onLandingClick?: () => void;
   onBlogClick?: () => void;
+  onCareersClick?: () => void;
   onProductClick?: () => void;
 }
 
@@ -28,6 +29,7 @@ export const ContactUs: React.FC<ContactUsProps> = ({
   onRefundClick,
   onPartnersClick,
   onAboutClick,
+  onCareersClick,
   onLandingClick,
   onBlogClick,
   onProductClick
@@ -41,6 +43,7 @@ export const ContactUs: React.FC<ContactUsProps> = ({
   });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [submittedEmail, setSubmittedEmail] = useState<string>('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -59,6 +62,7 @@ export const ContactUs: React.FC<ContactUsProps> = ({
       });
 
       if (res.ok) {
+        setSubmittedEmail(formData.email);
         setStatus('success');
         setFormData({ name: '', email: '', company: '', topic: '', message: '' });
       } else {
@@ -151,7 +155,7 @@ export const ContactUs: React.FC<ContactUsProps> = ({
                     <CheckCircle2 size={40} />
                   </div>
                   <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Message Sent!</h3>
-                  <p className="text-slate-500 mb-8">We've received your request and will get back to you shortly at {formData.email}.</p>
+                  <p className="text-slate-500 mb-8">We've received your request and will get back to you shortly at {submittedEmail}.</p>
                   <button 
                     onClick={() => setStatus('idle')}
                     className="text-[#0500e2] font-semibold hover:underline"
@@ -206,6 +210,7 @@ export const ContactUs: React.FC<ContactUsProps> = ({
                       >
                         <option value="" disabled>Select a topic</option>
                         <option value="sales">Sales</option>
+                        <option value="demo">Book Demo</option>
                         <option value="support">Technical Support</option>
                         <option value="partnerships">Partnerships</option>
                         <option value="other">Other</option>
@@ -281,6 +286,7 @@ export const ContactUs: React.FC<ContactUsProps> = ({
         onPartnersClick={onPartnersClick}
         onAboutClick={onAboutClick}
         onProductClick={onProductClick}
+        onCareersClick={onCareersClick}
       />
     </div>
   );

@@ -15,9 +15,10 @@ interface FooterProps {
   onHomeClick?: () => void;
   onPricingClick?: () => void;
   onProductClick?: () => void;
+  onCareersClick?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, onRefundClick, onPartnersClick, onAboutClick, onContactClick, onBlogClick, onHomeClick, onPricingClick, onProductClick }) => {
+export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, onRefundClick, onPartnersClick, onAboutClick, onContactClick, onBlogClick, onHomeClick, onPricingClick, onProductClick, onCareersClick }) => {
   const { t } = useLanguage();
 
   return (
@@ -87,8 +88,6 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, on
                         <li><button onClick={onProductClick} className="hover:text-[#0500e2] transition-colors">Product</button></li>
                         <li><button onClick={onHomeClick} className="hover:text-[#0500e2] transition-colors">Features</button></li>
                         <li><button onClick={onPricingClick} className="hover:text-[#0500e2] transition-colors">Pricing</button></li>
-                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Security</a></li>
-                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Roadmap</a></li>
                     </ul>
                 </div>
 
@@ -101,7 +100,11 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, on
                                 About Us
                             </button>
                         </li>
-                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Careers</a></li>
+                        <li>
+                            <button onClick={onCareersClick} className="hover:text-[#0500e2] transition-colors text-start">
+                                Careers
+                            </button>
+                        </li>
                         <li>
                             <button onClick={onBlogClick} className="hover:text-[#0500e2] transition-colors text-start">
                                 Blog
@@ -119,15 +122,12 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, on
                 <div>
                     <h4 className="font-bold text-slate-900 dark:text-white mb-4 text-sm">{t('landing.footer.resources')}</h4>
                     <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
-                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Help Center</a></li>
+                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">FAQs</a></li>
                         <li>
                             <button onClick={onContactClick} className="hover:text-[#0500e2] transition-colors text-start">
                                 Contact Us
                             </button>
                         </li>
-                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">API Documentation</a></li>
-                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Community</a></li>
-                        <li><a href="#" className="hover:text-[#0500e2] transition-colors">Status</a></li>
                     </ul>
                 </div>
 

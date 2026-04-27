@@ -15,7 +15,7 @@ interface PublicNavigationProps {
   onContact?: () => void;
   onBlogClick?: () => void;
   onProductClick?: () => void;
-  activePage?: 'landing' | 'pricing' | 'login' | 'signup' | 'partners' | 'about' | 'contact' | 'blog' | 'product';
+  activePage?: 'landing' | 'pricing' | 'login' | 'signup' | 'partners' | 'about' | 'contact' | 'blog' | 'product' | 'careers';
 }
 
 export const PublicNavigation: React.FC<PublicNavigationProps> = ({ 

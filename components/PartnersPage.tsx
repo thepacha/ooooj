@@ -32,6 +32,7 @@ interface PartnersPageProps {
   onRefundClick: () => void;
   onContactClick?: () => void;
   onBlogClick?: () => void;
+  onCareersClick?: () => void;
   onProductClick?: () => void;
 }
 
@@ -43,6 +44,7 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({
   onTermsClick,
   onPrivacyClick,
   onRefundClick,
+  onCareersClick,
   onContactClick,
   onBlogClick,
   onProductClick
@@ -349,6 +351,7 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({
         onContactClick={onContactClick}
         onBlogClick={onBlogClick}
         onProductClick={onProductClick}
+        onCareersClick={onCareersClick}
       />
     </div>
   );

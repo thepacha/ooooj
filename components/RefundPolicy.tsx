@@ -15,6 +15,7 @@ interface RefundPolicyProps {
   onPrivacyClick?: () => void;
   onRefundClick?: () => void;
   onContactClick?: () => void;
+  onCareersClick?: () => void;
   onProductClick?: () => void;
 }
 
@@ -29,6 +30,7 @@ export const RefundPolicy: React.FC<RefundPolicyProps> = ({
   onPrivacyClick,
   onRefundClick,
   onContactClick,
+  onCareersClick,
   onProductClick
 }) => {
   return (
@@ -114,6 +116,7 @@ export const RefundPolicy: React.FC<RefundPolicyProps> = ({
         onPartnersClick={onPartners}
         onContactClick={onContactClick}
         onProductClick={onProductClick}
+        onCareersClick={onCareersClick}
       />
     </div>
   );

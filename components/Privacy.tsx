@@ -15,6 +15,7 @@ interface PrivacyProps {
   onPrivacyClick?: () => void;
   onRefundClick?: () => void;
   onContactClick?: () => void;
+  onCareersClick?: () => void;
   onProductClick?: () => void;
 }
 
@@ -29,6 +30,7 @@ export const Privacy: React.FC<PrivacyProps> = ({
   onPrivacyClick,
   onRefundClick,
   onContactClick,
+  onCareersClick,
   onProductClick
 }) => {
   return (
@@ -175,6 +177,7 @@ export const Privacy: React.FC<PrivacyProps> = ({
         onPartnersClick={onPartners}
         onContactClick={onContactClick}
         onProductClick={onProductClick}
+        onCareersClick={onCareersClick}
       />
     </div>
   );

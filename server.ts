@@ -397,6 +397,20 @@ async function startServer() {
           if (!response.ok) {
             const errorData = await response.json();
             console.error('Brevo API Error (Dashboard): Status', response.status, JSON.stringify(errorData));
+            
+            // Specifically handle IP restriction errors
+            if (response.status === 401 && errorData.code === 'unauthorized' && errorData.message?.includes('unrecognised IP address')) {
+              console.error('\x1b[31m%s\x1b[0m', 'CRITICAL: Brevo IP Authorization Required.');
+              console.error('\x1b[33m%s\x1b[0m', `Please authorize the following IP in your Brevo account: ${errorData.message.match(/[0-9a-f:]+/i)?.[0] || 'the current server IP'}`);
+              console.error('\x1b[34m%s\x1b[0m', 'Link: https://app.brevo.com/security/authorised_ips');
+              
+              return res.status(401).json({ 
+                error: "Email service IP restriction",
+                message: "Your server IP is not authorized in Brevo. Please add it to your Authorized IPs in Brevo security settings.",
+                link: "https://app.brevo.com/security/authorised_ips"
+              });
+            }
+
             return res.status(response.status).json({ 
               error: `Email service error: ${errorData.message || 'Unknown error'}`,
               details: errorData 

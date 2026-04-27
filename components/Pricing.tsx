@@ -18,6 +18,7 @@ interface PricingProps {
   onPartnersClick?: () => void;
   onContactClick?: () => void;
   onBlogClick?: () => void;
+  onCareersClick?: () => void;
   onProductClick?: () => void;
 }
 
@@ -32,6 +33,7 @@ export const Pricing: React.FC<PricingProps> = ({
   onRefundClick,
   onAboutClick,
   onPartnersClick,
+  onCareersClick,
   onContactClick,
   onBlogClick,
   onProductClick
@@ -426,6 +428,7 @@ export const Pricing: React.FC<PricingProps> = ({
             onContactClick={onContactClick}
             onBlogClick={onBlogClick}
             onProductClick={onProductClick}
+            onCareersClick={onCareersClick}
         />
       )}
     </div>
