@@ -39,6 +39,7 @@ import { supabase } from './lib/supabase';
 import { useLanguage, LanguageProvider } from './contexts/LanguageContext';
 import mixpanel from './lib/mixpanel';
 import { useNotifications } from './hooks/useNotifications';
+import { Analytics } from '@vercel/analytics/react';
 
 type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 'privacy' | 'refund' | 'partners' | 'about' | 'contact' | 'blog' | 'product';
 
@@ -1344,6 +1345,7 @@ function App() {
   return (
     <LanguageProvider>
       <AppContent />
+      <Analytics />
     </LanguageProvider>
   );
 }
