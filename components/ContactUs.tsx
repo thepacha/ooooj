@@ -66,8 +66,15 @@ export const ContactUs: React.FC<ContactUsProps> = ({
         setStatus('success');
         setFormData({ name: '', email: '', company: '', topic: '', message: '' });
       } else {
-        const data = await res.json();
-        setErrorMessage(data.error || "Submission failed");
+        let errorMessage = "Submission failed";
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const data = await res.json();
+          errorMessage = data.error || errorMessage;
+        } else {
+          errorMessage = `Server error: ${res.status} ${res.statusText}`;
+        }
+        setErrorMessage(errorMessage);
         setStatus('error');
       }
     } catch (error: any) {
