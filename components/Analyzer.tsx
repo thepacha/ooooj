@@ -6,7 +6,7 @@ import { AnalysisResult, Criteria, User } from '../types';
 import { EvaluationView } from './EvaluationView';
 import { generateId } from '../lib/utils';
 import { useLanguage } from '../contexts/LanguageContext';
-import mixpanel from '../lib/mixpanel';
+import mixpanel, { trackEvent } from '../lib/mixpanel';
 
 interface AnalyzerProps {
   criteria: Criteria[];
@@ -163,6 +163,7 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
           input_mode: inputMode,
           feature: 'Analyzer'
       });
+      trackEvent.aiConversionEvent('Analysis Completed', { feature: 'Analyzer' });
     } catch (err: any) {
       setError(err.message || 'Failed to analyze transcript.');
       setProcessingStatus('idle');

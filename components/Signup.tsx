@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase';
 import { DEFAULT_CRITERIA } from '../types';
 import { PublicNavigation } from './PublicNavigation';
 import { useLanguage } from '../contexts/LanguageContext';
-import mixpanel from '../lib/mixpanel';
+import mixpanel, { trackEvent } from '../lib/mixpanel';
 
 interface SignupProps {
   onSignup: (user: User) => void;
@@ -124,14 +124,12 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
             
             await supabase.from('criteria').insert(criteriaRecords);
 
-            mixpanel.track('Sign Up', {
-                signup_method: 'email',
+            trackEvent.signUp('email', {
                 user_id: authData.user.id,
                 email: email
             });
         } else if (authData.user && !authData.session) {
-            mixpanel.track('Sign Up', {
-                signup_method: 'email',
+            trackEvent.signUp('email', {
                 user_id: authData.user.id,
                 email: email,
                 status: 'pending_verification'
@@ -143,9 +141,7 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
     } catch (err: any) {
         setError(err.message || 'Failed to sign up.');
         setIsLoading(false);
-        mixpanel.track('Sign Up Failed', {
-            error: err.message
-        });
+        trackEvent.error('Sign Up Error', err.message);
     }
   };
 

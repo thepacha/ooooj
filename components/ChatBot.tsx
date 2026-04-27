@@ -4,7 +4,7 @@ import { MessageSquare, X, Send, Loader2, Sparkles, Minimize2, AlertTriangle } f
 import { createChatSession } from '../services/geminiService';
 import { User } from '../types';
 import { incrementUsage, checkLimit, COSTS } from '../lib/usageService';
-import mixpanel from '../lib/mixpanel';
+import mixpanel, { trackEvent } from '../lib/mixpanel';
 
 interface Message {
   role: 'user' | 'model';
@@ -191,15 +191,33 @@ export const ChatBot: React.FC<ChatBotProps> = ({ user }) => {
                 key={idx} 
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div 
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm whitespace-pre-wrap ${
-                    msg.role === 'user' 
-                      ? 'bg-[#0500e2] text-white rounded-br-none' 
-                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-bl-none'
-                  }`}
-                >
-                  {msg.text}
-                </div>
+                {msg.role === 'user' ? (
+                  <div className="max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm whitespace-pre-wrap bg-[#0500e2] text-white rounded-br-none">
+                    {msg.text}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1 items-start max-w-[85%]">
+                    <div className="rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm whitespace-pre-wrap bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-bl-none">
+                      {msg.text}
+                    </div>
+                    <div className="flex gap-2 px-2 mt-1">
+                      <button 
+                        onClick={() => trackEvent.userFeedback('positive', msg.text)}
+                        className="text-slate-400 hover:text-green-500 transition-colors"
+                        title="Helpful"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                      </button>
+                      <button 
+                        onClick={() => trackEvent.userFeedback('negative', msg.text)}
+                        className="text-slate-400 hover:text-red-500 transition-colors"
+                        title="Not helpful"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-2"></path></svg>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
             {isLoading && messages[messages.length-1].role === 'user' && (

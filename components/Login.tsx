@@ -6,7 +6,7 @@ import { BackgroundGradientAnimation } from './ui/background-gradient-animation'
 import { supabase } from '../lib/supabase';
 import { PublicNavigation } from './PublicNavigation';
 import { useLanguage } from '../contexts/LanguageContext';
-import mixpanel from '../lib/mixpanel';
+import mixpanel, { trackEvent } from '../lib/mixpanel';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -48,8 +48,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
         if (error) throw error;
         
         if (data.user) {
-            mixpanel.track('Sign In', {
-                login_method: 'email',
+            trackEvent.signIn('email', {
                 user_id: data.user.id,
                 success: true
             });
@@ -59,11 +58,11 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
     } catch (err: any) {
         setError(err.message || 'Failed to sign in.');
         setIsLoading(false);
-        mixpanel.track('Sign In', {
-            login_method: 'email',
+        trackEvent.signIn('email', {
             success: false,
             error: err.message
         });
+        trackEvent.error('Sign In Error', err.message);
     }
   };
 

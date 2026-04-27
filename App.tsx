@@ -38,7 +38,7 @@ import { Loader2, Trash2, AlertTriangle, Sparkles, MessageSquare, TrendingUp, In
 import { RevuLogo } from './components/RevuLogo';
 import { supabase } from './lib/supabase';
 import { useLanguage, LanguageProvider } from './contexts/LanguageContext';
-import mixpanel from './lib/mixpanel';
+import mixpanel, { trackEvent } from './lib/mixpanel';
 import { useNotifications } from './hooks/useNotifications';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 
@@ -160,11 +160,7 @@ function AppContent() {
       }
 
       // Mixpanel Page View
-      mixpanel.track('Page View', {
-          page_title: view,
-          page_url: path || view,
-          user_id: user?.id
-      });
+      trackEvent.pageView(path || view, view, { user_id: user?.id });
   };
 
   // Handle Browser Back/Forward Buttons
@@ -190,11 +186,7 @@ function AppContent() {
           if (APP_ROUTES[path]) {
               setAuthView('app');
               setCurrentView(APP_ROUTES[path]);
-              mixpanel.track('Page View', {
-                  page_title: APP_ROUTES[path],
-                  page_url: path,
-                  user_id: user?.id
-              });
+              trackEvent.pageView(path, APP_ROUTES[path], { user_id: user?.id });
               return;
           }
 
@@ -204,11 +196,7 @@ function AppContent() {
                   setAuthView('app');
                   setCurrentView('dashboard');
                   safeReplaceState({}, '', '/dashboard');
-                  mixpanel.track('Page View', {
-                      page_title: 'dashboard',
-                      page_url: '/dashboard',
-                      user_id: user?.id
-                  });
+                  trackEvent.pageView('/dashboard', 'dashboard', { user_id: user?.id });
               } else {
                   setAuthView('landing');
               }
@@ -241,11 +229,7 @@ function AppContent() {
       setAuthView(view);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       
-      mixpanel.track('Page View', {
-          page_title: view,
-          page_url: path,
-          user_id: user?.id
-      });
+      trackEvent.pageView(path, view, { user_id: user?.id });
   };
 
   const [isLoadingUser, setIsLoadingUser] = useState(true);
@@ -424,7 +408,9 @@ function AppContent() {
                     $name: profile.name,
                     company: profile.company,
                     website: profile.website,
-                    role: profile.role
+                    role: profile.role,
+                    $avatar: profile.avatar_url,
+                    $created: session.user.created_at
                 });
             } else if (!profile) {
                 const newProfile = {
@@ -655,18 +641,14 @@ function AppContent() {
 
   const handlePlanSelect = (plan: string) => {
      if (user) {
-         mixpanel.track('Purchase', {
+         trackEvent.purchase(plan === 'pro' ? 59 : plan === 'starter' ? 20 : 199, 'USD', {
              user_id: user.id,
              transaction_id: crypto.randomUUID(), // Mock ID
-             revenue: plan === 'pro' ? 59 : plan === 'starter' ? 20 : 199, // Approximate
-             currency: 'USD',
              plan_id: plan
          });
          alert(`You selected the ${plan} plan. Payment integration coming soon!`);
      } else {
-         mixpanel.track('Initiate Checkout', {
-             plan_id: plan
-         });
+         trackEvent.conversion('Initiate Checkout', { plan_id: plan });
          navigateAuth('signup');
      }
   }
