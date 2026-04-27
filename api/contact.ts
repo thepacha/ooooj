@@ -80,12 +80,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.error('Error sending email via Brevo API (dashboard):', emailError);
         // We still return success if Supabase worked, or maybe we should fail? 
         // Typically we want to know if the email failed.
-        return res.status(500).json({ error: `Connection to email service failed: \${emailError.message}` });
+        return res.status(500).json({ error: `Connection to email service failed: ${emailError.message}` });
       }
     } else {
       console.warn('BREVO_API_KEY is missing from environment variables.');
-      // If no API key, we might still want to succeed if Supabase worked, but usually this is an error in production
-      return res.status(500).json({ error: "Email service not configured" });
     }
 
     return res.status(200).json({ success: true });

@@ -4,6 +4,7 @@ import path from "path";
 import { WebSocketServer, WebSocket } from "ws";
 import http from "http";
 import dotenv from "dotenv";
+import { supabase } from "./lib/supabase";
 
 dotenv.config();
 
@@ -347,7 +348,6 @@ async function startServer() {
       }
 
       // 1. Save to Supabase
-      const { supabase } = await import("./lib/supabase"); // Lazy import to ensure it works in root context
       const { error: supabaseError } = await supabase
         .from('contact_messages')
         .insert([{ name, email, message, company, topic }]);
@@ -424,7 +424,6 @@ async function startServer() {
         }
       } else {
         console.warn('BREVO_API_KEY is missing from environment variables.');
-        return res.status(500).json({ error: "Email service not configured (API key missing)" });
       }
 
       res.json({ success: true });
