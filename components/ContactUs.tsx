@@ -72,7 +72,7 @@ export const ContactUs: React.FC<ContactUsProps> = ({
           const data = await res.json();
           errorMessage = data.error || errorMessage;
         } else {
-          errorMessage = `Server error: ${res.status} ${res.statusText}`;
+          errorMessage = `Server error: ${res.status}${res.statusText ? ` ${res.statusText}` : ''}`;
         }
         setErrorMessage(errorMessage);
         setStatus('error');
