@@ -40,6 +40,7 @@ import { supabase } from './lib/supabase';
 import { useLanguage, LanguageProvider } from './contexts/LanguageContext';
 import mixpanel from './lib/mixpanel';
 import { useNotifications } from './hooks/useNotifications';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 'privacy' | 'refund' | 'partners' | 'about' | 'contact' | 'blog' | 'product' | 'careers';
 
@@ -1390,6 +1391,7 @@ function App() {
   return (
     <LanguageProvider>
       <AppContent />
+      <SpeedInsights />
     </LanguageProvider>
   );
 }
