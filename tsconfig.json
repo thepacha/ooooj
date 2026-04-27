@@ -14,7 +14,12 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@mixpanel/react-native-session-replay": ["./lib/sessionReplay.tsx"]
+    }
   },
   "include": ["src", "components", "contexts", "lib", "services", "types.ts", "App.tsx", "index.tsx"]
 }

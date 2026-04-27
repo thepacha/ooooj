@@ -3,10 +3,13 @@ import mixpanel from "mixpanel-browser";
 const MIXPANEL_TOKEN = "f53cf0631032824d708490beca0fdbd0";
 
 mixpanel.init(MIXPANEL_TOKEN, {
-  debug: false,
+  debug: true,
   track_pageview: true,
   persistence: "localStorage",
   ignore_dnt: true,
+  record_sessions_percent: 100,
+  record_mask_all_inputs: true,
+  record_mask_all_text: true,
 });
 
 export const trackEvent = {

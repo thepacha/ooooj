@@ -18,6 +18,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve('./'),
+        '@mixpanel/react-native-session-replay': path.resolve('./lib/sessionReplay.tsx'),
       },
     },
     define: {
