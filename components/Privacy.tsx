@@ -62,12 +62,10 @@ export const Privacy: React.FC<PrivacyProps> = ({
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Owner and Data Controller</h2>
                 <p>
                     Mohamed Abdelmaguid<br />
-                    123 Innovation Drive<br />
-                    Suite 400<br />
-                    San Francisco, CA 94103, USA
+                    Cairo, Egypt
                 </p>
                 <p className="mt-2">
-                    <strong>Owner contact email:</strong> <a href="mailto:privacy@revuqai.com" className="text-[#0500e2] font-bold">privacy@revuqai.com</a>
+                    <strong>Owner contact email:</strong> <a href="mailto:privacy@revuqai.com" className="text-[#0500e2] font-bold">Mohamed@revuqai.com</a>
                 </p>
             </section>
 

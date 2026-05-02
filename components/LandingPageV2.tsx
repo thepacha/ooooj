@@ -10,7 +10,7 @@ interface LandingPageV2Props {
 
 export const LandingPageV2: React.FC<LandingPageV2Props> = ({ onLoginClick, onSignupClick }) => {
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0a0a0a] text-slate-900 dark:text-white font-sans selection:bg-blue-100 selection:text-blue-900">
+    <div className="min-h-screen bg-white dark:bg-[#0a0a0a] text-slate-900 dark:text-white font-sans">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
         <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">

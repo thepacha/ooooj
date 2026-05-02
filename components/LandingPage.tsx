@@ -93,13 +93,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({ user, onLoginClick, on
     targetSpeedRef.current = 0.5; // Resume speed
   };
   const [wordIndex, setWordIndex] = useState(0);
+  const [activePhraseIndex, setActivePhraseIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActivePhraseIndex((prev) => (prev + 1) % 3);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
   
   const rotatingWords = [
-    t('landing.hero.words.0' as any),
-    t('landing.hero.words.1' as any),
-    t('landing.hero.words.2' as any),
-    t('landing.hero.words.3' as any),
-    t('landing.hero.words.4' as any)
+    t('landing.hero.words.0'),
+    t('landing.hero.words.1'),
+    t('landing.hero.words.2'),
+    t('landing.hero.words.3'),
+    t('landing.hero.words.4')
   ];
 
   useEffect(() => {
@@ -142,10 +150,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ user, onLoginClick, on
                 </div>
                 <h1 
                     style={{ fontSize: '44px' }}
-                    className="font-bold text-slate-900 dark:text-white tracking-tight mb-6 leading-tight"
+                    className="font-bold text-slate-900 dark:text-white tracking-tight mb-6 leading-tight flex flex-wrap gap-x-2"
                 >
-                    <span className="text-[#0500e2]">{t('landing.hero.prefix_blue')}</span>
-                    {t('landing.hero.prefix_rest')}
+                    {[
+                      t('landing.hero.phrase_1'),
+                      t('landing.hero.phrase_2'),
+                      t('landing.hero.phrase_3')
+                    ].map((phrase, idx) => (
+                      <motion.span 
+                        key={idx}
+                        animate={{ 
+                          color: activePhraseIndex === idx ? '#0500e2' : 'inherit'
+                        }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        {phrase}
+                      </motion.span>
+                    ))}
                 </h1>
 
                 <p 

@@ -13,12 +13,14 @@ interface LoginProps {
   onSwitchToSignup: () => void;
   onBackToHome: () => void;
   onPricing: () => void;
+  onAbout?: () => void;
+  onContact?: () => void;
   onProduct?: () => void;
 }
 
 type LoginView = 'login' | 'forgot-password';
 
-export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToHome, onPricing, onProduct }) => {
+export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToHome, onPricing, onAbout, onContact, onProduct }) => {
   const [view, setView] = useState<LoginView>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -111,13 +113,15 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
   }
 
   return (
-    <div className="min-h-screen flex bg-[#f5f4f0] dark:bg-[#0a0a0a] font-sans selection:bg-[#0500e2] selection:text-white">
+    <div className="min-h-screen flex bg-[#f5f4f0] dark:bg-[#0a0a0a] font-sans">
       {/* Header */}
       <PublicNavigation 
         onLanding={onBackToHome}
         onLogin={() => {}} // Already on login
         onSignup={onSwitchToSignup}
         onPricing={onPricing}
+        onAbout={onAbout}
+        onContact={onContact}
         onProductClick={onProduct}
         activePage="login"
       />

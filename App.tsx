@@ -1168,6 +1168,8 @@ function AppContent() {
                 onLogin={() => {}} 
                 onSwitchToSignup={() => navigateAuth('signup')}
                 onPricing={() => navigateAuth('pricing')}
+                onAbout={() => navigateAuth('about')}
+                onContact={() => navigateAuth('contact')}
                 onProduct={() => navigateAuth('product')}
                 onBackToHome={handleBackToHome}
               />
@@ -1191,6 +1193,8 @@ function AppContent() {
                 onSignup={() => {}} 
                 onSwitchToLogin={() => navigateAuth('login')}
                 onPricing={() => navigateAuth('pricing')}
+                onAbout={() => navigateAuth('about')}
+                onContact={() => navigateAuth('contact')}
                 onProduct={() => navigateAuth('product')}
                 onBackToHome={handleBackToHome}
               />

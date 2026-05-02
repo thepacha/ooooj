@@ -132,6 +132,7 @@
               sans: ['Inter', 'sans-serif'],
               serif: ['Playfair Display', 'serif'],
               arabic: ['Cairo', 'sans-serif'],
+              outfit: ['Outfit', 'sans-serif'],
             },
             animation: {
               'fade-in': 'fade-in 0.3s ease-out forwards',
@@ -143,9 +144,15 @@
         }
       }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&family=Cairo:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
       body { font-family: 'Inter', sans-serif; }
+      
+      /* Global selection color */
+      ::selection {
+        background-color: #0500e2;
+        color: white;
+      }
       
       /* RTL specific font override */
       html[dir="rtl"] body { font-family: 'Cairo', sans-serif; }

@@ -273,8 +273,9 @@ export const translations = {
 
     // Landing Page
     'landing.hero.badge': 'Revu: the #1 AI Roleplay',
-    'landing.hero.prefix_blue': 'Train Smarter.',
-    'landing.hero.prefix_rest': ' Sell More. Support Better.',
+    'landing.hero.phrase_1': 'Train Smarter.',
+    'landing.hero.phrase_2': 'Sell More.',
+    'landing.hero.phrase_3': 'Support Better.',
     'landing.hero.words.0': 'to cut onboarding time in half.',
     'landing.hero.words.1': 'to close deals 30% faster.',
     'landing.hero.words.2': 'to increase average deal sizes.',
@@ -760,8 +761,9 @@ export const translations = {
 
     // Landing Page
     'landing.hero.badge': 'Revu: منصة تمثيل الأدوار رقم #1 بالذكاء الاصطناعي',
-    'landing.hero.prefix_blue': 'تدرب بذكاء.',
-    'landing.hero.prefix_rest': ' بع أكثر. ادعم بشكل أفضل.',
+    'landing.hero.phrase_1': 'تدرب بذكاء.',
+    'landing.hero.phrase_2': 'بع أكثر.',
+    'landing.hero.phrase_3': 'ادعم بشكل أفضل.',
     'landing.hero.words.0': 'لتقليص وقت التأهيل للنصف.',
     'landing.hero.words.1': 'لإغلاق الصفقات أسرع بـ 30%.',
     'landing.hero.words.2': 'لزيادة متوسط حجم الصفقات.',
@@ -978,4 +980,4 @@ export const translations = {
 };
 
 export type Language = 'en' | 'ar';
-export type TranslationKey = keyof typeof translations.en | 'landing.hero.words.0' | 'landing.hero.words.1' | 'landing.hero.words.2' | 'landing.hero.words.3' | 'landing.hero.words.4' | 'landing.hero.prefix_blue' | 'landing.hero.prefix_rest';
+export type TranslationKey = keyof typeof translations.en | 'landing.hero.words.0' | 'landing.hero.words.1' | 'landing.hero.words.2' | 'landing.hero.words.3' | 'landing.hero.words.4' | 'landing.hero.phrase_1' | 'landing.hero.phrase_2' | 'landing.hero.phrase_3';

@@ -85,7 +85,7 @@ export const ContactUs: React.FC<ContactUsProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#fafbfc] dark:bg-slate-950 text-slate-900 dark:text-slate-50 flex flex-col font-sans selection:bg-[#0500e2] selection:text-white pb-32 lg:pb-0">
+    <div className="min-h-screen bg-[#fafbfc] dark:bg-slate-950 text-slate-900 dark:text-slate-50 flex flex-col font-sans pb-32 lg:pb-0">
       <PublicNavigation 
         user={user}
         onLogin={onLoginClick}

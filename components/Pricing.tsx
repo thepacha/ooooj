@@ -171,7 +171,7 @@ export const Pricing: React.FC<PricingProps> = ({
                 <Star size={14} fill="currentColor" /> {t('pricing.priority_support')}
             </div>
             
-            <h2 className="text-5xl md:text-7xl font-serif font-bold text-slate-900 dark:text-white mb-6 tracking-tight">
+            <h2 className="text-[42px] md:text-[67px] font-outfit font-bold text-slate-900 dark:text-white mb-6 tracking-tight leading-[1.1]">
                 {t('pricing.title')}
             </h2>
             <p className="text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto mb-12 font-light">
@@ -251,7 +251,7 @@ export const Pricing: React.FC<PricingProps> = ({
                             <p className={`text-sm font-bold uppercase tracking-wider mb-2 ${plan.style === 'enterprise' ? 'text-slate-400' : 'text-slate-500'}`}>
                                 {plan.subtitle}
                             </p>
-                            <h3 className={`text-3xl font-serif font-bold mb-4 ${plan.style === 'enterprise' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
+                            <h3 className={`text-3xl font-outfit font-bold mb-4 ${plan.style === 'enterprise' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
                                 {plan.name}
                             </h3>
                             <p className={`text-sm leading-relaxed ${plan.style === 'enterprise' ? 'text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}>
@@ -317,7 +317,7 @@ export const Pricing: React.FC<PricingProps> = ({
 
         {/* Feature Table (Desktop) */}
         <div className="max-w-7xl mx-auto px-6 mb-32 hidden lg:block">
-            <h3 className="text-3xl font-serif font-bold text-center mb-16 text-slate-900 dark:text-white">{t('pricing.compare.title')}</h3>
+            <h3 className="text-3xl font-outfit font-bold text-center mb-16 text-slate-900 dark:text-white">{t('pricing.compare.title')}</h3>
             
             <div className="overflow-hidden">
                 <table className="w-full border-collapse">
@@ -396,7 +396,7 @@ export const Pricing: React.FC<PricingProps> = ({
 
         {/* FAQ */}
         <div className="max-w-3xl mx-auto px-6">
-            <h3 className="text-3xl font-serif font-bold text-center mb-12 text-slate-900 dark:text-white">{t('pricing.faq.title')}</h3>
+            <h3 className="text-3xl font-outfit font-bold text-center mb-12 text-slate-900 dark:text-white">{t('pricing.faq.title')}</h3>
             <div className="space-y-4">
                 {faqs.map((faq, i) => (
                     <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-300 hover:shadow-md">

@@ -14,10 +14,12 @@ interface SignupProps {
   onSwitchToLogin: () => void;
   onBackToHome: () => void;
   onPricing: () => void;
+  onAbout?: () => void;
+  onContact?: () => void;
   onProduct?: () => void;
 }
 
-export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBackToHome, onPricing, onProduct }) => {
+export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBackToHome, onPricing, onAbout, onContact, onProduct }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -205,13 +207,15 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
   }
 
   return (
-    <div className="min-h-screen flex bg-[#f5f4f0] dark:bg-[#0a0a0a] font-sans selection:bg-[#0500e2] selection:text-white">
+    <div className="min-h-screen flex bg-[#f5f4f0] dark:bg-[#0a0a0a] font-sans">
       {/* Header */}
       <PublicNavigation 
         onLanding={onBackToHome}
         onLogin={onSwitchToLogin}
         onSignup={() => {}} // Already on signup
         onPricing={onPricing}
+        onAbout={onAbout}
+        onContact={onContact}
         onProductClick={onProduct}
         activePage="signup"
       />

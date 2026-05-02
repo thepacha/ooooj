@@ -154,7 +154,7 @@ export const Terms: React.FC<TermsProps> = ({
             <section>
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Contact Us</h2>
                 <p>
-                    If you have any questions about these Terms, please contact us at <a href="mailto:terms@revuqai.com" className="text-[#0500e2] hover:underline font-bold">support@revuqa.com</a>
+                    If you have any questions about these Terms, please contact us at <a href="mailto:terms@revuqai.com" className="text-[#0500e2] hover:underline font-bold">support@revuqai.com</a>
                 </p>
             </section>
         </div>
