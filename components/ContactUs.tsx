@@ -113,12 +113,12 @@ export const ContactUs: React.FC<ContactUsProps> = ({
               We're here to help
             </div>
             
-            <h1 className="text-5xl lg:text-7xl font-bold tracking-tight mb-6">
+            <h1 className="text-[50px] font-bold tracking-tight mb-6 leading-tight">
               Let's build <br/><span className="text-[#0500e2]">something great.</span>
             </h1>
             
             <p className="text-lg text-slate-600 dark:text-slate-400 mb-12 max-w-lg leading-relaxed">
-              Have questions about RevuQA, pricing, or need technical support? 
+              Have questions about Revu, pricing, or need technical support? 
               Our team is ready to provide you with the answers you need to scale your QA processes.
             </p>
 

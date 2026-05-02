@@ -140,11 +140,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ user, onLoginClick, on
                         {t('landing.hero.badge')}
                     </span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight mb-6 leading-tight uppercase">
-                    {t('landing.hero.prefix')}
+                <h1 
+                    style={{ fontSize: '44px' }}
+                    className="font-bold text-slate-900 dark:text-white tracking-tight mb-6 leading-tight"
+                >
+                    <span className="text-[#0500e2]">{t('landing.hero.prefix_blue')}</span>
+                    {t('landing.hero.prefix_rest')}
                 </h1>
 
-                <p className="text-xl text-slate-500 dark:text-slate-400 mb-12 leading-relaxed max-w-xl text-start">
+                <p 
+                    style={{ fontSize: '18px' }}
+                    className="text-slate-500 dark:text-slate-400 mb-12 leading-relaxed max-w-xl text-start"
+                >
                     {t('landing.hero.subtitle')}
                 </p>
 

@@ -272,14 +272,15 @@ export const translations = {
     'nav.get_started': 'Get Started',
 
     // Landing Page
-    'landing.hero.badge': 'New: Voice Engine 2.0',
-    'landing.hero.prefix': 'PRACTICE WITH AI 24/7. CLOSE MORE SALES WITH CONFIDENCE',
+    'landing.hero.badge': 'Revu: the #1 AI Roleplay',
+    'landing.hero.prefix_blue': 'Train Smarter.',
+    'landing.hero.prefix_rest': ' Sell More. Support Better.',
     'landing.hero.words.0': 'to cut onboarding time in half.',
     'landing.hero.words.1': 'to close deals 30% faster.',
     'landing.hero.words.2': 'to increase average deal sizes.',
     'landing.hero.words.3': 'to save managers 10+ hours.',
     'landing.hero.words.4': 'to hit quota in their first 90 days.',
-    'landing.hero.subtitle': "Bad calls cost revenue. Train agents with AI before they cost you customers. Hyper-realistic call simulations that eliminate guesswork and build confidence fast.",
+    'landing.hero.subtitle': "Revu trains agents through realistic roleplay scenarios, then scores 100% of live calls automatically in Arabic, English and beyond. No manual reviews. No missed revenue.",
     'landing.cta.start': 'Start Simulation',
     'landing.scenario_freedom.cta': 'Close More Deals',
     'landing.cta.demo': 'Listen to Demo',
@@ -758,14 +759,15 @@ export const translations = {
     'nav.get_started': 'ابدأ الآن',
 
     // Landing Page
-    'landing.hero.badge': 'جديد: محرك الصوت 2.0',
-    'landing.hero.prefix': 'تَدَرَّبْ بِالذَّكَاءِ الاِصْطِنَاعِيِّ 24/7. أَغْلِقْ صَفَقَاتِكَ بِثِقَةٍ',
+    'landing.hero.badge': 'Revu: منصة تمثيل الأدوار رقم #1 بالذكاء الاصطناعي',
+    'landing.hero.prefix_blue': 'تدرب بذكاء.',
+    'landing.hero.prefix_rest': ' بع أكثر. ادعم بشكل أفضل.',
     'landing.hero.words.0': 'لتقليص وقت التأهيل للنصف.',
     'landing.hero.words.1': 'لإغلاق الصفقات أسرع بـ 30%.',
     'landing.hero.words.2': 'لزيادة متوسط حجم الصفقات.',
     'landing.hero.words.3': 'لتوفير أكثر من 10 ساعات.',
     'landing.hero.words.4': 'لتحقيق الهدف في أول 90 يوماً.',
-    'landing.hero.subtitle': 'لا تتدرب على عملاء حقيقيين. درب وكلاءك باستخدام سيناريوهات ذكاء اصطناعي واقعية للغاية تحاكي أصعب مكالماتك - قبل أن يرفعوا سماعة الهاتف.',
+    'landing.hero.subtitle': "تقوم Revu بتدريب الوكلاء من خلال سيناريوهات لعب أدوار واقعية، ثم تسجل 100% من المكالمات المباشرة تلقائيًا باللغتين العربية والإنجليزية وأبعد من ذلك. لا مراجعات يدوية. لا خسارة في الأرباح.",
     'landing.cta.start': 'بدء المحاكاة',
     'landing.scenario_freedom.cta': 'إغلاق المزيد من الصفقات',
     'landing.cta.demo': 'استمع للعرض',
@@ -976,4 +978,4 @@ export const translations = {
 };
 
 export type Language = 'en' | 'ar';
-export type TranslationKey = keyof typeof translations.en | 'landing.hero.words.0' | 'landing.hero.words.1' | 'landing.hero.words.2' | 'landing.hero.words.3' | 'landing.hero.words.4' | 'landing.hero.prefix';
+export type TranslationKey = keyof typeof translations.en | 'landing.hero.words.0' | 'landing.hero.words.1' | 'landing.hero.words.2' | 'landing.hero.words.3' | 'landing.hero.words.4' | 'landing.hero.prefix_blue' | 'landing.hero.prefix_rest';

@@ -28,10 +28,10 @@ async function startServer() {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Revu AI - Quality Assurance & Coaching Insights</title>
-    <meta name="description" content="Revu AI automates transcript scoring and provides actionable coaching insights for modern support teams. Get started for free today.">
-    <meta name="keywords" content="AI QA, Quality Assurance, Transcript Scoring, Coaching Insights, Support Team Performance">
+    <meta name="description" content="Revu AI is the premier Quality Assurance and agent coaching platform for modern support teams. Automate transcript scoring, gain actionable insights, and elevate agent performance with advanced AI analysis. Get started with the most powerful QA tool in the industry today.">
+    <meta name="keywords" content="AI QA, Quality Assurance, Transcript Scoring, Coaching Insights, Support Team Performance, MENA Contact Centers, Arabic AI QA">
     <meta property="og:title" content="Revu AI - Quality Assurance & Coaching Insights">
-    <meta property="og:description" content="Revu AI automates transcript scoring and provides actionable coaching insights for modern support teams.">
+    <meta property="og:description" content="Revu AI is the premier Quality Assurance and agent coaching platform for modern support teams. Automate transcript scoring, gain actionable insights, and elevate agent performance with advanced AI analysis.">
     <meta property="og:type" content="website">
     <link rel="stylesheet" href="/index.css">
 </head>
@@ -105,9 +105,9 @@ async function startServer() {
         
         // Inject SEO meta tags
         const metaTags = `
-            <title>Revu AI Blog - Contact Center Insights</title>
-            <meta name="description" content="Insights, strategies, and updates on AI-powered quality assurance and contact center performance.">
-            <meta property="og:title" content="Revu AI Blog">
+            <title>Revu AI Blog - Contact Center Insights & QA Strategies</title>
+            <meta name="description" content="Explore the Revu AI blog for the latest insights, strategies, and updates on AI-powered quality assurance. Learn how to transform contact center performance with automated transcript scoring and data-driven agent coaching techniques.">
+            <meta property="og:title" content="Revu AI Blog - Expert Insights on AI QA">
         `;
         
         let finalHtml = indexHtml.replace('</head>', `${metaTags}</head>`);

@@ -1,5 +1,5 @@
-# Revu
-AI-powered contact center QA and agent coaching for MENA.
+# Revu | AI Roleplay Training & Auto QA
+Help sales and support staff practice tough calls using smart AI roleplay. Plus, save hours of manual work by automating your daily QA scoring.
 
 ## Services
 - Automated call QA scoring
