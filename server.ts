@@ -119,6 +119,60 @@ async function startServer() {
     }
   });
 
+  // SEO-friendly FAQ SSR route
+  app.get("/faqs", (req, res, next) => {
+    try {
+        let indexHtml = '';
+        if (process.env.NODE_ENV === "production") {
+            const fs = require('fs');
+            indexHtml = fs.readFileSync(path.join(process.cwd(), "dist", "index.html"), "utf-8");
+        } else {
+            indexHtml = `<!DOCTYPE html><html lang="en"><head><script type="module" src="/@vite/client"></script><script type="module" src="/src/main.tsx"></script></head><body><div id="root"></div></body></html>`;
+        }
+
+        const faqs = [
+            { q: "What is Revu AI?", a: "Revu AI is an advanced Quality Assurance and agent coaching platform designed for modern support teams. We use cutting-edge AI to automate transcript scoring, analyze customer sentiment, and provide actionable coaching insights." },
+            { q: "Does Revu AI support Arabic language?", a: "Yes! We are specialists in the MENA region. Revu AI supports various Arabic dialects as well as Modern Standard Arabic, ensuring high accuracy for companies operating across the Middle East." },
+            { q: "How accurate is the automated scoring?", a: "Revu AI achieve over 95% alignment with human-scored rubrics. Our system is trained both on general communication principles and your specific business guidelines." },
+            { q: "How is my data protected?", a: "Security is our top priority. We use enterprise-grade encryption (AES-256) for data at rest and TLS 1.2+ for data in transit. We are fully GDPR and SOC2 compliant." },
+            { q: "Can I use my own custom quality rubrics?", a: "Absolutely. You can import your existing quality frameworks or build new ones within the platform. You define the criteria, their weights, and specific scoring logic." },
+            { q: "How is usage calculated?", a: "Pricing is based on the volume of interactions analyzed per month. We have tiers for teams of all sizes, from startups to large enterprises." },
+            { q: "Is there a free trial?", a: "Yes, we offer a 14-day free trial that includes full access to our platform features and enough credits to analyze your first batch of transcripts." }
+        ];
+
+        const faqHtml = faqs.map(f => `
+            <div style="margin-bottom: 30px; border-bottom: 1px solid #e2e8f0; padding-bottom: 20px;">
+                <h2 style="font-size: 1.5rem; color: #0f172a; margin-bottom: 10px;">${f.q}</h2>
+                <p style="color: #475569; line-height: 1.6;">${f.a}</p>
+            </div>
+        `).join('');
+
+        const seoContent = `
+        <div style="padding: 60px 20px; max-width: 800px; margin: 0 auto; font-family: sans-serif;">
+            <h1 style="font-size: 3rem; margin-bottom: 20px; text-align: center; color: #0500e2;">Frequently Asked Questions</h1>
+            <p style="text-align: center; font-size: 1.2rem; color: #64748b; margin-bottom: 50px;">Everything you need to know about Revu AI, security, and our platform features.</p>
+            <div>
+                ${faqHtml}
+            </div>
+        </div>
+        `;
+        
+        const metaTags = `
+            <title>Frequently Asked Questions - Revu AI Support</title>
+            <meta name="description" content="Find answers to common questions about Revu AI, the premier Quality Assurance and agent coaching platform. Learn about our automated transcript scoring, Arabic language support, security measures, and more.">
+            <meta property="og:title" content="Revu AI FAQs - Quality Assurance & Coaching Insights">
+            <meta property="og:description" content="Everything you need to know about Revu AI. Automated scoring, Arabic support, data security, and enterprise features.">
+        `;
+        
+        let finalHtml = indexHtml.replace('</head>', `${metaTags}</head>`);
+        finalHtml = finalHtml.replace('<div id="root"></div>', `<div id="root">${seoContent}</div>`);
+        
+        res.send(finalHtml);
+    } catch (e) {
+        next();
+    }
+  });
+
   // Helper to split text into chunks of max length (1900 to be safe under 2000 limit)
   const splitText = (str: string, maxLength: number): string[] => {
       const chunks: string[] = [];

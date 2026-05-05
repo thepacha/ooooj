@@ -17,6 +17,7 @@ interface ContactUsProps {
   onBlogClick?: () => void;
   onCareersClick?: () => void;
   onProductClick?: () => void;
+  onFaqsClick?: () => void;
 }
 
 export const ContactUs: React.FC<ContactUsProps> = ({
@@ -32,7 +33,8 @@ export const ContactUs: React.FC<ContactUsProps> = ({
   onCareersClick,
   onLandingClick,
   onBlogClick,
-  onProductClick
+  onProductClick,
+  onFaqsClick
 }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -295,6 +297,7 @@ export const ContactUs: React.FC<ContactUsProps> = ({
         onProductClick={onProductClick}
         onCareersClick={onCareersClick}
         onPricingClick={onPricingClick}
+        onFaqsClick={onFaqsClick}
       />
     </div>
   );

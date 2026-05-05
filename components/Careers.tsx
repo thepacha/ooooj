@@ -19,6 +19,7 @@ interface CareersProps {
   onAboutClick?: () => void;
   onProductClick?: () => void;
   onCareersClick?: () => void;
+  onFaqsClick?: () => void;
 }
 
 export const Careers: React.FC<CareersProps> = ({ 
@@ -34,7 +35,8 @@ export const Careers: React.FC<CareersProps> = ({
   onBlogClick,
   onAboutClick,
   onProductClick,
-  onCareersClick
+  onCareersClick,
+  onFaqsClick
 }) => {
   const { isRTL } = useLanguage();
 
@@ -213,6 +215,7 @@ export const Careers: React.FC<CareersProps> = ({
         onCareersClick={onCareersClick}
         onPricingClick={onPricing}
         onHomeClick={onBack}
+        onFaqsClick={onFaqsClick}
       />
     </div>
   );

@@ -33,6 +33,7 @@ import { AboutUs } from './components/AboutUs';
 import { ContactUs } from './components/ContactUs';
 import { ProductPage } from './components/ProductPage';
 import { Careers } from './components/Careers';
+import { Faqs } from './components/Faqs';
 import { ViewState, AnalysisResult, Criteria, DEFAULT_CRITERIA, User } from './types';
 import { Loader2, Trash2, AlertTriangle, Sparkles, MessageSquare, TrendingUp, Info } from 'lucide-react';
 import { RevuLogo } from './components/RevuLogo';
@@ -42,7 +43,7 @@ import mixpanel, { trackEvent, enableLocationTracking } from './lib/mixpanel';
 import { useNotifications } from './hooks/useNotifications';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 
-type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 'privacy' | 'refund' | 'partners' | 'about' | 'contact' | 'blog' | 'product' | 'careers';
+type AuthState = 'landing' | 'login' | 'signup' | 'app' | 'pricing' | 'terms' | 'privacy' | 'refund' | 'partners' | 'about' | 'contact' | 'blog' | 'product' | 'careers' | 'faqs';
 
 // URL Routing Configuration
 const APP_ROUTES: Record<string, ViewState> = {
@@ -124,6 +125,8 @@ function AppContent() {
       if (path === '/product') return { auth: 'product', view: 'dashboard' };
       if (path === '/careers') return { auth: 'careers', view: 'dashboard' };
       
+      if (path === '/faqs') return { auth: 'faqs', view: 'dashboard' };
+      
       // App Pages
       if (APP_ROUTES[path]) {
           return { auth: 'app', view: APP_ROUTES[path] };
@@ -182,6 +185,8 @@ function AppContent() {
           if (path === '/product') { setAuthView('product'); return; }
           if (path === '/careers') { setAuthView('careers'); return; }
           
+          if (path === '/faqs') { setAuthView('faqs'); return; }
+          
           // App Routes
           if (APP_ROUTES[path]) {
               setAuthView('app');
@@ -222,6 +227,7 @@ function AppContent() {
       else if (view === 'blog') path = '/blog';
       else if (view === 'product') path = '/product';
       else if (view === 'careers') path = '/careers';
+      else if (view === 'faqs') path = '/faqs';
       
       if (typeof window !== 'undefined' && window.location.pathname !== path) {
           safePushState({}, '', path);
@@ -965,6 +971,7 @@ function AppContent() {
                 onContactClick={() => navigateAuth('contact')}
                 onProductClick={() => navigateAuth('product')}
                 onCareersClick={() => navigateAuth('careers')}
+                onFaqsClick={() => navigateAuth('faqs')}
               />
           </div>
       )
@@ -986,6 +993,7 @@ function AppContent() {
                 onContactClick={() => navigateAuth('contact')}
                 onProductClick={() => navigateAuth('product')}
                 onCareersClick={() => navigateAuth('careers')}
+                onFaqsClick={() => navigateAuth('faqs')}
               />
           </div>
       )
@@ -1007,6 +1015,7 @@ function AppContent() {
                 onContactClick={() => navigateAuth('contact')}
                 onProductClick={() => navigateAuth('product')}
                 onCareersClick={() => navigateAuth('careers')}
+                onFaqsClick={() => navigateAuth('faqs')}
               />
           </div>
       )
@@ -1027,6 +1036,7 @@ function AppContent() {
                 onBlogClick={() => navigateAuth('blog')}
                 onProductClick={() => navigateAuth('product')}
                 onCareersClick={() => navigateAuth('careers')}
+                onFaqsClick={() => navigateAuth('faqs')}
               />
           </div>
       )
@@ -1057,6 +1067,7 @@ function AppContent() {
                 onBlogClick={() => navigateAuth('blog')}
                 onProductClick={() => navigateAuth('product')}
                 onCareersClick={() => navigateAuth('careers')}
+                onFaqsClick={() => navigateAuth('faqs')}
               />
           </motion.div>
         </AnimatePresence>
@@ -1087,6 +1098,7 @@ function AppContent() {
                 onBlogClick={() => navigateAuth('blog')}
                 onCareersClick={() => navigateAuth('careers')}
                 onProductClick={() => navigateAuth('product')}
+                onFaqsClick={() => navigateAuth('faqs')}
               />
           </motion.div>
         </AnimatePresence>
@@ -1118,6 +1130,7 @@ function AppContent() {
                 onBlogClick={() => navigateAuth('blog')}
                 onProductClick={() => navigateAuth('product')}
                 onCareersClick={() => navigateAuth('careers')}
+                onFaqsClick={() => navigateAuth('faqs')}
               />
               <ChatBot user={user} />
           </motion.div>
@@ -1151,6 +1164,7 @@ function AppContent() {
                 onBlogClick={() => navigateAuth('blog')}
                 onProductClick={() => navigateAuth('product')}
                 onCareersClick={() => navigateAuth('careers')}
+                onFaqsClick={() => navigateAuth('faqs')}
               />
           </motion.div>
         </AnimatePresence>
@@ -1232,6 +1246,7 @@ function AppContent() {
                 onBlogClick={() => navigateAuth('blog')}
                 onProductClick={() => navigateAuth('product')}
                 onCareersClick={() => navigateAuth('careers')}
+                onFaqsClick={() => navigateAuth('faqs')}
               />
           </motion.div>
         </AnimatePresence>
@@ -1263,6 +1278,39 @@ function AppContent() {
                 onBlogClick={() => {}}
                 onProductClick={() => navigateAuth('product')}
                 onCareersClick={() => navigateAuth('careers')}
+                onFaqsClick={() => navigateAuth('faqs')}
+              />
+          </motion.div>
+        </AnimatePresence>
+      );
+  }
+
+  if (authView === 'faqs' && !isRecoveryMode) {
+      return (
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key="faqs"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="w-full min-h-screen"
+          >
+              <Faqs 
+                onLogin={handleLandingLoginClick} 
+                onSignup={handleLandingSignupClick} 
+                onPricing={() => navigateAuth('pricing')}
+                onLanding={handleBackToHome}
+                onTerms={() => navigateAuth('terms')}
+                onPrivacy={() => navigateAuth('privacy')}
+                onRefund={() => navigateAuth('refund')}
+                onPartners={() => navigateAuth('partners')}
+                onAbout={() => navigateAuth('about')}
+                onContact={() => navigateAuth('contact')}
+                onBlog={() => navigateAuth('blog')}
+                onProduct={() => navigateAuth('product')}
+                onCareers={() => navigateAuth('careers')}
+                onFaqs={() => navigateAuth('faqs')}
               />
           </motion.div>
         </AnimatePresence>
@@ -1304,6 +1352,7 @@ function AppContent() {
                 onHomeClick={handleBackToHome}
                 onPricingClick={() => navigateAuth('pricing')}
                 onCareersClick={() => navigateAuth('careers')}
+                onFaqsClick={() => navigateAuth('faqs')}
               />
               <ChatBot user={user} />
           </motion.div>

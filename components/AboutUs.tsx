@@ -18,6 +18,7 @@ interface AboutUsProps {
   onContactClick?: () => void;
   onBlogClick?: () => void;
   onProductClick?: () => void;
+  onFaqsClick?: () => void;
 }
 
 export const AboutUs: React.FC<AboutUsProps> = ({ 
@@ -32,7 +33,8 @@ export const AboutUs: React.FC<AboutUsProps> = ({
   onContactClick,
   onBlogClick,
   onCareersClick,
-  onProductClick
+  onProductClick,
+  onFaqsClick
 }) => {
   const { isRTL } = useLanguage();
 
@@ -173,6 +175,7 @@ export const AboutUs: React.FC<AboutUsProps> = ({
         onContactClick={onContactClick}
         onProductClick={onProductClick}
         onPricingClick={onPricing}
+        onFaqsClick={onFaqsClick}
       />
     </div>
   );

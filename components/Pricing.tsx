@@ -21,6 +21,7 @@ interface PricingProps {
   onCareersClick?: () => void;
   onProductClick?: () => void;
   onPricingClick?: () => void;
+  onFaqsClick?: () => void;
 }
 
 export const Pricing: React.FC<PricingProps> = ({ 
@@ -38,7 +39,8 @@ export const Pricing: React.FC<PricingProps> = ({
   onContactClick,
   onBlogClick,
   onProductClick,
-  onPricingClick
+  onPricingClick,
+  onFaqsClick
 }) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -417,6 +419,18 @@ export const Pricing: React.FC<PricingProps> = ({
                     </div>
                 ))}
             </div>
+
+            {onFaqsClick && (
+                <div className="mt-12 text-center">
+                    <button 
+                        onClick={onFaqsClick}
+                        className="text-[#0500e2] font-bold hover:underline inline-flex items-center gap-2"
+                    >
+                        View more FAQs
+                        <ArrowRight size={16} />
+                    </button>
+                </div>
+            )}
         </div>
       </div>
 
@@ -432,6 +446,7 @@ export const Pricing: React.FC<PricingProps> = ({
             onProductClick={onProductClick}
             onCareersClick={onCareersClick}
             onPricingClick={onPricingClick || (() => window.scrollTo({ top: 0, behavior: 'smooth' }))}
+            onFaqsClick={onFaqsClick}
         />
       )}
     </div>

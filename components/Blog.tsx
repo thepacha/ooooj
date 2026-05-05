@@ -16,6 +16,7 @@ interface BlogProps {
   onBlogClick: () => void;
   onCareersClick?: () => void;
   onProductClick?: () => void;
+  onFaqsClick?: () => void;
 }
 
 const BLOG_POSTS = [
@@ -58,7 +59,8 @@ export function Blog({
   onContactClick,
   onBlogClick,
   onCareersClick,
-  onProductClick
+  onProductClick,
+  onFaqsClick
 }: BlogProps) {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
@@ -124,6 +126,7 @@ export function Blog({
         onPartnersClick={onPartners}
         onPricingClick={onPricing}
         onHomeClick={onBack}
+        onFaqsClick={onFaqsClick}
       />
     </div>
   );
