@@ -172,6 +172,7 @@ export const AboutUs: React.FC<AboutUsProps> = ({
         onCareersClick={onCareersClick}
         onContactClick={onContactClick}
         onProductClick={onProductClick}
+        onPricingClick={onPricing}
       />
     </div>
   );

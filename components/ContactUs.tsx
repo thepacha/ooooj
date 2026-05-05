@@ -294,6 +294,7 @@ export const ContactUs: React.FC<ContactUsProps> = ({
         onAboutClick={onAboutClick}
         onProductClick={onProductClick}
         onCareersClick={onCareersClick}
+        onPricingClick={onPricingClick}
       />
     </div>
   );

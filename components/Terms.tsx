@@ -168,6 +168,7 @@ export const Terms: React.FC<TermsProps> = ({
         onContactClick={onContactClick}
         onProductClick={onProductClick}
         onCareersClick={onCareersClick}
+        onPricingClick={onPricing}
       />
     </div>
   );

@@ -33,23 +33,29 @@ class MPSessionReplaySDK {
   async initialize(token: string, distinctId: string, config: MPSessionReplayConfig): Promise<void> {
     this.config = config;
     
-    // Setup session replay config using set_config if mixpanel is already initialized,
-    // otherwise init it for the first time.
-    mixpanel.init(token, {
-      debug: config.enableLogging,
-      record_sessions_percent: config.recordingSessionsPercent,
-      record_mask_all_text: config.autoMaskedViews?.includes(MPSessionReplayMask.Text),
-      record_mask_all_inputs: config.autoMaskedViews?.includes(MPSessionReplayMask.Text),
-    });
-    
-    // Fallback if already init and we just want to update config
-    mixpanel.set_config({
-      record_sessions_percent: config.recordingSessionsPercent,
-      record_mask_all_text: config.autoMaskedViews?.includes(MPSessionReplayMask.Text),
-      record_mask_all_inputs: config.autoMaskedViews?.includes(MPSessionReplayMask.Text),
-    });
-    
-    mixpanel.identify(distinctId);
+    try {
+      // In mixpanel-browser, calling init multiple times with the same token 
+      // can cause mutex/locking issues. We use set_config for updates if possible.
+      // The SDK usually handles multiple init calls for the same token by returning 
+      // the existing instance, but we want to be extra safe.
+      
+      mixpanel.init(token, {
+        debug: config.enableLogging,
+        record_sessions_percent: config.recordingSessionsPercent,
+        record_mask_all_text: config.autoMaskedViews?.includes(MPSessionReplayMask.Text),
+        record_mask_all_inputs: config.autoMaskedViews?.includes(MPSessionReplayMask.Text),
+      });
+      
+      mixpanel.set_config({
+        record_sessions_percent: config.recordingSessionsPercent,
+        record_mask_all_text: config.autoMaskedViews?.includes(MPSessionReplayMask.Text),
+        record_mask_all_inputs: config.autoMaskedViews?.includes(MPSessionReplayMask.Text),
+      });
+      
+      mixpanel.identify(distinctId);
+    } catch (err) {
+      console.warn("MPSessionReplay initialization guard triggered", err);
+    }
     
     if (config.autoStartRecording) {
       await this.startRecording();

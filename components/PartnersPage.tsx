@@ -352,6 +352,7 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({
         onBlogClick={onBlogClick}
         onProductClick={onProductClick}
         onCareersClick={onCareersClick}
+        onPricingClick={onPricing}
       />
     </div>
   );

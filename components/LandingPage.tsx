@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, Play, Mic, Shield, Zap, TrendingUp, Phone, Check, MessageSquare, AlertCircle, BarChart3, Star, Search, Bell, ChevronDown, Edit2, MoreVertical } from 'lucide-react';
+import { ArrowRight, Play, Mic, Shield, Zap, TrendingUp, Phone, Check, X, MessageSquare, AlertCircle, BarChart3, Star, Search, Bell, ChevronDown, Edit2, MoreVertical, Link, ShieldCheck, ClipboardCheck, Brain, Bot, LineChart, Globe2, ListChecks, Target, Activity, Users, Blocks, Award } from 'lucide-react';
+import { RevuIcon } from './RevuIcon';
 import { User } from '../types';
 import { PublicNavigation } from './PublicNavigation';
 import { Footer } from './Footer';
@@ -578,54 +579,283 @@ export const LandingPage: React.FC<LandingPageProps> = ({ user, onLoginClick, on
           </div>
       </div>
 
+      {/* How Revu Works Section */}
+      <section className="py-24 px-6 bg-[#f3f4f6]/30 dark:bg-slate-900/30">
+          <div className="max-w-7xl mx-auto">
+              <div className="text-center mb-20">
+                  <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6">How Revu Works</h2>
+                  <p className="text-[17px] text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                      From connection to coaching, Revu automates your entire QA and training cycle.
+                  </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative">
+                  {/* Decorative lines for desktop connecting cards */}
+                  <div className="hidden lg:block absolute top-[15%] left-[5%] right-[5%] h-[2px] bg-blue-100 dark:bg-blue-900/20 -z-10 rounded-full"></div>
+                  <div className="hidden lg:block absolute top-[65%] left-[5%] right-[5%] h-[2px] bg-blue-100 dark:bg-blue-900/20 -z-10 rounded-full"></div>
+
+                  {[
+                      { 
+                          title: "1. Connect in minutes", 
+                          desc: "Plug into Aircall, Twilio, Zendesk, and more. No migration, no IT project. You're live before the day ends.",
+                          icon: Link,
+                          delay: 0.1
+                      },
+                      { 
+                          title: "2. Auto QA for every call", 
+                          desc: "Revu scores 100% of calls in Arabic, English, or both, against your own QA criteria. No sampling. No blind spots.",
+                          icon: ShieldCheck,
+                          delay: 0.2
+                      },
+                      { 
+                          title: "3. Agents get a precise breakdown", 
+                          desc: "Not a manager's opinion. Not a quarterly review. Exact scores, exact moments, exact gaps, delivered instantly.",
+                          icon: ClipboardCheck,
+                          delay: 0.3
+                      },
+                      { 
+                          title: "4. Data-based training scenarios", 
+                          desc: "Based on each agent's real call performance, Revu identifies what they need to work on and loads the right roleplay scenarios automatically.",
+                          icon: Brain,
+                          delay: 0.4
+                      },
+                      { 
+                          title: "5. Agents practice with AI Roleplay", 
+                          desc: "Voice-based. Scenario-specific. Relentlessly realistic. Agents practice objections, escalations, and compliance scripts with an AI that pushes back, in Arabic, English, or both, until they're ready.",
+                          icon: Bot,
+                          delay: 0.5
+                      },
+                      { 
+                          title: "6. Managers watch performance", 
+                          desc: "The dashboard shows who's improving, who's stuck, and why, so every coaching conversation is targeted, not guesswork.",
+                          icon: LineChart,
+                          delay: 0.6
+                      }
+                  ].map((step, idx) => (
+                      <motion.div 
+                          key={idx}
+                          initial={{ opacity: 0, y: 20 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: step.delay, duration: 0.5 }}
+                          className="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group relative z-10"
+                      >
+                          <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-900/40 text-[#0500e2] dark:text-blue-400 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform shadow-sm">
+                              <step.icon size={26} />
+                          </div>
+                          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4 leading-snug">{step.title}</h3>
+                          <p className="text-slate-500 dark:text-slate-400 leading-relaxed text-sm">
+                              {step.desc}
+                          </p>
+                      </motion.div>
+                  ))}
+              </div>
+          </div>
+      </section>
+
+      {/* Visual Breaker */}
+      <section className="py-16 bg-[#0500e2] overflow-hidden relative">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-400/20 via-transparent to-transparent opacity-50"></div>
+          <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
+              <h2 className="text-2xl md:text-4xl font-bold text-white mb-2 tracking-tight">
+                  Stop sampling. Start scoring every call.
+              </h2>
+              <p className="text-blue-100/80 text-lg max-w-2xl mx-auto font-medium">
+                  Revu turns silence into data, and data into deals.
+              </p>
+          </div>
+      </section>
+
+      {/* What You Can Do With Revu Section */}
+      <section id="features" className="py-24 px-6 bg-white dark:bg-slate-950">
+          <div className="max-w-7xl mx-auto">
+              <div className="text-center mb-16">
+                  <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6 tracking-tight">
+                      What You Can Do With Revu
+                  </h2>
+                  <p className="text-[17px] text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                      Everything your team needs to stop losing deals to bad calls.
+                  </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[
+                      { 
+                          title: "Automated QA Scoring", 
+                          desc: "Score every single call automatically against your own rubric. No sampling, no bias, no backlog.",
+                          icon: Award,
+                          color: "text-blue-600 bg-blue-50 dark:bg-blue-900/30",
+                          layout: "col-span-1"
+                      },
+                      { 
+                          title: "Multilingual Call Analysis", 
+                          desc: "Built natively for MENA. Revu handles Arabic, English, French, and more, including mid-call language switching, with full accuracy across every conversation.",
+                          icon: Globe2,
+                          color: "text-purple-600 bg-purple-50 dark:bg-purple-900/30",
+                          layout: "col-span-1"
+                      },
+                      { 
+                          title: "Custom Scorecard Builder", 
+                          desc: "Define what good looks like for your team, compliance, tone, script adherence, sales technique. Revu scores to your standard.",
+                          icon: ListChecks,
+                          color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30",
+                          layout: "col-span-1"
+                      },
+                      { 
+                          title: "Real-Time Agent Feedback", 
+                          desc: "Agents don't wait for a manager. They get a detailed breakdown the moment a call ends, what worked, what didn't, and why.",
+                          icon: Zap,
+                          color: "text-amber-600 bg-amber-50 dark:bg-amber-900/30",
+                          layout: "col-span-1"
+                      },
+                      { 
+                          title: "AI Roleplay Training", 
+                          desc: "Practice before the real thing. Agents run live voice scenarios with an AI that pushes back, objects, and escalates just like real customers.",
+                          icon: Bot,
+                          color: "text-rose-600 bg-rose-50 dark:bg-rose-900/30",
+                          layout: "col-span-1"
+                      },
+                      { 
+                          title: "Targeted Coaching Recommendations", 
+                          desc: "Revu identifies each agent's weak spots and surfaces exactly what they need to work on, not generic training, personalized improvement.",
+                          icon: Target,
+                          color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30",
+                          layout: "col-span-1"
+                      },
+                      { 
+                          title: "Live Performance Dashboard", 
+                          desc: "A single view of your entire team's quality metrics, trends, and risk flags, updated in real time, not end-of-month reports.",
+                          icon: Activity,
+                          color: "text-cyan-600 bg-cyan-50 dark:bg-cyan-900/30",
+                          layout: "col-span-1"
+                      },
+                      { 
+                          title: "Compliance Monitoring", 
+                          desc: "Flag calls that miss required disclosures, scripts, or regulatory language, automatically, across 100% of volume.",
+                          icon: ShieldCheck,
+                          color: "text-red-600 bg-red-50 dark:bg-red-900/30",
+                          layout: "col-span-1"
+                      },
+                      { 
+                          title: "Team & Agent Benchmarking", 
+                          desc: "Compare agent performance across teams, shifts, and campaigns. Identify your top performers and replicate what they do.",
+                          icon: Users,
+                          color: "text-teal-600 bg-teal-50 dark:bg-teal-900/30",
+                          layout: "md:col-span-1 lg:col-span-2"
+                      },
+                      { 
+                          title: "Native Integrations, Zero Setup", 
+                          desc: "Connect to Aircall, Twilio, Zendesk, Freshworks, and more in minutes. No migration, no IT project, no disruption.",
+                          icon: Blocks,
+                          color: "text-orange-600 bg-orange-50 dark:bg-orange-900/30",
+                          layout: "md:col-span-1 lg:col-span-2 hover:bg-orange-50/50"
+                      }
+                  ].map((feat, idx) => (
+                      <motion.div 
+                          key={idx}
+                          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                          whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: idx * 0.05, duration: 0.4 }}
+                          className={`p-8 rounded-[2rem] bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex flex-col justify-between ${feat.layout}`}
+                      >
+                          <div>
+                              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-sm ${feat.color}`}>
+                                  <feat.icon size={26} strokeWidth={2.5} />
+                              </div>
+                              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3 tracking-tight">
+                                  {feat.title}
+                              </h3>
+                              <p className="text-slate-500 dark:text-slate-400 leading-relaxed text-sm md:text-[15px]">
+                                  {feat.desc}
+                              </p>
+                          </div>
+                      </motion.div>
+                  ))}
+              </div>
+          </div>
+      </section>
+
+      {/* Thin Breaker */}
+      <div className="max-w-7xl mx-auto px-6">
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-800 to-transparent relative">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#0500e2] shadow-[0_0_10px_rgba(5,0,226,0.5)]"></div>
+          </div>
+      </div>
+
       {/* Comparison Section (The Problem) */}
       <section className="py-24 px-6 bg-white dark:bg-slate-950">
           <div className="max-w-4xl mx-auto text-center mb-16">
               <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6">
-                  {t('landing.comparison.title_start')} <span className="text-red-500 decoration-4 underline decoration-wavy underline-offset-4">{t('landing.comparison.title_awkward')}</span>.
+                  {t('landing.comparison.title_start')} <span className="text-red-500 line-through decoration-[3px] decoration-red-500/30">{t('landing.comparison.title_awkward')}</span>.
               </h2>
               <p className="text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
                   {t('landing.comparison.subtitle')}
               </p>
           </div>
 
-          <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-              {/* Old Way */}
-              <div className="p-8 md:p-10 rounded-[2.5rem] bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
-                  <h3 className="text-xl font-bold text-slate-500 mb-8 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center">☹️</div>
-                      {t('landing.comparison.old_way')}
-                  </h3>
-                  <ul className="space-y-6">
-                      {[1,2,3].map(i => (
-                          <li key={i} className="flex items-start gap-4 text-slate-500">
-                              <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></div>
-                              <span className="text-lg">{t(`landing.comparison.old_list.${i}` as any)}</span>
-                          </li>
-                      ))}
-                  </ul>
+          <div className="max-w-6xl mx-auto relative group/comparison">
+              {/* Visual Divider (Breaker) */}
+              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-800 hidden md:block z-10 -translate-x-1/2">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center shadow-lg z-20">
+                      <div className="text-[10px] font-bold text-slate-400 tracking-tighter">VS</div>
+                  </div>
               </div>
 
-              {/* New Way */}
-              <div className="p-8 md:p-10 rounded-[2.5rem] bg-[#0500e2] text-white shadow-2xl shadow-blue-900/20 relative overflow-hidden group">
-                  {/* Background Decoration */}
-                  <div className="absolute top-0 end-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 rtl:-translate-x-1/2 group-hover:bg-white/20 transition-colors"></div>
-                  
-                  <div className="relative z-10">
-                    <h3 className="text-xl font-bold mb-8 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-white text-[#0500e2] flex items-center justify-center">🚀</div>
-                        {t('landing.comparison.new_way')}
-                    </h3>
-                    <ul className="space-y-6">
-                        {[1,2,3].map(i => (
-                            <li key={i} className="flex items-start gap-4 font-medium text-blue-50">
-                                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
-                                    <Check size={14} strokeWidth={3} className="text-white" />
-                                </div> 
-                                <span className="text-lg">{t(`landing.comparison.new_list.${i}` as any)}</span>
-                            </li>
-                        ))}
-                    </ul>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-0 overflow-hidden rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-xl">
+                  {/* Old Way */}
+                  <div className="p-8 md:p-12 lg:p-16 bg-slate-50 dark:bg-slate-900 flex flex-col justify-between relative">
+                      <div>
+                        <div className="mb-8">
+                            <h3 className="text-xl font-bold text-slate-500 mb-1 flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-lg">☹️</div>
+                                {t('landing.comparison.old_way')}
+                            </h3>
+                            <p className="text-slate-400 dark:text-slate-500 text-sm font-medium ml-[52px]">
+                                {t('landing.comparison.old_way_subtitle')}
+                            </p>
+                        </div>
+                        <ul className="space-y-6">
+                            {[1,2,3,4,5].map(i => (
+                                <li key={i} className="flex items-start gap-4 text-slate-500">
+                                    <div className="w-6 h-6 rounded-full bg-slate-200/50 dark:bg-slate-800 flex items-center justify-center shrink-0 mt-0.5">
+                                        <X size={14} strokeWidth={3} className="text-slate-400" />
+                                    </div>
+                                    <span className="text-lg">{t(`landing.comparison.old_list.${i}` as any)}</span>
+                                </li>
+                            ))}
+                        </ul>
+                      </div>
+                  </div>
+
+                  {/* New Way */}
+                  <div className="p-8 md:p-12 lg:p-16 bg-[#0500e2] text-white relative overflow-hidden group flex flex-col justify-between">
+                      {/* Background Decoration */}
+                      <div className="absolute top-0 end-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 rtl:-translate-x-1/2 group-hover:bg-white/20 transition-colors"></div>
+                      
+                      <div className="relative z-10">
+                        <div className="mb-8">
+                            <h3 className="text-xl font-bold mb-1 flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-white text-[#0500e2] flex items-center justify-center p-2">
+                                    <RevuIcon className="w-full h-full text-[#0500e2]" />
+                                </div>
+                                {t('landing.comparison.new_way')}
+                            </h3>
+                            <p className="text-blue-200 text-sm font-medium ml-[52px]">
+                                {t('landing.comparison.new_way_subtitle')}
+                            </p>
+                        </div>
+                        <ul className="space-y-6">
+                            {[1,2,3,4,5].map(i => (
+                                <li key={i} className="flex items-start gap-4 font-medium text-blue-50">
+                                    <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
+                                        <Check size={14} strokeWidth={3} className="text-white" />
+                                    </div> 
+                                    <span className="text-lg">{t(`landing.comparison.new_list.${i}` as any)}</span>
+                                </li>
+                            ))}
+                        </ul>
+                      </div>
                   </div>
               </div>
           </div>
@@ -747,24 +977,56 @@ export const LandingPage: React.FC<LandingPageProps> = ({ user, onLoginClick, on
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-6">
-          <div className="max-w-5xl mx-auto bg-[#0500e2] dark:bg-white rounded-[3rem] px-8 py-16 md:p-24 text-center relative overflow-hidden shadow-2xl">
-              {/* Background Glow */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-500/20 via-slate-900/0 to-transparent pointer-events-none"></div>
+      <section className="py-16 px-6">
+          <div className="max-w-2xl mx-auto bg-[#0500e2] dark:bg-white rounded-[2.5rem] px-8 py-14 md:py-16 md:px-16 text-center relative overflow-hidden shadow-2xl group">
+              {/* Animated Background Decoration */}
+              <div className="absolute -top-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-colors duration-700"></div>
+              <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl group-hover:bg-blue-400/30 transition-colors duration-700"></div>
               
-              <div className="relative z-10">
-                  <h2 className="text-4xl md:text-6xl font-bold text-white dark:text-slate-900 mb-8 tracking-tight">
+              {/* Background Glow */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-400/20 via-transparent to-transparent pointer-events-none"></div>
+              
+              <div className="relative z-10 mx-auto">
+                  <motion.h2 
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    style={{ fontSize: '31px' }} 
+                    className="font-bold text-white dark:text-slate-900 mb-4 tracking-tight leading-tight"
+                  >
                       {t('landing.final_cta.title')}
-                  </h2>
-                  <div className="flex flex-col sm:flex-row justify-center gap-4">
+                  </motion.h2>
+                  
+                  <motion.p 
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.1 }}
+                    style={{ fontSize: '17px' }}
+                    className="text-blue-100 dark:text-slate-500 mb-10 opacity-90 mx-auto"
+                  >
+                      {t('landing.final_cta.subtitle')}
+                  </motion.p>
+
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.2 }}
+                    className="flex flex-col justify-center items-center gap-4"
+                  >
                       <button 
                         onClick={onSignupClick}
-                        className="px-10 py-5 bg-white text-[#0500e2] dark:bg-[#0500e2] dark:text-white rounded-xl font-bold text-xl hover:scale-105 transition-transform shadow-lg shadow-blue-500/30"
+                        className="px-10 py-4 bg-white text-[#0500e2] dark:bg-[#0500e2] dark:text-white rounded-xl font-bold text-lg hover:shadow-[0_20px_50px_rgba(8,_112,_184,_0.7)] hover:-translate-y-1 transition-all flex items-center gap-3 group/btn"
                       >
                           {t('landing.final_cta.button')}
+                          <ArrowRight size={20} className={`transition-transform group-hover/btn:translate-x-1 ${isRTL ? 'rotate-180' : ''}`} />
                       </button>
-                  </div>
-                  <p className="mt-8 text-sm font-medium text-slate-400 dark:text-slate-500">{t('landing.final_cta.note')}</p>
+                      
+                      <p className="text-white/80 dark:text-slate-500 text-sm font-medium">
+                        {t('landing.final_cta.footer_text')}
+                      </p>
+                  </motion.div>
               </div>
           </div>
       </section>
@@ -779,6 +1041,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ user, onLoginClick, on
         onBlogClick={onBlogClick}
         onProductClick={onProductClick}
         onCareersClick={onCareersClick}
+        onPricingClick={onPricingClick}
       />
     </div>
   );

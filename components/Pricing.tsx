@@ -20,6 +20,7 @@ interface PricingProps {
   onBlogClick?: () => void;
   onCareersClick?: () => void;
   onProductClick?: () => void;
+  onPricingClick?: () => void;
 }
 
 export const Pricing: React.FC<PricingProps> = ({ 
@@ -36,7 +37,8 @@ export const Pricing: React.FC<PricingProps> = ({
   onCareersClick,
   onContactClick,
   onBlogClick,
-  onProductClick
+  onProductClick,
+  onPricingClick
 }) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -429,6 +431,7 @@ export const Pricing: React.FC<PricingProps> = ({
             onBlogClick={onBlogClick}
             onProductClick={onProductClick}
             onCareersClick={onCareersClick}
+            onPricingClick={onPricingClick || (() => window.scrollTo({ top: 0, behavior: 'smooth' }))}
         />
       )}
     </div>

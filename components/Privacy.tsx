@@ -176,6 +176,7 @@ export const Privacy: React.FC<PrivacyProps> = ({
         onContactClick={onContactClick}
         onProductClick={onProductClick}
         onCareersClick={onCareersClick}
+        onPricingClick={onPricing}
       />
     </div>
   );

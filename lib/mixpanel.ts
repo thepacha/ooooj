@@ -2,15 +2,29 @@ import mixpanel from "mixpanel-browser";
 
 const MIXPANEL_TOKEN = "f53cf0631032824d708490beca0fdbd0";
 
-mixpanel.init(MIXPANEL_TOKEN, {
-  debug: true,
-  track_pageview: true,
-  persistence: "localStorage",
-  ignore_dnt: true,
-  record_sessions_percent: 100,
-  record_mask_all_inputs: true,
-  record_mask_all_text: true,
-});
+// Standard Mixpanel initialization with improved error handling for mutex timeouts
+const initMixpanel = () => {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    mixpanel.init(MIXPANEL_TOKEN, {
+      debug: false, // Set to false to reduce console noise unless needed
+      track_pageview: true,
+      persistence: "localStorage",
+      ignore_dnt: true,
+      record_sessions_percent: 100,
+      record_mask_all_inputs: true,
+      record_mask_all_text: true,
+      // Increase the timeout or handle locking issues if needed
+      // Note: mixpanel-browser doesn't have a direct "lock_timeout" config option visible in standard docs,
+      // but ensuring single initialization helps significantly.
+    });
+  } catch (err) {
+    console.warn("Mixpanel initialization failed", err);
+  }
+};
+
+initMixpanel();
 
 export const trackEvent = {
   // Default Events

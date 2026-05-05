@@ -117,6 +117,7 @@ export const RefundPolicy: React.FC<RefundPolicyProps> = ({
         onContactClick={onContactClick}
         onProductClick={onProductClick}
         onCareersClick={onCareersClick}
+        onPricingClick={onPricing}
       />
     </div>
   );

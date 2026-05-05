@@ -211,6 +211,7 @@ export const Careers: React.FC<CareersProps> = ({
         onBlogClick={onBlogClick}
         onProductClick={onProductClick}
         onCareersClick={onCareersClick}
+        onPricingClick={onPricing}
         onHomeClick={onBack}
       />
     </div>

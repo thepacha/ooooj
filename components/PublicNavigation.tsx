@@ -87,7 +87,7 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
             <div className="hidden lg:flex items-center gap-8 text-sm font-medium text-slate-900 dark:text-slate-200">
                 <button onClick={() => handleNavClick(onProductClick)} className={`hover:text-[#0500e2] transition-colors ${activePage === 'product' ? 'text-[#0500e2]' : ''}`}>Product</button>
                 <button onClick={() => handleNavClick(onAbout)} className={`hover:text-[#0500e2] transition-colors ${activePage === 'about' ? 'text-[#0500e2]' : ''}`}>About</button>
-                <button onClick={() => handleNavClick(onLanding)} className="hover:text-[#0500e2] transition-colors">Features</button>
+                <button onClick={() => handleNavClick(() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }))} className="hover:text-[#0500e2] transition-colors">Features</button>
                 <button onClick={() => handleNavClick(onPricing)} className={`hover:text-[#0500e2] transition-colors ${activePage === 'pricing' ? 'text-[#0500e2]' : ''}`}>Pricing</button>
                 <button onClick={() => handleNavClick(onContact)} className={`hover:text-[#0500e2] transition-colors ${activePage === 'contact' ? 'text-[#0500e2]' : ''}`}>Contact</button>
             </div>
@@ -170,7 +170,7 @@ export const PublicNavigation: React.FC<PublicNavigationProps> = ({
             <div className="flex flex-col h-full px-6 pb-10 overflow-y-auto">
                 <div className="flex-1 flex flex-col gap-6 text-xl font-bold text-slate-900 dark:text-white mt-8">
                     <button onClick={() => handleNavClick(onProductClick)} className={`text-start hover:text-[#0500e2] transition-colors border-b border-slate-100 dark:border-slate-800 pb-4 ${activePage === 'product' ? 'text-[#0500e2]' : ''}`}>Product</button>
-                    <button onClick={() => handleNavClick(onLanding)} className="text-start hover:text-[#0500e2] transition-colors border-b border-slate-100 dark:border-slate-800 pb-4">{t('nav.features')}</button>
+                    <button onClick={() => handleNavClick(() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }))} className="text-start hover:text-[#0500e2] transition-colors border-b border-slate-100 dark:border-slate-800 pb-4">{t('nav.features')}</button>
                     <button onClick={() => handleNavClick(onLanding)} className="text-start hover:text-[#0500e2] transition-colors border-b border-slate-100 dark:border-slate-800 pb-4">{t('nav.how_it_works')}</button>
                     <button onClick={() => handleNavClick(onPricing)} className={`text-start hover:text-[#0500e2] transition-colors border-b border-slate-100 dark:border-slate-800 pb-4 ${activePage === 'pricing' ? 'text-[#0500e2]' : ''}`}>{t('nav.pricing')}</button>
                     <button onClick={() => handleNavClick(onContact)} className={`text-start hover:text-[#0500e2] transition-colors border-b border-slate-100 dark:border-slate-800 pb-4 ${activePage === 'contact' ? 'text-[#0500e2]' : ''}`}>Contact Us</button>

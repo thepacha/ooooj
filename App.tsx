@@ -361,8 +361,12 @@ function AppContent() {
             if (mounted) {
                 setUser(basicUser);
                 
-                // Mixpanel Identify
-                mixpanel.identify(session.user.id);
+                // Mixpanel Identify - Guard against redundant calls
+                const currentMixpanelId = mixpanel.get_distinct_id();
+                if (currentMixpanelId !== session.user.id) {
+                    mixpanel.identify(session.user.id);
+                }
+                
                 mixpanel.people.set({
                     $name: basicUser.name,
                     $email: basicUser.email,

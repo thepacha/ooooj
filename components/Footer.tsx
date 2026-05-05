@@ -86,7 +86,7 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, on
                     <h4 className="font-bold text-slate-900 dark:text-white mb-4 text-sm">{t('landing.footer.product')}</h4>
                     <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
                         <li><button onClick={onProductClick} className="hover:text-[#0500e2] transition-colors">Product</button></li>
-                        <li><button onClick={onHomeClick} className="hover:text-[#0500e2] transition-colors">Features</button></li>
+                        <li><button onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-[#0500e2] transition-colors">Features</button></li>
                         <li><button onClick={onPricingClick} className="hover:text-[#0500e2] transition-colors">Pricing</button></li>
                     </ul>
                 </div>
