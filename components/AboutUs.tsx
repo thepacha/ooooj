@@ -19,6 +19,7 @@ interface AboutUsProps {
   onBlogClick?: () => void;
   onProductClick?: () => void;
   onFaqsClick?: () => void;
+  onFeaturesClick?: () => void;
 }
 
 export const AboutUs: React.FC<AboutUsProps> = ({ 
@@ -34,7 +35,8 @@ export const AboutUs: React.FC<AboutUsProps> = ({
   onBlogClick,
   onCareersClick,
   onProductClick,
-  onFaqsClick
+  onFaqsClick,
+  onFeaturesClick
 }) => {
   const { isRTL } = useLanguage();
 
@@ -52,6 +54,7 @@ export const AboutUs: React.FC<AboutUsProps> = ({
         onContact={onContactClick}
         onBlogClick={onBlogClick}
         onProductClick={onProductClick}
+        onFeaturesClick={onFeaturesClick}
         activePage="about"
       />
 
@@ -105,7 +108,7 @@ export const AboutUs: React.FC<AboutUsProps> = ({
               <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-8 items-start">
                 <div className="w-24 h-24 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center shrink-0 overflow-hidden">
                   <img
-  src="/mohamed.png"
+  src="https://pub-3f89eefcccc34790a13b41ee21b7427f.r2.dev/mohamed.png"
   alt="Mohamed Ibrahim"
   className="w-full h-full object-cover"
 />
@@ -176,6 +179,7 @@ export const AboutUs: React.FC<AboutUsProps> = ({
         onProductClick={onProductClick}
         onPricingClick={onPricing}
         onFaqsClick={onFaqsClick}
+        onFeaturesClick={onFeaturesClick}
       />
     </div>
   );

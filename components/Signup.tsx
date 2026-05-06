@@ -17,9 +17,10 @@ interface SignupProps {
   onAbout?: () => void;
   onContact?: () => void;
   onProduct?: () => void;
+  onFeaturesClick?: () => void;
 }
 
-export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBackToHome, onPricing, onAbout, onContact, onProduct }) => {
+export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBackToHome, onPricing, onAbout, onContact, onProduct, onFeaturesClick }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -217,6 +218,7 @@ export const Signup: React.FC<SignupProps> = ({ onSignup, onSwitchToLogin, onBac
         onAbout={onAbout}
         onContact={onContact}
         onProductClick={onProduct}
+        onFeaturesClick={onFeaturesClick}
         activePage="signup"
       />
 

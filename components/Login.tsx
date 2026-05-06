@@ -16,11 +16,12 @@ interface LoginProps {
   onAbout?: () => void;
   onContact?: () => void;
   onProduct?: () => void;
+  onFeaturesClick?: () => void;
 }
 
 type LoginView = 'login' | 'forgot-password';
 
-export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToHome, onPricing, onAbout, onContact, onProduct }) => {
+export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackToHome, onPricing, onAbout, onContact, onProduct, onFeaturesClick }) => {
   const [view, setView] = useState<LoginView>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -123,6 +124,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToSignup, onBackT
         onAbout={onAbout}
         onContact={onContact}
         onProductClick={onProduct}
+        onFeaturesClick={onFeaturesClick}
         activePage="login"
       />
 

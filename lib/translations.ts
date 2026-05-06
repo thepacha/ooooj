@@ -324,7 +324,7 @@ export const translations = {
     'landing.scenarios.duration': '5 min session',
 
     'landing.analytics.title': 'Then, automate your real-world QA.',
-    'landing.analytics.subtitle': "RevuQA isn't just a simulator. Connect it to your actual support channels to grade 100% of live interactions using the same AI engine.",
+    'landing.analytics.subtitle': "Revu isn't just a simulator. Connect it to your actual support channels to grade 100% of live interactions using the same AI engine.",
     'landing.analytics.list.1': 'Score 100% of tickets (not just 2%)',
     'landing.analytics.list.2': 'Identify coaching gaps instantly',
     'landing.analytics.list.3': 'Track sentiment trends over time',
@@ -820,7 +820,7 @@ export const translations = {
     'landing.scenarios.duration': 'جلسة 5 دقائق',
 
     'landing.analytics.title': 'ثم، قم بأتمتة ضمان الجودة الواقعي.',
-    'landing.analytics.subtitle': 'RevuQA ليس مجرد محاكي. قم بتوصيله بقنوات الدعم الفعلية الخاصة بك لتقييم 100% من التفاعلات المباشرة باستخدام نفس محرك الذكاء الاصطناعي.',
+    'landing.analytics.subtitle': 'Revu ليس مجرد محاكي. قم بتوصيله بقنوات الدعم الفعلية الخاصة بك لتقييم 100% من التفاعلات المباشرة باستخدام نفس محرك الذكاء الاصطناعي.',
     'landing.analytics.list.1': 'سجل 100% من التذاكر (وليس 2% فقط)',
     'landing.analytics.list.2': 'حدد فجوات التدريب على الفور',
     'landing.analytics.list.3': 'تتبع اتجاهات المشاعر بمرور الوقت',
@@ -837,7 +837,7 @@ export const translations = {
     'landing.final_cta.footer_text': 'أغلق المزيد من الصفقات.',
     'landing.final_cta.note': '',
 
-    'landing.footer.desc': 'RevuQA: المنصة الأصلية للذكاء الاصطناعي لتميز تجربة العملاء.',
+    'landing.footer.desc': 'Revu: المنصة الأصلية للذكاء الاصطناعي لتميز تجربة العملاء.',
     'landing.footer.rights': 'جميع الحقوق محفوظة.',
     'landing.footer.status': 'الأنظمة تعمل',
     'landing.footer.product': 'المنتج',

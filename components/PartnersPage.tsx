@@ -35,6 +35,7 @@ interface PartnersPageProps {
   onCareersClick?: () => void;
   onProductClick?: () => void;
   onFaqsClick?: () => void;
+  onFeaturesClick?: () => void;
 }
 
 export const PartnersPage: React.FC<PartnersPageProps> = ({ 
@@ -49,7 +50,8 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({
   onContactClick,
   onBlogClick,
   onProductClick,
-  onFaqsClick
+  onFaqsClick,
+  onFeaturesClick
 }) => {
   const { t, isRTL } = useLanguage();
 
@@ -255,6 +257,7 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({
         onContact={onContactClick}
         onBlogClick={onBlogClick}
         onProductClick={onProductClick}
+        onFeaturesClick={onFeaturesClick}
         activePage="partners"
       />
 
@@ -356,6 +359,7 @@ export const PartnersPage: React.FC<PartnersPageProps> = ({
         onCareersClick={onCareersClick}
         onPricingClick={onPricing}
         onFaqsClick={onFaqsClick}
+        onFeaturesClick={onFeaturesClick}
       />
     </div>
   );

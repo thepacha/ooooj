@@ -146,6 +146,7 @@ function AppContent() {
   const initialState = getInitialState();
   const [authView, setAuthView] = useState<AuthState>(initialState.auth as AuthState);
   const [currentView, setCurrentView] = useState<ViewState>(initialState.view as ViewState);
+  const [targetSection, setTargetSection] = useState<string | null>(null);
 
   // Unified Navigation Handler
   const handleNavigate = (view: ViewState) => {
@@ -213,7 +214,7 @@ function AppContent() {
   }, [user]);
 
   // Auth helper for public pages
-  const navigateAuth = (view: AuthState) => {
+  const navigateAuth = (view: AuthState, skipScroll = false) => {
       let path = '/';
       if (view === 'terms') path = '/termsandconditions';
       else if (view === 'pricing') path = '/pricing';
@@ -233,7 +234,9 @@ function AppContent() {
           safePushState({}, '', path);
       }
       setAuthView(view);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (!skipScroll) {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
       
       trackEvent.pageView(path, view, { user_id: user?.id });
   };
@@ -669,9 +672,44 @@ function AppContent() {
       if (isAppDomain) {
           window.location.href = 'https://revuqai.com';
       } else {
+          setTargetSection(null);
           navigateAuth('landing');
       }
   };
+
+  const handleFeaturesClick = () => {
+    if (authView !== 'landing') {
+        setTargetSection('features');
+        navigateAuth('landing', true); // Skip the default scroll to top
+    } else {
+        const el = document.getElementById('features');
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+  };
+
+  // Scroll to target section when landing page is loaded
+  useEffect(() => {
+      if (authView === 'landing' && targetSection) {
+          // Give it a moment to mount and render
+          const timer = setTimeout(() => {
+              const el = document.getElementById(targetSection);
+              if (el) {
+                  const headerOffset = 100;
+                  const elementPosition = el.getBoundingClientRect().top;
+                  const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                  window.scrollTo({
+                      top: offsetPosition,
+                      behavior: 'smooth'
+                  });
+                  setTargetSection(null);
+              }
+          }, 500); // Increased timeout for better reliability
+          return () => clearTimeout(timer);
+      }
+  }, [authView, targetSection]);
 
   const handleLandingLoginClick = () => {
       if (isProductionLanding) {
@@ -972,6 +1010,7 @@ function AppContent() {
                 onProductClick={() => navigateAuth('product')}
                 onCareersClick={() => navigateAuth('careers')}
                 onFaqsClick={() => navigateAuth('faqs')}
+                onFeaturesClick={handleFeaturesClick}
               />
           </div>
       )
@@ -994,6 +1033,7 @@ function AppContent() {
                 onProductClick={() => navigateAuth('product')}
                 onCareersClick={() => navigateAuth('careers')}
                 onFaqsClick={() => navigateAuth('faqs')}
+                onFeaturesClick={handleFeaturesClick}
               />
           </div>
       )
@@ -1016,6 +1056,7 @@ function AppContent() {
                 onProductClick={() => navigateAuth('product')}
                 onCareersClick={() => navigateAuth('careers')}
                 onFaqsClick={() => navigateAuth('faqs')}
+                onFeaturesClick={handleFeaturesClick}
               />
           </div>
       )
@@ -1037,6 +1078,7 @@ function AppContent() {
                 onProductClick={() => navigateAuth('product')}
                 onCareersClick={() => navigateAuth('careers')}
                 onFaqsClick={() => navigateAuth('faqs')}
+                onFeaturesClick={handleFeaturesClick}
               />
           </div>
       )
@@ -1068,6 +1110,7 @@ function AppContent() {
                 onProductClick={() => navigateAuth('product')}
                 onCareersClick={() => navigateAuth('careers')}
                 onFaqsClick={() => navigateAuth('faqs')}
+                onFeaturesClick={handleFeaturesClick}
               />
           </motion.div>
         </AnimatePresence>
@@ -1099,6 +1142,7 @@ function AppContent() {
                 onCareersClick={() => navigateAuth('careers')}
                 onProductClick={() => navigateAuth('product')}
                 onFaqsClick={() => navigateAuth('faqs')}
+                onFeaturesClick={handleFeaturesClick}
               />
           </motion.div>
         </AnimatePresence>
@@ -1131,6 +1175,7 @@ function AppContent() {
                 onProductClick={() => navigateAuth('product')}
                 onCareersClick={() => navigateAuth('careers')}
                 onFaqsClick={() => navigateAuth('faqs')}
+                onFeaturesClick={handleFeaturesClick}
               />
               <ChatBot user={user} />
           </motion.div>
@@ -1165,6 +1210,7 @@ function AppContent() {
                 onProductClick={() => navigateAuth('product')}
                 onCareersClick={() => navigateAuth('careers')}
                 onFaqsClick={() => navigateAuth('faqs')}
+                onFeaturesClick={handleFeaturesClick}
               />
           </motion.div>
         </AnimatePresence>
@@ -1189,6 +1235,7 @@ function AppContent() {
                 onAbout={() => navigateAuth('about')}
                 onContact={() => navigateAuth('contact')}
                 onProduct={() => navigateAuth('product')}
+                onFeaturesClick={handleFeaturesClick}
                 onBackToHome={handleBackToHome}
               />
           </motion.div>
@@ -1214,6 +1261,7 @@ function AppContent() {
                 onAbout={() => navigateAuth('about')}
                 onContact={() => navigateAuth('contact')}
                 onProduct={() => navigateAuth('product')}
+                onFeaturesClick={handleFeaturesClick}
                 onBackToHome={handleBackToHome}
               />
           </motion.div>
@@ -1247,6 +1295,7 @@ function AppContent() {
                 onProductClick={() => navigateAuth('product')}
                 onCareersClick={() => navigateAuth('careers')}
                 onFaqsClick={() => navigateAuth('faqs')}
+                onFeaturesClick={handleFeaturesClick}
               />
           </motion.div>
         </AnimatePresence>
@@ -1262,7 +1311,7 @@ function AppContent() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="w-full min-h-screen"
+            className="w-full min-h-screen bg-white dark:bg-[#0a0a0a]"
           >
               <Blog 
                 onBack={handleBackToHome}
@@ -1279,6 +1328,7 @@ function AppContent() {
                 onProductClick={() => navigateAuth('product')}
                 onCareersClick={() => navigateAuth('careers')}
                 onFaqsClick={() => navigateAuth('faqs')}
+                onFeaturesClick={handleFeaturesClick}
               />
           </motion.div>
         </AnimatePresence>
@@ -1294,7 +1344,7 @@ function AppContent() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="w-full min-h-screen"
+            className="w-full min-h-screen bg-white dark:bg-[#0a0a0a]"
           >
               <Faqs 
                 onLogin={handleLandingLoginClick} 
@@ -1311,6 +1361,7 @@ function AppContent() {
                 onProduct={() => navigateAuth('product')}
                 onCareers={() => navigateAuth('careers')}
                 onFaqs={() => navigateAuth('faqs')}
+                onFeatures={handleFeaturesClick}
               />
           </motion.div>
         </AnimatePresence>
@@ -1326,7 +1377,7 @@ function AppContent() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="w-full min-h-screen pt-20"
+            className="w-full min-h-screen bg-white dark:bg-[#0a0a0a]"
           >
               <PublicNavigation 
                 user={user}
@@ -1338,6 +1389,7 @@ function AppContent() {
                 onContact={() => navigateAuth('contact')}
                 onBlogClick={() => navigateAuth('blog')}
                 onProductClick={() => navigateAuth('product')}
+                onFeaturesClick={handleFeaturesClick}
                 activePage="product" 
               />
               <ProductPage onSignupClick={() => navigateAuth('signup')} onPricingClick={() => navigateAuth('pricing')} />
@@ -1353,6 +1405,7 @@ function AppContent() {
                 onPricingClick={() => navigateAuth('pricing')}
                 onCareersClick={() => navigateAuth('careers')}
                 onFaqsClick={() => navigateAuth('faqs')}
+                onFeaturesClick={handleFeaturesClick}
               />
               <ChatBot user={user} />
           </motion.div>

@@ -1,6 +1,6 @@
 {
-  "name": "Revu | AI Roleplay Training & Auto QA",
-  "description": "Help sales and support staff practice tough calls using smart AI roleplay. Plus, save hours of manual work by automating your daily QA scoring.",
+  "name": "Revu | AI Roleplay for Sales & Service",
+  "description": "High-performance AI roleplay training for Sales and Customer Service teams. Practice tough conversations, master objection handling, and get instant feedback.",
   "requestFramePermissions": [
     "microphone"
   ]

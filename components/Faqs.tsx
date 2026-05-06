@@ -61,6 +61,7 @@ export const Faqs: React.FC<{
   onProduct: () => void;
   onCareers: () => void;
   onFaqs?: () => void;
+  onFeatures?: () => void;
 }> = (props) => {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   const [searchQuery, setSearchQuery] = useState('');
@@ -161,6 +162,7 @@ export const Faqs: React.FC<{
         onContact={props.onContact}
         onBlogClick={props.onBlog}
         onProductClick={props.onProduct}
+        onFeaturesClick={props.onFeatures}
       />
 
       <main className="pt-32 pb-20 px-6">
@@ -289,6 +291,7 @@ export const Faqs: React.FC<{
         onProductClick={props.onProduct}
         onCareersClick={props.onCareers}
         onFaqsClick={props.onFaqs || (() => window.scrollTo({ top: 0, behavior: 'smooth' }))}
+        onFeaturesClick={props.onFeatures}
       />
     </div>
   );

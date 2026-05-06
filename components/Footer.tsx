@@ -17,9 +17,24 @@ interface FooterProps {
   onProductClick?: () => void;
   onCareersClick?: () => void;
   onFaqsClick?: () => void;
+  onFeaturesClick?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, onRefundClick, onPartnersClick, onAboutClick, onContactClick, onBlogClick, onHomeClick, onPricingClick, onProductClick, onCareersClick, onFaqsClick }) => {
+export const Footer: React.FC<FooterProps> = ({ 
+  onTermsClick, 
+  onPrivacyClick, 
+  onRefundClick, 
+  onPartnersClick, 
+  onAboutClick, 
+  onContactClick, 
+  onBlogClick, 
+  onHomeClick, 
+  onPricingClick, 
+  onProductClick, 
+  onCareersClick, 
+  onFaqsClick,
+  onFeaturesClick
+}) => {
   const { t } = useLanguage();
 
   return (
@@ -86,9 +101,9 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, on
                 <div>
                     <h4 className="font-bold text-slate-900 dark:text-white mb-4 text-sm">{t('landing.footer.product')}</h4>
                     <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
-                        <li><button onClick={onProductClick} className="hover:text-[#0500e2] transition-colors">Product</button></li>
-                        <li><button onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-[#0500e2] transition-colors">Features</button></li>
-                        <li><button onClick={onPricingClick} className="hover:text-[#0500e2] transition-colors">Pricing</button></li>
+                        <li><button onClick={onProductClick} className="hover:text-[#0500e2] transition-colors text-start w-full">Product</button></li>
+                        <li><button onClick={onFeaturesClick || (() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }))} className="hover:text-[#0500e2] transition-colors text-start w-full">Features</button></li>
+                        <li><button onClick={onPricingClick} className="hover:text-[#0500e2] transition-colors text-start w-full">Pricing</button></li>
                     </ul>
                 </div>
 
@@ -156,7 +171,7 @@ export const Footer: React.FC<FooterProps> = ({ onTermsClick, onPrivacyClick, on
             </div>
             
             <div className="pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-400">
-                <p>&copy; {new Date().getFullYear()} RevuQA AI. {t('landing.footer.rights')}</p>
+                <p>&copy; {new Date().getFullYear()} Revu AI. {t('landing.footer.rights')}</p>
                 <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     {t('landing.footer.status')}

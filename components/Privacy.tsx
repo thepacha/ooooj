@@ -18,6 +18,7 @@ interface PrivacyProps {
   onCareersClick?: () => void;
   onProductClick?: () => void;
   onFaqsClick?: () => void;
+  onFeaturesClick?: () => void;
 }
 
 export const Privacy: React.FC<PrivacyProps> = ({ 
@@ -33,7 +34,8 @@ export const Privacy: React.FC<PrivacyProps> = ({
   onContactClick,
   onCareersClick,
   onProductClick,
-  onFaqsClick
+  onFaqsClick,
+  onFeaturesClick
 }) => {
   return (
     <div className="min-h-screen bg-[#f5f4f0] dark:bg-[#0a0a0a] font-sans text-slate-900 dark:text-slate-100 animate-fade-in">
@@ -45,6 +47,7 @@ export const Privacy: React.FC<PrivacyProps> = ({
         onAbout={onAbout}
         onContact={onContactClick}
         onProductClick={onProductClick}
+        onFeaturesClick={onFeaturesClick}
         activePage="landing" 
       />
 
@@ -180,6 +183,7 @@ export const Privacy: React.FC<PrivacyProps> = ({
         onCareersClick={onCareersClick}
         onPricingClick={onPricing}
         onFaqsClick={onFaqsClick}
+        onFeaturesClick={onFeaturesClick}
       />
     </div>
   );
