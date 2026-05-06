@@ -960,7 +960,7 @@ function AppContent() {
         }
         return <Admin user={user} />;
       case 'pricing':
-        return <Pricing onPlanSelect={handlePlanSelect} isLoggedIn={true} />;
+        return <Pricing onPlanSelect={handlePlanSelect} isLoggedIn={true} onContactClick={() => handleNavigate('contact')} />;
       case 'evaluation':
         if (!selectedEvaluation) return <History history={history} onSelectEvaluation={handleSelectEvaluation} onDeleteEvaluation={handleDeleteEvaluation} filter='all' />;
         return (
@@ -1392,7 +1392,11 @@ function AppContent() {
                 onFeaturesClick={handleFeaturesClick}
                 activePage="product" 
               />
-              <ProductPage onSignupClick={() => navigateAuth('signup')} onPricingClick={() => navigateAuth('pricing')} />
+              <ProductPage 
+                onSignupClick={() => navigateAuth('signup')} 
+                onPricingClick={() => navigateAuth('pricing')} 
+                onContactClick={() => navigateAuth('contact')}
+              />
               <Footer 
                 onTermsClick={() => navigateAuth('terms')}
                 onPrivacyClick={() => navigateAuth('privacy')}
