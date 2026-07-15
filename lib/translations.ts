@@ -19,6 +19,7 @@ export const translations = {
     'nav.deepgram_tts': 'Deepgram TTS',
     'nav.gemini_arabic_tts': 'Gemini Arabic TTS',
     'nav.notifications': 'Notifications',
+    'nav.language_practice': 'Language Practice',
 
     // Dashboard
     'dash.welcome': 'Welcome back',
@@ -515,6 +516,7 @@ export const translations = {
     'nav.deepgram_tts': 'Deepgram TTS',
     'nav.gemini_arabic_tts': 'Gemini Arabic TTS',
     'nav.notifications': 'التنبيهات',
+    'nav.language_practice': 'ممارسة اللغات',
 
     // Dashboard
     'dash.welcome': 'مرحباً بعودتك',

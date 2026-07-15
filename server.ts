@@ -5,6 +5,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import http from "http";
 import dotenv from "dotenv";
 import { supabase } from "./lib/supabase";
+import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
 
 dotenv.config();
 
@@ -525,6 +526,7 @@ async function startServer() {
   // Setup WebSocket server for TTS
   const ttsWss = new WebSocketServer({ noServer: true });
   const assemblyWss = new WebSocketServer({ noServer: true });
+  const geminiLiveWss = new WebSocketServer({ noServer: true });
 
   const safeClose = (socket: any, code: number, reason: string) => {
     if (socket.readyState === socket.OPEN || socket.readyState === socket.CONNECTING) {
@@ -548,6 +550,10 @@ async function startServer() {
     } else if (pathname === '/api/assemblyai') {
       assemblyWss.handleUpgrade(request, socket, head, (ws) => {
         assemblyWss.emit('connection', ws, request);
+      });
+    } else if (pathname === '/api/gemini-live') {
+      geminiLiveWss.handleUpgrade(request, socket, head, (ws) => {
+        geminiLiveWss.emit('connection', ws, request);
       });
     } else {
       socket.destroy();
@@ -668,6 +674,103 @@ async function startServer() {
     clientWs.on("close", () => {
       console.log("Client disconnected from AssemblyAI local proxy");
       safeClose(assemblyWs, 1000, "Client disconnected");
+    });
+  });
+
+  geminiLiveWss.on("connection", (clientWs) => {
+    console.log("Client connected to Gemini Live local proxy");
+    
+    let session: any = null;
+
+    clientWs.on("message", async (data) => {
+      try {
+        const msg = JSON.parse(data.toString());
+        if (msg.type === "setup") {
+          const { voice, systemInstruction } = msg;
+          console.log("Setting up Gemini Live Session with voice:", voice);
+          
+          const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+          if (!apiKey) {
+            clientWs.send(JSON.stringify({ type: "error", error: "GEMINI_API_KEY is not configured on the server." }));
+            safeClose(clientWs, 4001, "API Key Missing");
+            return;
+          }
+
+          const localAi = new GoogleGenAI({
+            apiKey: apiKey,
+            httpOptions: {
+              headers: {
+                'User-Agent': 'aistudio-build',
+              }
+            }
+          });
+
+          // Connect to Gemini Live
+          session = await localAi.live.connect({
+            model: "gemini-3.1-flash-live-preview",
+            config: {
+              responseModalities: [Modality.AUDIO],
+              speechConfig: {
+                voiceConfig: { prebuiltVoiceConfig: { voiceName: voice || "Zephyr" } },
+              },
+              systemInstruction: systemInstruction || "You are a helpful language tutor.",
+              outputAudioTranscription: {},
+              inputAudioTranscription: {},
+            },
+            callbacks: {
+              onopen: () => {
+                console.log("Gemini Live session connected upstream");
+                if (clientWs.readyState === clientWs.OPEN) {
+                  clientWs.send(JSON.stringify({ type: "ready" }));
+                }
+              },
+              onmessage: (message: LiveServerMessage) => {
+                if (clientWs.readyState === clientWs.OPEN) {
+                  clientWs.send(JSON.stringify({
+                    type: "server_message",
+                    message
+                  }));
+                }
+              },
+              onclose: () => {
+                console.log("Gemini Live session closed upstream");
+                if (clientWs.readyState === clientWs.OPEN) {
+                  clientWs.send(JSON.stringify({ type: "close" }));
+                }
+              },
+              onerror: (err: any) => {
+                console.error("Gemini Live upstream error:", err);
+                if (clientWs.readyState === clientWs.OPEN) {
+                  clientWs.send(JSON.stringify({ type: "error", error: err.message || String(err) }));
+                }
+              }
+            }
+          });
+
+        } else if (msg.audio) {
+          if (session) {
+            session.sendRealtimeInput({
+              audio: { data: msg.audio, mimeType: "audio/pcm;rate=16000" },
+            });
+          }
+        }
+      } catch (e: any) {
+        console.error("Error in Gemini Live Proxy message handler:", e);
+        if (clientWs.readyState === clientWs.OPEN) {
+          clientWs.send(JSON.stringify({ type: "error", error: e.message || String(e) }));
+        }
+      }
+    });
+
+    clientWs.on("close", () => {
+      console.log("Client disconnected from Gemini Live local proxy");
+      if (session) {
+        try {
+          session.close();
+        } catch (e) {
+          console.error("Error closing session on disconnect:", e);
+        }
+      }
     });
   });
 

@@ -18,6 +18,7 @@ import { EvaluationView } from './components/EvaluationView';
 import { Roster } from './components/Roster';
 import { Pricing } from './components/Pricing';
 import { Training } from './components/Training';
+import { LanguagePractice } from './components/LanguagePractice';
 import { Admin } from './components/Admin';
 import { Blog } from './components/Blog';
 import { PublicNavigation } from './components/PublicNavigation';
@@ -52,6 +53,7 @@ const APP_ROUTES: Record<string, ViewState> = {
   '/account': 'account',
   '/analyze': 'analyze',
   '/ai-training': 'training',
+  '/language-practice': 'language-practice',
   '/usageandlimits': 'usage',
   '/history': 'history',
   '/team': 'roster',
@@ -69,6 +71,7 @@ const VIEW_TO_PATH: Record<string, string> = {
   'account': '/account',
   'analyze': '/analyze',
   'training': '/ai-training',
+  'language-practice': '/language-practice',
   'assembly-test': '/assembly-test',
   'deepgram-tts': '/deepgram-tts',
   'gemini-arabic-tts': '/gemini-arabic-tts',
@@ -744,6 +747,8 @@ function AppContent() {
         return <Analyzer criteria={criteria} onAnalysisComplete={handleAnalysisComplete} user={user} addNotification={addNotification} />;
       case 'training':
         return <Training user={user} history={history.filter(h => !h.isDeleted)} onAnalysisComplete={handleAnalysisComplete} addNotification={addNotification} />;
+      case 'language-practice':
+        return <LanguagePractice user={user} onAnalysisComplete={handleAnalysisComplete} addNotification={addNotification} />;
       case 'assembly-test':
         return <AssemblyAITest user={user} history={history.filter(h => !h.isDeleted)} onAnalysisComplete={handleAnalysisComplete} addNotification={addNotification} />;
       case 'deepgram-tts':
