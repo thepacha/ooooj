@@ -7,8 +7,7 @@ import {
   Lock, CheckSquare, HelpCircle, Eye, EyeOff, MessageCircle, Send, Plus,
   Phone, PhoneOff
 } from 'lucide-react';
-import { getAI } from '../services/geminiService';
-import { Type, Modality } from '@google/genai';
+import { getAI, Type, Modality } from '../services/geminiService';
 import { User, AnalysisResult } from '../types';
 
 // Helper functions for WAV audio header generation

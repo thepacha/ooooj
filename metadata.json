@@ -3,5 +3,8 @@
   "description": "High-performance AI roleplay training for Sales and Customer Service teams. Practice tough conversations, master objection handling, and get instant feedback.",
   "requestFramePermissions": [
     "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]
 }

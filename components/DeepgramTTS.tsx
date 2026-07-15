@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Play, Square, Loader2, Volume2, Settings2, Download, AlertTriangle, Sparkles } from 'lucide-react';
-import { getAI } from '../services/geminiService';
-import { Modality } from '@google/genai';
+import { getAI, Modality } from '../services/geminiService';
 
 const DEEPGRAM_MODELS = [
   { id: 'aura-2-thalia-en', name: 'Thalia', language: 'English (US)', gender: 'Feminine', description: 'Clear, Confident, Energetic, Enthusiastic' },

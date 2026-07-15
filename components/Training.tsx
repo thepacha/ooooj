@@ -518,11 +518,6 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
 
     const confirmStartSession = async () => {
         if (!activeScenario) return;
-        
-        if (!process.env.API_KEY) {
-            alert("API Key is missing. Please check your configuration.");
-            return;
-        }
 
         if (user) {
              const canProceed = await checkLimit(user.id, COSTS.CHAT * 5); 

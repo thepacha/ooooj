@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LayoutDashboard, FileText, History, Settings, X, Sun, Moon, PieChart, Users, GraduationCap, ShieldAlert, Globe, Bell, Mic } from 'lucide-react';
+import { LayoutDashboard, FileText, History, Settings, X, Sun, Moon, PieChart, Users, GraduationCap, ShieldAlert, Globe, Bell, Mic, Languages } from 'lucide-react';
 import { ViewState, User } from '../types';
 import { RevuLogo } from './RevuLogo';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -25,6 +25,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
     { id: 'dashboard', label: t('nav.dashboard'), icon: <LayoutDashboard size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
     { id: 'analyze', label: t('nav.analyze'), icon: <FileText size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
     { id: 'training', label: t('nav.training'), icon: <GraduationCap size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
+    { id: 'ai-conversation', label: t('nav.ai_conversation'), icon: <Languages size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
     { id: 'language-practice', label: t('nav.language_practice'), icon: <Globe size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
     { id: 'assembly-test', label: 'AssemblyAI Test', icon: <Mic size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
     { id: 'deepgram-tts', label: 'Deepgram & Gemini TTS', icon: <Mic size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },

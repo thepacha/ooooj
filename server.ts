@@ -5,7 +5,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import http from "http";
 import dotenv from "dotenv";
 import { supabase } from "./lib/supabase";
-import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
+import { GoogleGenAI, Modality, LiveServerMessage, Type } from "@google/genai";
 
 dotenv.config();
 
@@ -485,6 +485,526 @@ async function startServer() {
     } catch (error) {
       console.error("Contact API error:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Server-side Gemini API Client & Routes
+  const getGeminiClient = () => {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not configured on the server.");
+    }
+    return new GoogleGenAI({
+      apiKey: apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        }
+      }
+    });
+  };
+
+  app.post("/api/gemini/generate-content", async (req, res) => {
+    try {
+      const { model, contents, config } = req.body;
+      const client = getGeminiClient();
+      const response = await client.models.generateContent({
+        model: model || "gemini-3.5-flash",
+        contents,
+        config
+      });
+      res.json({
+        text: response.text,
+        candidates: response.candidates
+      });
+    } catch (e: any) {
+      console.error("Error in /api/gemini/generate-content:", e);
+      res.status(500).json({ error: e.message || "Failed to generate content" });
+    }
+  });
+
+  app.post("/api/gemini/chat", async (req, res) => {
+    try {
+      const { model, history, message, config } = req.body;
+      const client = getGeminiClient();
+      const cleanHistory = Array.isArray(history) && history.length > 0 ? history.slice(0, -1) : [];
+      const chat = client.chats.create({
+        model: model || "gemini-3.5-flash",
+        history: cleanHistory,
+        config
+      });
+      const response = await chat.sendMessage({ message });
+      res.json({ text: response.text });
+    } catch (e: any) {
+      console.error("Error in /api/gemini/chat:", e);
+      res.status(500).json({ error: e.message || "Chat failed" });
+    }
+  });
+
+  app.post("/api/gemini/chat-stream", async (req, res) => {
+    try {
+      const { model, history, message, config } = req.body;
+      const client = getGeminiClient();
+      const cleanHistory = Array.isArray(history) && history.length > 0 ? history.slice(0, -1) : [];
+      const chat = client.chats.create({
+        model: model || "gemini-3.5-flash",
+        history: cleanHistory,
+        config
+      });
+
+      const responseStream = await chat.sendMessageStream({ message });
+
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+
+      for await (const chunk of responseStream) {
+        if (chunk.text) {
+          res.write(`data: ${JSON.stringify({ text: chunk.text })}\n\n`);
+        }
+      }
+      res.write("data: [DONE]\n\n");
+      res.end();
+    } catch (e: any) {
+      console.error("Error in /api/gemini/chat-stream:", e);
+      res.status(500).json({ error: e.message || "Chat stream failed" });
+    }
+  });
+
+  app.post("/api/gemini/analyze-transcript", async (req, res) => {
+    try {
+      const { transcript, criteria } = req.body;
+      const client = getGeminiClient();
+      const criteriaList = Array.isArray(criteria) 
+        ? criteria.map((c: any) => `- ${c.name} (Weight: ${c.weight}): ${c.description}`).join('\n')
+        : '';
+      const prompt = `
+        Analyze the following customer service transcript.
+        
+        TRANSCRIPT:
+        ${transcript}
+        
+        CRITERIA TO EVALUATE:
+        ${criteriaList}
+        
+        Extract the Agent Name and Customer Name if available (otherwise use "Unknown").
+        Provide a summary.
+        Determine the overall sentiment.
+        Score each criterion from 0-100 based on the description and weight.
+        Provide reasoning and a suggestion for improvement for each criterion.
+        Calculate an overall weighted score.
+
+        Return the result in JSON format.
+      `;
+
+      const response = await client.models.generateContent({
+        model: 'gemini-3.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              agentName: { type: Type.STRING },
+              customerName: { type: Type.STRING },
+              summary: { type: Type.STRING },
+              sentiment: { type: Type.STRING, enum: ['Positive', 'Neutral', 'Negative'] },
+              overallScore: { type: Type.NUMBER },
+              criteriaResults: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    name: { type: Type.STRING },
+                    score: { type: Type.NUMBER },
+                    reasoning: { type: Type.STRING },
+                    suggestion: { type: Type.STRING }
+                  },
+                  required: ['name', 'score', 'reasoning', 'suggestion']
+                }
+              }
+            },
+            required: ['agentName', 'customerName', 'summary', 'sentiment', 'overallScore', 'criteriaResults']
+          }
+        }
+      });
+
+      const resultText = response.text || "{}";
+      const parsed = JSON.parse(resultText);
+
+      if (parsed.criteriaResults && parsed.criteriaResults.length > 0 && Array.isArray(criteria)) {
+        let totalWeight = 0;
+        let weightedScoreSum = 0;
+        parsed.criteriaResults.forEach((result: any) => {
+          const originalCriterion = criteria.find((c: any) => c.name === result.name);
+          const weight = originalCriterion ? originalCriterion.weight : 1;
+          totalWeight += weight;
+          weightedScoreSum += (result.score || 0) * weight;
+        });
+        if (totalWeight > 0) {
+          parsed.overallScore = Math.round(weightedScoreSum / totalWeight);
+        }
+      }
+
+      res.json(parsed);
+    } catch (e: any) {
+      console.error("Error in /api/gemini/analyze-transcript:", e);
+      res.status(500).json({ error: e.message || "Failed to analyze transcript" });
+    }
+  });
+
+  app.post("/api/gemini/generate-mock-transcript", async (req, res) => {
+    try {
+      const client = getGeminiClient();
+      const response = await client.models.generateContent({
+        model: 'gemini-3.5-flash',
+        contents: "Generate a realistic 10-turn customer support transcript between an Agent and a Customer regarding a billing dispute. The customer should be slightly annoyed but the agent resolves it. Format it as plain text.",
+      });
+      res.json({ text: response.text || "" });
+    } catch (e: any) {
+      console.error("Error in /api/gemini/generate-mock-transcript:", e);
+      res.status(500).json({ error: e.message || "Failed to generate mock transcript" });
+    }
+  });
+
+  app.post("/api/gemini/transcribe-media", async (req, res) => {
+    try {
+      const { base64Data, mimeType } = req.body;
+      const client = getGeminiClient();
+      const response = await client.models.generateContent({
+        model: 'gemini-3.5-flash',
+        contents: {
+          parts: [
+            { inlineData: { mimeType, data: base64Data } },
+            { text: "Transcribe this audio. Return only the transcript text with speaker labels (Agent/Customer)." }
+          ]
+        }
+      });
+      res.json({ text: response.text || "" });
+    } catch (e: any) {
+      console.error("Error in /api/gemini/transcribe-media:", e);
+      res.status(500).json({ error: e.message || "Failed to transcribe media" });
+    }
+  });
+
+  app.post("/api/gemini/generate-training-topic", async (req, res) => {
+    try {
+      const { params } = req.body;
+      const client = getGeminiClient();
+      let contextStr = '';
+      if (params) {
+        contextStr = `
+        Please tailor the topic to the following parameters:
+        - Language: ${params.language}
+        - Buyer Mode: ${params.mood}
+        - Persona: ${params.persona}
+        - Difficulty: ${params.difficulty}
+        - Industry: ${params.industry}
+        - Funnel Stage: ${params.funnelStage}
+        - Category: ${params.category}
+        `;
+      }
+      const prompt = `
+        Generate a single, concise, and creative scenario description for a customer service or sales roleplay training session.
+        It should be 1-2 sentences.
+        ${contextStr}
+        
+        Examples:
+        - "A long-time customer is threatening to cancel because a competitor offered a lower price."
+        - "A confused user cannot find the export button and is getting frustrated."
+        - "A potential client is interested in the Enterprise plan but thinks the implementation time is too long."
+        
+        Return ONLY the text of the scenario description. No JSON, no markdown.
+      `;
+      const response = await client.models.generateContent({
+        model: 'gemini-3.5-flash',
+        contents: prompt
+      });
+      res.json({ text: response.text?.trim() || "" });
+    } catch (e: any) {
+      console.error("Error in /api/gemini/generate-training-topic:", e);
+      res.status(500).json({ error: e.message || "Failed to generate training topic" });
+    }
+  });
+
+  app.post("/api/gemini/generate-ai-scenario", async (req, res) => {
+    try {
+      const { params } = req.body;
+      const client = getGeminiClient();
+      const seed = Date.now().toString();
+      const { topic, category, difficulty, funnelStage, persona, mood, industry, language, dialect } = params || {};
+
+      const prompt = `
+        Create a rich, complex training roleplay scenario for a ${category || 'Support'} agent.
+        Random Seed: ${seed}
+        
+        CORE CONTEXT: ${topic || 'General customer issue'}
+        ${industry ? `INDUSTRY: ${industry} (Ensure terminology and context is specific to this industry)` : ''}
+        DIFFICULTY: ${difficulty || 'Intermediate'}
+        
+        ${funnelStage ? `SALES STAGE: ${funnelStage} (Ensure the customer behavior reflects this specific stage of the funnel)` : ''}
+        ${persona ? `BUYER PERSONA: ${persona}` : 'PERSONA: Create a random realistic persona'}
+        ${mood ? `CUSTOMER MOOD: ${mood}` : ''}
+        ${language ? `LANGUAGE: ${language}` : 'LANGUAGE: English'}
+        ${dialect ? `DIALECT: ${dialect}` : ''}
+        
+        INSTRUCTIONS:
+        1. Assign a GENDER and NAME suitable for the persona and language/dialect.
+        2. Select a suitable VOICE for this persona:
+           - 'Puck' (Male, Mid-range)
+           - 'Charon' (Male, Deep)
+           - 'Kore' (Female, Professional)
+           - 'Fenrir' (Male, Authoritative)
+           - 'Aoede' (Female, Soft/High)
+        3. Define "HIDDEN CONTEXT": Secrets the customer holds (e.g., budget constraints, hidden decision makers, technical limitations).
+        4. Write a detailed System Instruction that forces the AI to stay in character. 
+           If Sales Stage is 'Closing', make them negotiate terms.
+           If Sales Stage is 'Discovery', make them answer questions but be guarded.
+           If Mood is '${mood}', reflect that in sentence length and tone.
+           The AI MUST speak in the requested LANGUAGE (${language || 'English'})${dialect ? ` and DIALECT (${dialect})` : ''}.
+         5. Be creative!
+         6. Generate 5 distinct "Mission Objectives" for the agent relevant to the ${funnelStage || 'situation'}.
+         7. Generate 6 "Suggested Talk Tracks" (direct quotes/phrases) in the requested language.
+         8. Generate 4 "Smart Openers" - effective opening lines for the agent to use in this specific scenario, in the requested language.
+         9. The initialMessage MUST be in the requested language and dialect.
+         
+         IMPORTANT: Ensure the scenario details (Name, Context, Secret) are fresh and creative.
+
+         Return JSON.
+      `;
+
+      const response = await client.models.generateContent({
+        model: 'gemini-3.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              description: { type: Type.STRING },
+              difficulty: { type: Type.STRING, enum: ['Beginner', 'Intermediate', 'Advanced'] },
+              category: { type: Type.STRING, enum: ['Sales', 'Support', 'Technical'] },
+              initialMessage: { type: Type.STRING },
+              systemInstruction: { type: Type.STRING },
+              voice: { type: Type.STRING, enum: ['Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'] },
+              language: { type: Type.STRING },
+              dialect: { type: Type.STRING },
+              objectives: { type: Type.ARRAY, items: { type: Type.STRING } },
+              talkTracks: { type: Type.ARRAY, items: { type: Type.STRING } },
+              openers: { type: Type.ARRAY, items: { type: Type.STRING } }
+            },
+            required: ['title', 'description', 'difficulty', 'category', 'initialMessage', 'systemInstruction', 'voice', 'objectives', 'talkTracks', 'openers']
+          }
+        }
+      });
+
+      res.json(JSON.parse(response.text || "{}"));
+    } catch (e: any) {
+      console.error("Error in /api/gemini/generate-ai-scenario:", e);
+      res.status(500).json({ error: e.message || "Failed to generate AI scenario" });
+    }
+  });
+
+  app.post("/api/gemini/generate-training-batch", async (req, res) => {
+    try {
+      const client = getGeminiClient();
+      const factors = [
+        "Include a VIP customer demanding special treatment.",
+        "Include a user who accidentally deleted their data.",
+        "Include a sales lead who is budget-conscious.",
+        "Include a technical user who thinks they know more than the agent.",
+        "Include a user rushing to catch a flight.",
+        "Include a user who is pleasantly surprised but has one concern."
+      ];
+      const randomFactor = factors[Math.floor(Math.random() * factors.length)];
+      const seed = Date.now().toString().slice(-4);
+
+      const prompt = `
+        Generate 3 distinct, highly realistic customer service roleplay scenarios.
+        Random Seed: ${seed}
+        Special Constraint: ${randomFactor}
+        
+        CRITERIA:
+        1. Unique Names: Use diverse names and professions (e.g. 'Dr. Aris', 'Captain Lee', 'Sarah the Architect').
+        2. Unique Personas: Vary age, job title, and temperament (Angry, Confused, Rush, Happy).
+        3. Contexts: Mix of Sales (objections), Technical (bugs), and Support (refunds).
+        4. Hidden Secrets: Give each persona a secret (e.g. "lying about usage", "actually broke it themselves", "needs approval from boss").
+        5. Voices: Assign a voice that fits the persona from: 'Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'.
+        
+        Return a JSON object with a "scenarios" key containing an array of 3 objects. Include smart openers for each.
+      `;
+
+      const response = await client.models.generateContent({
+        model: 'gemini-3.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              scenarios: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    title: { type: Type.STRING },
+                    description: { type: Type.STRING },
+                    difficulty: { type: Type.STRING, enum: ['Beginner', 'Intermediate', 'Advanced'] },
+                    category: { type: Type.STRING, enum: ['Sales', 'Support', 'Technical'] },
+                    initialMessage: { type: Type.STRING },
+                    systemInstruction: { type: Type.STRING },
+                    voice: { type: Type.STRING, enum: ['Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'] },
+                    objectives: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    talkTracks: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    openers: { type: Type.ARRAY, items: { type: Type.STRING } }
+                  },
+                  required: ['title', 'description', 'difficulty', 'category', 'initialMessage', 'systemInstruction', 'voice', 'objectives', 'talkTracks', 'openers']
+                }
+              }
+            }
+          }
+        }
+      });
+
+      const parsed = JSON.parse(response.text || '{"scenarios": []}');
+      res.json(parsed.scenarios || []);
+    } catch (e: any) {
+      console.error("Error in /api/gemini/generate-training-batch:", e);
+      res.status(500).json({ error: e.message || "Failed to generate training batch" });
+    }
+  });
+
+  app.post("/api/gemini/generate-smart-openers", async (req, res) => {
+    try {
+      const { scenario } = req.body;
+      const client = getGeminiClient();
+      const prompt = `
+        Generate 4 distinct, professional, and highly effective opening lines for a customer service agent handling this specific situation.
+        
+        SCENARIO: ${scenario.title}
+        DESCRIPTION: ${scenario.description}
+        CUSTOMER PERSONA: ${scenario.systemInstruction}
+        GOAL: Resolve the issue efficiently while maintaining high empathy.
+        
+        LANGUAGE: ${scenario.language || 'English'}
+        DIALECT: ${scenario.dialect || 'N/A'}
+
+        REQUIREMENTS:
+        1. Openers must be "Smart" & "Professional" - avoid generic "How can I help?".
+        2. Tailor them to the specific context (e.g. if angry, validate emotion first).
+        3. Use psychological techniques (e.g. labeling, agenda setting).
+        4. Make them sound human, not robotic.
+        5. The openers MUST be in the specified LANGUAGE and DIALECT.
+
+        Return strictly a JSON array of strings.
+      `;
+
+      const response = await client.models.generateContent({
+        model: 'gemini-3.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING }
+          }
+        }
+      });
+
+      res.json(JSON.parse(response.text || "[]"));
+    } catch (e: any) {
+      console.error("Error in /api/gemini/generate-smart-openers:", e);
+      res.status(500).json({ error: e.message || "Failed to generate smart openers" });
+    }
+  });
+
+  app.post("/api/gemini/evaluate-training-session", async (req, res) => {
+    try {
+      const { transcript, scenario } = req.body;
+      const client = getGeminiClient();
+      const prompt = `
+        Analyze the following training roleplay transcript between an Agent (User) and a Customer (AI).
+        
+        SCENARIO: ${scenario.title}
+        DIFFICULTY: ${scenario.difficulty}
+        DESCRIPTION: ${scenario.description}
+        OBJECTIVES: ${scenario.objectives ? scenario.objectives.join(', ') : 'N/A'}
+        
+        TRANSCRIPT:
+        ${transcript}
+        
+        Evaluate the Agent's performance based on:
+        1. Adherence to the stated objectives (if any).
+        2. Empathy and tone appropriate for the difficulty level.
+        3. Problem-solving efficiency.
+        
+        Provide the result in JSON format.
+      `;
+
+      const response = await client.models.generateContent({
+        model: 'gemini-3.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              score: { type: Type.NUMBER, description: "Score from 0-100" },
+              feedback: { type: Type.STRING, description: "A 2-3 sentence summary of how they did." },
+              criteriaResults: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    name: { type: Type.STRING, description: "Name of the criterion evaluated (e.g., Empathy, Problem Solving)" },
+                    score: { type: Type.NUMBER, description: "Score from 0-100 for this specific criterion" },
+                    reasoning: { type: Type.STRING, description: "Why this score was given" },
+                    suggestion: { type: Type.STRING, description: "How to improve" }
+                  },
+                  required: ['name', 'score', 'reasoning', 'suggestion']
+                }
+              },
+              sentiment: { type: Type.STRING, enum: ['Positive', 'Neutral', 'Negative'], description: "The overall sentiment of the interaction." }
+            },
+            required: ['score', 'feedback', 'criteriaResults', 'sentiment']
+          }
+        }
+      });
+
+      res.json(JSON.parse(response.text || "{}"));
+    } catch (e: any) {
+      console.error("Error in /api/gemini/evaluate-training-session:", e);
+      res.status(500).json({ error: e.message || "Failed to evaluate training session" });
+    }
+  });
+
+  app.post("/api/gemini/generate-arabic-tts", async (req, res) => {
+    try {
+      const { text, dialect, voice } = req.body;
+      const client = getGeminiClient();
+      const prompt = `Speak this text in ${dialect} Arabic: ${text}`;
+      const response = await client.models.generateContent({
+        model: "gemini-3.1-flash-tts-preview",
+        contents: [{ parts: [{ text: prompt }] }],
+        config: {
+          responseModalities: [Modality.AUDIO],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: voice || 'Kore' },
+            },
+          },
+        },
+      });
+
+      const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      if (!base64Audio) {
+        throw new Error("Failed to generate audio from Gemini TTS");
+      }
+      res.json({ base64Audio });
+    } catch (e: any) {
+      console.error("Error in /api/gemini/generate-arabic-tts:", e);
+      res.status(500).json({ error: e.message || "Failed to generate Arabic TTS" });
     }
   });
 
