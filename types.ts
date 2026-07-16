@@ -35,7 +35,7 @@ export interface TrainingScenario {
   icon: 'Shield' | 'TrendingUp' | 'Wrench';
   initialMessage: string;
   systemInstruction: string;
-  voice?: 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Aoede'; // Voice selection
+  voice?: string; // Voice selection (Gemini or Cartesia UUID)
   language?: string; // e.g., 'en', 'ar'
   dialect?: string; // e.g., 'Modern Standard Arabic', 'Egyptian Arabic', 'Gulf Arabic', 'Levantine Arabic', 'Maghrebi Arabic'
   objectives?: string[]; // Specific goals for the scenario
@@ -43,11 +43,20 @@ export interface TrainingScenario {
   openers?: string[]; // Smart opening lines tailored to the scenario
 }
 
+export interface NativeAlternative {
+  original: string;
+  better: string;
+  explanation: string;
+}
+
 export interface TrainingResult {
   score: number;
   feedback: string;
   criteriaResults: CriteriaResult[];
   sentiment: 'Positive' | 'Neutral' | 'Negative';
+  strengths?: string[];
+  mistakes?: string[];
+  nativeAlternatives?: NativeAlternative[];
   nextSteps?: string[];
 }
 
@@ -82,7 +91,7 @@ export interface UsageHistory {
   chat_messages_count: number;
 }
 
-export type ViewState = 'dashboard' | 'analyze' | 'history' | 'settings' | 'evaluation' | 'usage' | 'roster' | 'pricing' | 'training' | 'admin' | 'terms' | 'privacy' | 'account' | 'notifications' | 'assembly-test' | 'deepgram-tts' | 'gemini-arabic-tts' | 'contact' | 'language-practice' | 'ai-conversation';
+export type ViewState = 'dashboard' | 'analyze' | 'history' | 'settings' | 'evaluation' | 'usage' | 'roster' | 'pricing' | 'training' | 'admin' | 'terms' | 'privacy' | 'account' | 'notifications' | 'assembly-test' | 'deepgram-tts' | 'gemini-arabic-tts' | 'contact' | 'ai-conversation';
 
 export const DEFAULT_CRITERIA: Criteria[] = [
   { id: '1', name: 'Empathy & Tone', description: 'Did the agent demonstrate empathy and maintain a professional tone?', weight: 9 },

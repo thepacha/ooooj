@@ -28,13 +28,98 @@ import {
 interface PreSessionBriefingProps {
   scenario: TrainingScenario;
   mode: 'text' | 'voice';
-  onStart: () => void;
+  onStart: (voiceId?: string) => void;
   onBack: () => void;
   bestScore?: number;
   attempts: number;
 }
 
+export const CARTESIA_LANG_VOICES: Record<string, { id: string; name: string; gender: 'Female' | 'Male' }[]> = {
+  'English': [
+    { id: 'c2ad7092-0447-47ea-948b-61fbb6faf153', name: 'Grace (Helpful)', gender: 'Female' },
+    { id: '2a12b36c-7f9b-4c3a-9f7a-72731b15323a', name: 'Ella (Scout)', gender: 'Female' },
+    { id: '56c7989e-7a5f-4d12-838f-e0f910e7356e', name: 'Tristan (Calm)', gender: 'Male' },
+    { id: '3d83e30f-c31b-4f26-b442-7075feafa53a', name: 'Wade (Soul)', gender: 'Male' }
+  ],
+  'Chinese': [
+    { id: '7a5d4663-88ae-47b7-808e-8f9b9ee4127b', name: 'Hua (Friendly)', gender: 'Female' },
+    { id: 'bf32f849-7bc9-4b91-8c62-954588efcc30', name: 'Lan (Calm)', gender: 'Female' },
+    { id: 'eda5bbff-1ff1-4886-8ef1-4e69a77640a0', name: 'Kai (Professional)', gender: 'Male' },
+    { id: '7e2a44d1-76b8-42b8-9507-fedfe3a803c8', name: 'Jian (Steady)', gender: 'Male' }
+  ],
+  'Dutch': [
+    { id: '225ba8cf-9fc2-4371-a78c-fe38ba38898a', name: 'Anneliese (Warm)', gender: 'Female' },
+    { id: '0eb213fe-4658-45bc-9442-33a48b24b133', name: 'Sanne (Bright)', gender: 'Female' },
+    { id: '4b250449-c635-4b63-bd1d-b654b12ffcd4', name: 'Jeroen (Polished)', gender: 'Male' },
+    { id: 'af482421-80f4-4379-b00c-a118def29cde', name: 'Lucas (Direct)', gender: 'Male' }
+  ],
+  'French': [
+    { id: 'b6cbde9b-00e3-4a57-9955-0703001e3231', name: 'Amélie (Sweet)', gender: 'Female' },
+    { id: 'c96a7d7d-3457-4979-8665-522f7b3e36fb', name: 'Léa (Helpful)', gender: 'Female' },
+    { id: '0418348a-0ca2-4e90-9986-800fb8b3bbc0', name: 'Antoine (Baritone)', gender: 'Male' },
+    { id: '93c98a2b-7d15-4f7b-8236-294b1e02b1c0', name: 'Mathieu (Doctor)', gender: 'Male' }
+  ],
+  'German': [
+    { id: 'b9de4a89-2257-424b-94c2-db18ba68c81a', name: 'Viktoria (Sweet)', gender: 'Female' },
+    { id: '6d4b1416-8d54-4d94-a788-8a802c086544', name: 'Sabine (Helpful)', gender: 'Female' },
+    { id: '42f14755-88c3-4124-aae3-5cc3a9618e8f', name: 'Jan (Baritone)', gender: 'Male' },
+    { id: '2be00b67-d53f-4eb5-89e7-96c224d56fbc', name: 'Dieter (Doctor)', gender: 'Male' }
+  ],
+  'Italian': [
+    { id: '90c7d657-9599-4cd0-9ed2-2568359e4d1a', name: 'Sofia (Sweet)', gender: 'Female' },
+    { id: '36d94908-c5b9-4014-b521-e69aee5bead0', name: 'Giulia (Helpful)', gender: 'Female' },
+    { id: 'e019ed7e-6079-4467-bc7f-b599a5dccf6f', name: 'Luca (Baritone)', gender: 'Male' },
+    { id: '88b329db-85d7-47cc-a5c5-98225a756721', name: 'Giuseppe (Doctor)', gender: 'Male' }
+  ],
+  'Japanese': [
+    { id: '31c55968-a9f4-4115-8831-3a16952179c8', name: 'Ayumi (Sweet)', gender: 'Female' },
+    { id: '861213b7-f057-45c8-9527-0f4c144f1a03', name: 'Haruka (Helpful)', gender: 'Female' },
+    { id: '6b92f628-be90-497c-8f4c-3b035002df71', name: 'Kenji (Baritone)', gender: 'Male' },
+    { id: '9436e723-612d-4114-aeb0-fa00d4d639bf', name: 'Katsuya (Doctor)', gender: 'Male' }
+  ],
+  'Korean': [
+    { id: '4dd4630e-19e0-4243-bca0-676ff85119b7', name: 'Haeun (Sweet)', gender: 'Female' },
+    { id: 'cac92886-4b7c-4bc1-a524-e0f79c0381be', name: 'Yuna (Helpful)', gender: 'Female' },
+    { id: 'f7755efb-1848-4321-aa22-5e5be5d32486', name: 'Ryeowook (Baritone)', gender: 'Male' },
+    { id: '537a82ae-4926-4bfb-9aec-aff0b80a12a5', name: 'Minho (Doctor)', gender: 'Male' }
+  ],
+  'Portuguese': [
+    { id: 'c9611be8-aae9-4a93-bb1c-98dd6b7d52a4', name: 'Isabella (Sweet)', gender: 'Female' },
+    { id: '2f4d204f-a5dc-4196-81bc-155986b76ab6', name: 'Mirella (Helpful)', gender: 'Female' },
+    { id: 'b603811e-54c2-4a0a-8854-09eab9ffa63f', name: 'Bruno (Baritone)', gender: 'Male' },
+    { id: '07b6f895-78b9-4921-8e10-8a21c99c2e8a', name: 'Rafael (Doctor)', gender: 'Male' }
+  ],
+  'Russian': [
+    { id: '25b7aaa6-1670-42dc-b791-419322400803', name: 'Daria (Sweet)', gender: 'Female' },
+    { id: '7a62541e-5492-410e-95ff-3abd096fce87', name: 'Natalia (Helpful)', gender: 'Female' },
+    { id: '1e4176b1-3db9-44d6-a601-4fe68b041942', name: 'Sergei (Baritone)', gender: 'Male' },
+    { id: '888b7df4-e165-4852-bfec-0ab2b96aaa46', name: 'Dmitri (Doctor)', gender: 'Male' }
+  ],
+  'Spanish': [
+    { id: '1cc00672-e9d4-455e-b3fb-31dfb7aad231', name: 'Laura (Sweet)', gender: 'Female' },
+    { id: 'e5e5c8d7-3924-4ff6-981a-cb667034be29', name: 'Regina (Helpful)', gender: 'Female' },
+    { id: '3efb11f3-4c0e-43c2-bad5-85ab99e993e2', name: 'Eduardo (Baritone)', gender: 'Male' },
+    { id: '4853bafa-52cc-48c8-86a1-1edf8c76e429', name: 'Alonso (Doctor)', gender: 'Male' }
+  ],
+  'Turkish': [
+    { id: 'bb2347fe-69e9-4810-873f-ffd759fe8420', name: 'Aylin (Sweet)', gender: 'Female' },
+    { id: '8036098f-cff4-401e-bfba-f0a6a6e5e49b', name: 'Elif (Helpful)', gender: 'Female' },
+    { id: '91e91d74-8eb4-43cd-97d3-7466c21db00d', name: 'Aykut (Baritone)', gender: 'Male' },
+    { id: '5a31e4fb-f823-4359-aa91-82c0ae9a991c', name: 'Murat (Doctor)', gender: 'Male' }
+  ],
+  'Danish': [
+    { id: 'c323c793-41f9-47b8-99dc-9b44b0440b84', name: 'Katrine (Sweet)', gender: 'Female' },
+    { id: 'eb929394-68e7-4e08-bd2f-e7055728a5e1', name: 'Mette (Helpful)', gender: 'Female' },
+    { id: '926e0766-f380-4d77-aeb0-9aa4ebb16b38', name: 'Soren (Baritone)', gender: 'Male' },
+    { id: 'a466f9e2-28eb-4bb7-925c-8e8984950700', name: 'Søren (Doctor)', gender: 'Male' }
+  ]
+};
+
 export const PreSessionBriefing: React.FC<PreSessionBriefingProps> = ({ scenario, mode, onStart, onBack, bestScore = 0, attempts }) => {
+  const cleanLang = scenario.language ? scenario.language.split(' ')[0] : 'English';
+  const voiceOptions = CARTESIA_LANG_VOICES[cleanLang] || CARTESIA_LANG_VOICES['English'];
+  const [selectedVoiceId, setSelectedVoiceId] = useState(voiceOptions[0]?.id || '244a2c5f-5ca1-4202-b0b2-3be91636c92d');
+
   const [isMicTesting, setIsMicTesting] = useState(false);
   const [micLevel, setMicLevel] = useState<number[]>(new Array(20).fill(0.1)); // Increased bars for smoother look
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
@@ -421,8 +506,30 @@ export const PreSessionBriefing: React.FC<PreSessionBriefingProps> = ({ scenario
                         </div>
                     )}
 
+                    {mode === 'voice' && (
+                        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 text-left space-y-3 mb-4">
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">
+                                🗣️ Select AI Partner Voice (Cartesia Multilingual)
+                            </label>
+                            <select
+                                value={selectedVoiceId}
+                                onChange={(e) => setSelectedVoiceId(e.target.value)}
+                                className="w-full p-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-[#0500e2] text-slate-900 dark:text-white"
+                            >
+                                {voiceOptions.map(v => (
+                                    <option key={v.id} value={v.id}>
+                                        {v.name} ({v.gender})
+                                    </option>
+                                ))}
+                            </select>
+                            <p className="text-[11px] text-slate-400">
+                                Powered by Cartesia Sonic Multilingual for premium native-accented voice quality.
+                            </p>
+                        </div>
+                    )}
+
                     <button 
-                        onClick={onStart}
+                        onClick={() => onStart(selectedVoiceId)}
                         className="w-full py-5 bg-[#0500e2] hover:bg-[#0400c0] text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group overflow-hidden relative"
                     >
                         <span className="relative z-10 flex items-center gap-2">

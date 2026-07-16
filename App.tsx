@@ -18,7 +18,6 @@ import { EvaluationView } from './components/EvaluationView';
 import { Roster } from './components/Roster';
 import { Pricing } from './components/Pricing';
 import { Training } from './components/Training';
-import { LanguagePractice } from './components/LanguagePractice';
 import { AiConversation } from './components/AiConversation';
 import { Admin } from './components/Admin';
 import { Blog } from './components/Blog';
@@ -55,7 +54,6 @@ const APP_ROUTES: Record<string, ViewState> = {
   '/analyze': 'analyze',
   '/ai-training': 'training',
   '/ai-conversation': 'ai-conversation',
-  '/language-practice': 'language-practice',
   '/usageandlimits': 'usage',
   '/history': 'history',
   '/team': 'roster',
@@ -74,7 +72,6 @@ const VIEW_TO_PATH: Record<string, string> = {
   'analyze': '/analyze',
   'training': '/ai-training',
   'ai-conversation': '/ai-conversation',
-  'language-practice': '/language-practice',
   'assembly-test': '/assembly-test',
   'deepgram-tts': '/deepgram-tts',
   'gemini-arabic-tts': '/gemini-arabic-tts',
@@ -752,8 +749,6 @@ function AppContent() {
         return <Training user={user} history={history.filter(h => !h.isDeleted)} onAnalysisComplete={handleAnalysisComplete} addNotification={addNotification} />;
       case 'ai-conversation':
         return <AiConversation user={user} history={history.filter(h => !h.isDeleted)} onAnalysisComplete={handleAnalysisComplete} addNotification={addNotification} />;
-      case 'language-practice':
-        return <LanguagePractice user={user} onAnalysisComplete={handleAnalysisComplete} addNotification={addNotification} />;
       case 'assembly-test':
         return <AssemblyAITest user={user} history={history.filter(h => !h.isDeleted)} onAnalysisComplete={handleAnalysisComplete} addNotification={addNotification} />;
       case 'deepgram-tts':
@@ -1462,28 +1457,10 @@ function AppContent() {
             notifications={notifications}
             markAsRead={markAsRead}
             markAllAsRead={markAllAsRead}
+            currentView={currentView}
           />
           <div className="p-4 lg:p-8 pt-6 lg:pt-8 max-w-6xl mx-auto print:max-w-none print:p-0">
             <div key={currentView} className="animate-fade-in-up">
-                <header className="mb-6 lg:mb-8 no-print">
-                    <h1 className="text-2xl lg:text-3xl font-bold text-[#000000] dark:text-white tracking-tight capitalize">
-                    {currentView === 'analyze' ? t('nav.analyze') : 
-                    currentView === 'evaluation' ? 'Evaluation Details' : 
-                    currentView === 'training' ? t('nav.training') :
-                    currentView === 'usage' ? t('nav.usage') :
-                    currentView === 'roster' ? t('nav.roster') :
-                    currentView === 'settings' ? t('nav.settings') : 
-                    currentView === 'account' ? t('account.title') :
-                    currentView === 'admin' ? t('nav.admin') :
-                    currentView === 'pricing' ? 'Subscription Plans' : 
-                    currentView === 'dashboard' ? t('nav.dashboard') : 
-                    currentView === 'history' ? t('nav.history') : currentView}
-                    </h1>
-                    <p className="text-sm lg:text-base text-slate-500 dark:text-slate-400 mt-2">
-                    {currentView === 'dashboard' && `${t('dash.welcome')}, ${(user?.name || 'User').split(' ')[0]}. ${t('dash.team_overview')}`}
-                    </p>
-                </header>
-                
                 {renderAppView()}
             </div>
           </div>

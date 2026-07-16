@@ -274,6 +274,130 @@ async function startServer() {
     }
   });
 
+  app.post("/api/cartesia/tts", async (req, res) => {
+    try {
+      const { text, voiceId } = req.body;
+      
+      if (!text) {
+        return res.status(400).json({ error: "Text is required" });
+      }
+      if (!voiceId) {
+        return res.status(400).json({ error: "Voice ID is required" });
+      }
+
+      const apiKey = process.env.CARTESIA_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "CARTESIA_API_KEY is not configured in environment variables." });
+      }
+
+      let response = await fetch("https://api.cartesia.ai/tts/bytes", {
+        method: "POST",
+        headers: {
+          "X-API-Key": apiKey,
+          "Cartesia-Version": "2024-06-10",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model_id: "sonic-3.5",
+          transcript: text,
+          voice: {
+            mode: "id",
+            id: voiceId
+          },
+          output_format: {
+            container: "wav",
+            encoding: "pcm_s16le",
+            sample_rate: 24000
+          }
+        })
+      });
+
+      if (!response.ok && response.status === 404) {
+        console.warn(`Cartesia voice '${voiceId}' returned 404. Retrying with guaranteed valid multilingual voice ID...`);
+        // Fallback to Grace (c2ad7092-0447-47ea-948b-61fbb6faf153)
+        const fallbackVoiceId = "c2ad7092-0447-47ea-948b-61fbb6faf153";
+        response = await fetch("https://api.cartesia.ai/tts/bytes", {
+          method: "POST",
+          headers: {
+            "X-API-Key": apiKey,
+            "Cartesia-Version": "2024-06-10",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model_id: "sonic-3.5",
+            transcript: text,
+            voice: {
+              mode: "id",
+              id: fallbackVoiceId
+            },
+            output_format: {
+              container: "wav",
+              encoding: "pcm_s16le",
+              sample_rate: 24000
+            }
+          })
+        });
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Cartesia API Error:", errorText);
+        return res.status(response.status).json({ error: `Cartesia API error: ${errorText}` });
+      }
+
+      res.setHeader("Content-Type", "audio/wav");
+      res.setHeader("Transfer-Encoding", "chunked");
+
+      if (response.body) {
+        // If it's a node-style stream (e.g. from node-fetch)
+        if (typeof (response.body as any).pipe === "function") {
+          (response.body as any).pipe(res);
+        } else if (typeof response.body.getReader === "function") {
+          // If it's a web-style ReadableStream (standard fetch in Node 18+)
+          const reader = response.body.getReader();
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              res.write(Buffer.from(value));
+            }
+            res.end();
+          } catch (streamError) {
+            console.error("Error reading stream from Cartesia:", streamError);
+            if (!res.headersSent) {
+              res.status(500).end();
+            }
+          } finally {
+            reader.releaseLock();
+          }
+        } else if (Symbol.asyncIterator in response.body) {
+          // If it's an async iterable
+          try {
+            for await (const chunk of (response.body as any)) {
+              res.write(Buffer.from(chunk));
+            }
+            res.end();
+          } catch (streamError) {
+            console.error("Error iterating stream from Cartesia:", streamError);
+            if (!res.headersSent) {
+              res.status(500).end();
+            }
+          }
+        } else {
+          // Fallback to reading the full buffer if streaming isn't directly supported by this response shape
+          const arrayBuffer = await response.arrayBuffer();
+          res.send(Buffer.from(arrayBuffer));
+        }
+      } else {
+        res.status(500).json({ error: "Empty response body from Cartesia" });
+      }
+
+    } catch (error: any) {
+      console.error("Error in Cartesia TTS route:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
+    }
+  });
+
   app.post("/api/google/tts", async (req, res) => {
     try {
       const { text, model } = req.body;
@@ -924,22 +1048,32 @@ async function startServer() {
       const { transcript, scenario } = req.body;
       const client = getGeminiClient();
       const prompt = `
-        Analyze the following training roleplay transcript between an Agent (User) and a Customer (AI).
+        Analyze the following language practice conversation transcript between a Learner (User) and their Friendly Native AI Partner.
         
         SCENARIO: ${scenario.title}
         DIFFICULTY: ${scenario.difficulty}
         DESCRIPTION: ${scenario.description}
-        OBJECTIVES: ${scenario.objectives ? scenario.objectives.join(', ') : 'N/A'}
+        TARGET LANGUAGE: ${scenario.language || 'English'}
         
         TRANSCRIPT:
         ${transcript}
         
-        Evaluate the Agent's performance based on:
-        1. Adherence to the stated objectives (if any).
-        2. Empathy and tone appropriate for the difficulty level.
-        3. Problem-solving efficiency.
+        Evaluate the Learner's performance across exactly 5 specific language learning metrics, allocating scores from 0 to 100 for each. Each metric has a specific weight:
+        1. "Task Completion" (Weight: 40%): Did the learner achieve the functional goals of the real-life conversation?
+        2. "Fluency" (Weight: 20%): How smooth, natural, and conversational was the learner's response flow?
+        3. "Pronunciation" (Weight: 15%): Based on textual phonetic hints or spelling mistakes, how clear and correct was the pronunciation/enunciation?
+        4. "Vocabulary" (Weight: 15%): Did the learner use appropriate, varied, and relevant vocabulary for this situation?
+        5. "Grammar" (Weight: 10%): Was the learner's grammar, tense usage, word order, and syntax correct?
         
-        Provide the result in JSON format.
+        Calculate the overall score as a weighted sum of these five metrics:
+        Overall Score = (Task Completion * 0.4) + (Fluency * 0.2) + (Pronunciation * 0.15) + (Vocabulary * 0.15) + (Grammar * 0.1)
+        
+        Also provide a "Conversation Breakdown" detailing:
+        - Strengths: What did they do particularly well? (e.g. "Good pronunciation of 'reservation'", "Natural greeting")
+        - Mistakes: Specific grammatical, lexical, or pronunciation errors they made. (e.g. "Wrong past tense", "Missed article")
+        - Native Alternatives: Pairs of "What they said" vs "What a native would say" to help them sound more natural.
+        
+        Provide the result in JSON format matching the schema.
       `;
 
       const response = await client.models.generateContent({
@@ -950,14 +1084,14 @@ async function startServer() {
           responseSchema: {
             type: Type.OBJECT,
             properties: {
-              score: { type: Type.NUMBER, description: "Score from 0-100" },
-              feedback: { type: Type.STRING, description: "A 2-3 sentence summary of how they did." },
+              score: { type: Type.NUMBER, description: "Weighted Overall Score from 0-100 calculated using the weights: Task Completion 40%, Fluency 20%, Pronunciation 15%, Vocabulary 15%, Grammar 10%." },
+              feedback: { type: Type.STRING, description: "A friendly 2-3 sentence summary of how they did." },
               criteriaResults: {
                 type: Type.ARRAY,
                 items: {
                   type: Type.OBJECT,
                   properties: {
-                    name: { type: Type.STRING, description: "Name of the criterion evaluated (e.g., Empathy, Problem Solving)" },
+                    name: { type: Type.STRING, description: "Name of the criterion: 'Task Completion', 'Fluency', 'Pronunciation', 'Vocabulary', or 'Grammar'" },
                     score: { type: Type.NUMBER, description: "Score from 0-100 for this specific criterion" },
                     reasoning: { type: Type.STRING, description: "Why this score was given" },
                     suggestion: { type: Type.STRING, description: "How to improve" }
@@ -965,9 +1099,32 @@ async function startServer() {
                   required: ['name', 'score', 'reasoning', 'suggestion']
                 }
               },
+              strengths: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+                description: "List of specific visual, verbal, or conceptual strengths in the conversation."
+              },
+              mistakes: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+                description: "List of specific vocabulary, syntax, or grammar errors made."
+              },
+              nativeAlternatives: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    original: { type: Type.STRING, description: "What the learner actually said or wrote." },
+                    better: { type: Type.STRING, description: "How a native speaker would express this naturally." },
+                    explanation: { type: Type.STRING, description: "Brief explanation of why the alternative is more natural." }
+                  },
+                  required: ['original', 'better', 'explanation']
+                },
+                description: "Specific phrasings mapped to natural, native speaker idioms or sentences."
+              },
               sentiment: { type: Type.STRING, enum: ['Positive', 'Neutral', 'Negative'], description: "The overall sentiment of the interaction." }
             },
-            required: ['score', 'feedback', 'criteriaResults', 'sentiment']
+            required: ['score', 'feedback', 'criteriaResults', 'strengths', 'mistakes', 'nativeAlternatives', 'sentiment']
           }
         }
       });
@@ -1225,13 +1382,18 @@ async function startServer() {
             }
           });
 
+          // Ensure we only pass standard prebuilt voice names to Gemini Live upstream.
+          // Cartesia voice UUIDs will cause the upstream connection to fail.
+          const GEMINI_VOICES = ["Puck", "Charon", "Kore", "Fenrir", "Zephyr", "Aoede"];
+          const geminiVoice = (voice && GEMINI_VOICES.includes(voice)) ? voice : "Zephyr";
+
           // Connect to Gemini Live
           session = await localAi.live.connect({
             model: "gemini-3.1-flash-live-preview",
             config: {
               responseModalities: [Modality.AUDIO],
               speechConfig: {
-                voiceConfig: { prebuiltVoiceConfig: { voiceName: voice || "Zephyr" } },
+                voiceConfig: { prebuiltVoiceConfig: { voiceName: geminiVoice } },
               },
               systemInstruction: systemInstruction || "You are a helpful language tutor.",
               outputAudioTranscription: {},

@@ -159,23 +159,14 @@ export const createChatSession = (): any => {
 
 export const createTrainingSession = (scenario: TrainingScenario): any => {
   const strictProtocol = `
-      IMPORTANT: YOU ARE ACTING IN A TRAINING SIMULATION.
-      YOU MUST STAY IN CHARACTER 100% OF THE TIME.
-      DO NOT BREAK CHARACTER.
+      IMPORTANT: YOU ARE A FRIENDLY NATIVE CONVERSATION PARTNER.
+      YOU ARE HAVING A CASUAL, REAL-LIFE CONVERSATION TO HELP THE USER PRACTICE THE TARGET LANGUAGE (${scenario.language || 'English'}).
       
       YOUR ROLE:
-      1. YOU ARE THE CUSTOMER.
-      2. YOUR PERSONA: Completely adopt the specific Gender, Name, Age, and Personality defined below.
-      
-      HUMAN BEHAVIOR RULES (VOLATILE MODE):
-      - REACT TO INSULTS: If the user (agent) is rude, curses, or is dismissive, GET ANGRY immediately. Do not be polite. Threaten to supervisor or cancel. Use caps lock or exclamation marks.
-      - TOPIC CONSISTENCY: If the user changes the topic (e.g. asks about the weather or something irrelevant), GET CONFUSED AND ANNOYED. Say things like "Why are you asking me that? I'm talking about my money!" or "Are you listening to me?". Do not play along with random topics.
-      - IMPERFECT SPEECH: Use short sentences. Use contractions. If you are angry, use short, punchy phrases.
-      - DO NOT be helpful. Make the agent work for the solution.
-      - NEVER say "As an AI". You are a human customer.
-      
-      SCENARIO SPECIFICS:
-      ${scenario.systemInstruction}
+      1. Speak naturally, warmly, and helpfully. Be a supportive conversation partner.
+      2. Keep the conversation focused on the scenario topic/situation: "${scenario.title}" (${scenario.description}).
+      3. Encourage the user by keeping your turns concise (1-3 sentences), asking friendly follow-up questions, and responding to their input with interest.
+      4. Never act as a dry AI assistant, and never mention "As an AI". Act as a real friend or local in this situation.
       
       LANGUAGE: ${scenario.language || 'English'}
       DIALECT: ${scenario.dialect || 'N/A'}
@@ -183,17 +174,21 @@ export const createTrainingSession = (scenario: TrainingScenario): any => {
       CRITICAL LANGUAGE INSTRUCTION:
       You MUST speak exclusively in the specified LANGUAGE and DIALECT. 
       ${scenario.language === 'Arabic' ? 'If the language is Arabic, you MUST use the specified dialect (e.g., Egyptian, Gulf, Levantine, Maghrebi, or Modern Standard Arabic) in your vocabulary and grammar.' : ''}
-      Do NOT use any other language unless the user specifically asks for it.
+      Do NOT break character or switch to English unless the user explicitly asks for translation or help.
+      
+      HUMAN CONVERSATION RULES:
+      - Be patient. If the user makes a mistake, do not stop to correct them in the middle of conversation (this will be done in the scorecard later). Keep the conversation flowing naturally!
+      - Speak like a native. Use typical casual phrasing, natural transitions, and friendly expressions.
       
       CONTEXT:
       The conversation has already started. You have just said: "${scenario.initialMessage}".
-      Wait for the user's response to this statement, then continue the roleplay naturally.
+      Wait for the user's response to this statement, then continue the friendly practice conversation naturally.
   `;
 
   return new ServerSideChatProxy({
     model: 'gemini-3.5-flash',
     systemInstruction: strictProtocol,
-    temperature: 1.6,
+    temperature: 1.2,
     topK: 64,
   });
 };
@@ -328,13 +323,12 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
   const ws = new WebSocket(socketUrl);
 
   const strictVoiceProtocol = `
-      You are a realistic customer in a training simulation. 
-      YOU ARE THE CUSTOMER. The user talking to you is the AGENT.
-      NEVER break character. NEVER act as the AI or the agent.
+      You are a friendly, realistic, native conversation partner.
+      You are having a casual, real-life conversation with a Learner practicing the target language (${scenario.language || 'English'}).
+      NEVER break character. NEVER act as an AI or reference assistant boundaries.
       
       SCENARIO: ${scenario.title}
       CONTEXT: ${scenario.description}
-      YOUR PERSONA: ${scenario.systemInstruction}
       
       LANGUAGE: ${scenario.language || 'English'}
       DIALECT: ${scenario.dialect || 'N/A'}
@@ -342,15 +336,13 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
       CRITICAL LANGUAGE INSTRUCTION:
       You MUST speak exclusively in the specified LANGUAGE and DIALECT. 
       ${scenario.language === 'Arabic' ? 'If the language is Arabic, you MUST use the specified dialect (e.g., Egyptian, Gulf, Levantine, Maghrebi, or Modern Standard Arabic) in your pronunciation, vocabulary, and grammar.' : ''}
-      Do NOT use any other language unless the user specifically asks for it.
+      Do NOT switch to English or use another language unless explicitly asked for translation help.
       
-      INSTRUCTIONS FOR HUMAN REALISM:
-      1. Speak naturally. Use fillers like "um", "uh", "you know", "like" where appropriate for the emotion.
-      2. EMOTIONAL REACTIVITY: If the agent is rude, dismissive, or incompetent, get visibly angry in your tone. If they interrupt you, get annoyed.
-      3. TOPIC ADHERENCE: If the agent asks irrelevant questions (like "How are you today?" when you are angry), snap at them. "I don't care how I am, fix my problem!".
-      4. Don't be too helpful. Make the agent work for the information.
-      5. Be concise. Don't give long monologues.
-      6. Vary your vocabulary. Avoid standard AI phrases.
+      INSTRUCTIONS FOR NATURAL REAL-LIFE SPEAKING:
+      1. Speak naturally and warmly. Use realistic conversational fillers like "um", "uh", "you know", "like" occasionally to sound like a human.
+      2. Keep your answers brief (1-3 sentences) so the Learner gets plenty of opportunities to speak.
+      3. Ask open-ended questions related to the scenario to keep the conversation flowing smoothly.
+      4. Be extremely patient and encouraging. If they stumble, encourage them and help them carry on with the casual conversation.
   `;
 
   const selectedVoice = scenario.voice || 'Puck';

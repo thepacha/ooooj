@@ -13,10 +13,32 @@ interface TopHeaderProps {
   notifications: Notification[];
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
+  currentView?: string;
 }
 
-export const TopHeader: React.FC<TopHeaderProps> = ({ user, onLogout, setView, onMenuClick, notifications, markAsRead, markAllAsRead }) => {
+export const TopHeader: React.FC<TopHeaderProps> = ({ user, onLogout, setView, onMenuClick, notifications, markAsRead, markAllAsRead, currentView }) => {
   const { t } = useLanguage();
+
+  const getPageTitle = (view: string) => {
+    switch (view) {
+      case 'dashboard': return t('nav.dashboard');
+      case 'analyze': return t('nav.analyze');
+      case 'evaluation': return 'Evaluation Details';
+      case 'training': return t('nav.training');
+      case 'ai-conversation': return 'AI-Conversation';
+      case 'assembly-test': return 'AssemblyAI Test';
+      case 'deepgram-tts': return 'Deepgram & Gemini TTS';
+      case 'notifications': return 'Notifications';
+      case 'history': return t('nav.history');
+      case 'roster': return t('nav.roster');
+      case 'usage': return t('nav.usage');
+      case 'settings': return t('nav.settings');
+      case 'admin': return t('nav.admin');
+      case 'account': return t('account.title');
+      default: return view ? view.charAt(0).toUpperCase() + view.slice(1) : '';
+    }
+  };
+
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState<'all' | 'unread'>('all');
@@ -72,15 +94,16 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ user, onLogout, setView, o
           <Menu size={24} />
         </button>
         
-        <div className="lg:hidden flex items-center gap-2 text-[#0500e2] dark:text-[#4b53fa]">
-          <RevuLogo className="h-8 w-auto" />
+        <div className="lg:hidden flex items-center gap-2">
+          <span className="font-sans font-bold text-base md:text-lg text-slate-900 dark:text-white tracking-tight">
+            {getPageTitle(currentView || '')}
+          </span>
         </div>
 
         <div className="hidden lg:flex items-center gap-2">
-          <div className="w-8 h-8 bg-[#0500e2] text-white rounded-lg flex items-center justify-center font-bold text-sm">
-            {orgName.substring(0, 1).toUpperCase()}
-          </div>
-          <span className="font-semibold text-slate-900 dark:text-white">{orgName}</span>
+          <span className="font-sans font-bold text-lg md:text-xl text-slate-900 dark:text-white tracking-tight">
+            {getPageTitle(currentView || '')}
+          </span>
         </div>
       </div>
 

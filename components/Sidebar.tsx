@@ -19,6 +19,26 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, onClose, theme, toggleTheme, onLogout, user }) => {
   const { t, language, setLanguage, isRTL } = useLanguage();
 
+  const getPageTitle = (view: string) => {
+    switch (view) {
+      case 'dashboard': return t('nav.dashboard');
+      case 'analyze': return t('nav.analyze');
+      case 'evaluation': return 'Evaluation Details';
+      case 'training': return t('nav.training');
+      case 'ai-conversation': return 'AI-Conversation';
+      case 'assembly-test': return 'AssemblyAI Test';
+      case 'deepgram-tts': return 'Deepgram & Gemini TTS';
+      case 'notifications': return 'Notifications';
+      case 'history': return t('nav.history');
+      case 'roster': return t('nav.roster');
+      case 'usage': return t('nav.usage');
+      case 'settings': return t('nav.settings');
+      case 'admin': return t('nav.admin');
+      case 'account': return t('account.title');
+      default: return view ? view.charAt(0).toUpperCase() + view.slice(1) : '';
+    }
+  };
+
   const role = user?.role || 'user';
   
   const allNavItems: { id: ViewState; label: string; icon: React.ReactNode; roles: string[] }[] = [
@@ -26,7 +46,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
     { id: 'analyze', label: t('nav.analyze'), icon: <FileText size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
     { id: 'training', label: t('nav.training'), icon: <GraduationCap size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
     { id: 'ai-conversation', label: t('nav.ai_conversation'), icon: <Languages size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
-    { id: 'language-practice', label: t('nav.language_practice'), icon: <Globe size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
     { id: 'assembly-test', label: 'AssemblyAI Test', icon: <Mic size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
     { id: 'deepgram-tts', label: 'Deepgram & Gemini TTS', icon: <Mic size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
     { id: 'notifications', label: 'Notifications', icon: <Bell size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
@@ -63,8 +82,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
         ${isOpen ? 'translate-x-0' : (isRTL ? 'translate-x-full lg:translate-x-0' : '-translate-x-full lg:translate-x-0')}
       `}>
         <div className="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 shrink-0">
-          <div className="flex items-center gap-3 text-[#0500e2] dark:text-[#4b53fa]">
-            <RevuLogo className="h-12 w-auto" />
+          <div className="flex items-center gap-3">
+            <span className="font-sans font-bold text-lg md:text-xl text-slate-800 dark:text-slate-100 tracking-tight">
+              {getPageTitle(currentView)}
+            </span>
           </div>
           {/* Close button for mobile */}
           <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-slate-900 dark:hover:text-white">

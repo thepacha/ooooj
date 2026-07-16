@@ -19,8 +19,7 @@ export const translations = {
     'nav.deepgram_tts': 'Deepgram TTS',
     'nav.gemini_arabic_tts': 'Gemini Arabic TTS',
     'nav.notifications': 'Notifications',
-    'nav.language_practice': 'Language Practice',
-    'nav.ai_conversation': 'AI Conversation',
+    'nav.ai_conversation': 'AI-Conversation',
 
     // Dashboard
     'dash.welcome': 'Welcome back',
@@ -517,7 +516,6 @@ export const translations = {
     'nav.deepgram_tts': 'Deepgram TTS',
     'nav.gemini_arabic_tts': 'Gemini Arabic TTS',
     'nav.notifications': 'التنبيهات',
-    'nav.language_practice': 'ممارسة اللغات',
     'nav.ai_conversation': 'محادثة الذكاء الاصطناعي',
 
     // Dashboard

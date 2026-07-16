@@ -516,8 +516,12 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
         setView('briefing');
     };
 
-    const confirmStartSession = async () => {
+    const confirmStartSession = async (selectedVoiceId?: string) => {
         if (!activeScenario) return;
+
+        if (selectedVoiceId) {
+            activeScenario.voice = selectedVoiceId;
+        }
 
         if (user) {
              const canProceed = await checkLimit(user.id, COSTS.CHAT * 5); 

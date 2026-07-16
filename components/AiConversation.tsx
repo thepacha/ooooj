@@ -239,6 +239,25 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
     const currentInputTranscription = useRef('');
     const currentOutputTranscription = useRef('');
 
+    // Refs for Cartesia low-latency sentence-level streaming pipeline
+    const cartesiaSentenceBuffer = useRef('');
+    const cartesiaQueue = useRef<{
+        id: number;
+        text: string;
+        audioBuffer: AudioBuffer | null;
+        isFetching: boolean;
+        error: boolean;
+    }[]>([]);
+    const nextSentenceId = useRef(0);
+    const isProcessingQueue = useRef(false);
+
+    const resetCartesiaQueue = () => {
+        cartesiaSentenceBuffer.current = '';
+        cartesiaQueue.current = [];
+        nextSentenceId.current = 0;
+        isProcessingQueue.current = false;
+    };
+
     // Derived state for input limits
     const wordCount = input.trim() === '' ? 0 : input.trim().split(/\s+/).length;
     const isOverLimit = wordCount > 24;
@@ -431,8 +450,12 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
         setView('briefing');
     };
 
-    const confirmStartSession = async () => {
+    const confirmStartSession = async (selectedVoiceId?: string) => {
         if (!activeScenario) return;
+
+        if (selectedVoiceId) {
+            activeScenario.voice = selectedVoiceId;
+        }
 
         if (user) {
              const canProceed = await checkLimit(user.id, COSTS.CHAT * 5); 
@@ -464,12 +487,117 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
         }
     };
 
+    const queueAndFetchSentence = (text: string, voiceId: string) => {
+        const sentenceId = nextSentenceId.current++;
+        const item = {
+            id: sentenceId,
+            text,
+            audioBuffer: null,
+            isFetching: true,
+            error: false
+        };
+        cartesiaQueue.current.push(item);
+        
+        // Start fetch asynchronously
+        fetchSentenceAudio(item, voiceId);
+    };
+
+    const fetchSentenceAudio = async (item: any, voiceId: string) => {
+        try {
+            const response = await fetch('/api/cartesia/tts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: item.text,
+                    voiceId: voiceId
+                })
+            });
+            
+            if (response.ok) {
+                const arrayBuffer = await response.arrayBuffer();
+                const ctx = outputAudioContext.current;
+                if (ctx) {
+                    if (ctx.state === 'suspended') {
+                        await ctx.resume();
+                    }
+                    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+                    item.audioBuffer = audioBuffer;
+                } else {
+                    item.error = true;
+                }
+            } else {
+                console.error(`Cartesia TTS sentence fetch failed: status ${response.status} for text "${item.text}"`);
+                item.error = true;
+            }
+        } catch (err) {
+            console.error("Failed to fetch/decode Cartesia sentence:", err);
+            item.error = true;
+        } finally {
+            item.isFetching = false;
+            processCartesiaPlayQueue();
+        }
+    };
+
+    const processCartesiaPlayQueue = async () => {
+        if (isProcessingQueue.current) return;
+        isProcessingQueue.current = true;
+        
+        try {
+            const ctx = outputAudioContext.current;
+            if (!ctx) {
+                isProcessingQueue.current = false;
+                return;
+            }
+            
+            while (cartesiaQueue.current.length > 0) {
+                const first = cartesiaQueue.current[0];
+                
+                if (first.isFetching) {
+                    break;
+                }
+                
+                if (first.error || !first.audioBuffer) {
+                    cartesiaQueue.current.shift();
+                    continue;
+                }
+                
+                if (ctx.state === 'suspended') {
+                    await ctx.resume();
+                }
+                
+                const audioBuffer = first.audioBuffer;
+                nextStartTime.current = Math.max(nextStartTime.current, ctx.currentTime);
+                
+                const source = ctx.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(ctx.destination);
+                
+                source.addEventListener('ended', () => {
+                    sources.current.delete(source);
+                });
+                
+                source.start(nextStartTime.current);
+                nextStartTime.current += audioBuffer.duration;
+                sources.current.add(source);
+                
+                cartesiaQueue.current.shift();
+            }
+        } catch (err) {
+            console.error("Error in processCartesiaPlayQueue:", err);
+        } finally {
+            isProcessingQueue.current = false;
+        }
+    };
+
     const startVoiceConnection = async (scenario: TrainingScenario) => {
         setIsVoiceActive(true);
         setConnectionError(null);
         currentInputTranscription.current = '';
         currentOutputTranscription.current = '';
         nextStartTime.current = 0;
+        resetCartesiaQueue();
 
         try {
             const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -516,10 +644,45 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
                     scriptProcessor.connect(inputAudioContext.current.destination);
                 },
                 onMessage: async (message) => {
+                    const isCartesiaVoice = scenario.voice ? !VOICES.includes(scenario.voice) : false;
+
                     if (message.serverContent?.outputTranscription) {
-                        currentOutputTranscription.current += message.serverContent.outputTranscription.text;
+                        const newText = message.serverContent.outputTranscription.text;
+                        currentOutputTranscription.current += newText;
+
+                        if (isCartesiaVoice) {
+                            cartesiaSentenceBuffer.current += newText;
+                            
+                            // Regex to match a complete sentence ending with standard punctuation or newline
+                            const sentenceRegex = /([^.?!。？！\n\r]+[.?!。？！\n\r]+)/g;
+                            let match;
+                            let lastIndex = 0;
+                            const currentBufferText = cartesiaSentenceBuffer.current;
+                            
+                            while ((match = sentenceRegex.exec(currentBufferText)) !== null) {
+                                const sentence = match[1].trim();
+                                if (sentence.length > 0) {
+                                    queueAndFetchSentence(sentence, scenario.voice || '');
+                                }
+                                lastIndex = sentenceRegex.lastIndex;
+                            }
+                            
+                            if (lastIndex > 0) {
+                                cartesiaSentenceBuffer.current = currentBufferText.substring(lastIndex);
+                            }
+                        }
                     } else if (message.serverContent?.inputTranscription) {
                         currentInputTranscription.current += message.serverContent.inputTranscription.text;
+                        
+                        // User started speaking/interrupted! Stop any playing Cartesia audio immediately and clear the queue
+                        if (isCartesiaVoice) {
+                            sources.current.forEach(src => {
+                                try { src.stop(); } catch(e){}
+                            });
+                            sources.current.clear();
+                            nextStartTime.current = 0;
+                            resetCartesiaQueue();
+                        }
                     }
 
                     if (message.serverContent?.turnComplete) {
@@ -535,6 +698,15 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
                         }
                         if (modelText.trim()) {
                             setMessages(prev => [...prev, {role: 'model', text: modelText}]);
+
+                            if (isCartesiaVoice) {
+                                // Flush any remaining text in the sentence buffer
+                                const remainingText = cartesiaSentenceBuffer.current.trim();
+                                if (remainingText.length > 0) {
+                                    queueAndFetchSentence(remainingText, scenario.voice || '');
+                                    cartesiaSentenceBuffer.current = '';
+                                }
+                            }
                         }
 
                         currentInputTranscription.current = '';
@@ -543,7 +715,7 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
 
                     const parts = message.serverContent?.modelTurn?.parts;
                     const base64Audio = parts?.[0]?.inlineData?.data;
-                    if (base64Audio && outputAudioContext.current) {
+                    if (base64Audio && outputAudioContext.current && !isCartesiaVoice) {
                         const ctx = outputAudioContext.current;
                         if (ctx.state === 'suspended') {
                             await ctx.resume();
@@ -607,6 +779,8 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
             outputAudioContext.current = null;
         }
         
+        resetCartesiaQueue();
+
         if (chatSession.current && typeof chatSession.current.then === 'function') {
              chatSession.current.then((session: any) => {
                  try {
@@ -931,11 +1105,19 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
                                             className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2] text-sm"
                                         >
                                             <option value="English">English</option>
-                                            <option value="Spanish">Spanish</option>
+                                            <option value="Chinese">Chinese</option>
+                                            <option value="Danish">Danish</option>
+                                            <option value="Dutch">Dutch</option>
                                             <option value="French">French</option>
                                             <option value="German">German</option>
                                             <option value="Arabic">Arabic</option>
                                             <option value="Italian">Italian</option>
+                                            <option value="Japanese">Japanese</option>
+                                            <option value="Korean">Korean</option>
+                                            <option value="Portuguese">Portuguese</option>
+                                            <option value="Russian">Russian</option>
+                                            <option value="Spanish">Spanish</option>
+                                            <option value="Turkish">Turkish</option>
                                         </select>
                                     </div>
                                     <div>
@@ -1077,11 +1259,19 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
                                             className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 outline-none focus:ring-2 focus:ring-[#0500e2] text-sm"
                                         >
                                             <option value="English">English</option>
-                                            <option value="Spanish">Spanish</option>
+                                            <option value="Chinese">Chinese</option>
+                                            <option value="Danish">Danish</option>
+                                            <option value="Dutch">Dutch</option>
                                             <option value="French">French</option>
                                             <option value="German">German</option>
                                             <option value="Arabic">Arabic</option>
                                             <option value="Italian">Italian</option>
+                                            <option value="Japanese">Japanese</option>
+                                            <option value="Korean">Korean</option>
+                                            <option value="Portuguese">Portuguese</option>
+                                            <option value="Russian">Russian</option>
+                                            <option value="Spanish">Spanish</option>
+                                            <option value="Turkish">Turkish</option>
                                         </select>
                                     </div>
                                     <div>
@@ -1323,21 +1513,15 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
     if (view === 'result') {
         if (!result) return null;
 
-        // Map general QA criteria to language practice attributes for display
-        const getCustomLanguageCriteriaName = (originalName: string) => {
-            if (originalName.includes('Empathy') || originalName.includes('Tone')) {
-                return 'Grammar & Syntax';
-            }
-            if (originalName.includes('Solution Accuracy') || originalName.includes('Accuracy')) {
-                return 'Vocabulary & Expression';
-            }
-            if (originalName.includes('Response Efficiency') || originalName.includes('Efficiency')) {
-                return 'Fluency & Flow';
-            }
-            if (originalName.includes('Compliance') || originalName.includes('Procedure')) {
-                return 'Comprehension & Response';
-            }
-            return originalName;
+        const getMetricWeight = (name: string) => {
+            const weights: Record<string, string> = {
+                'Task Completion': '40% Weight',
+                'Fluency': '20% Weight',
+                'Pronunciation': '15% Weight',
+                'Vocabulary': '15% Weight',
+                'Grammar': '10% Weight'
+            };
+            return weights[name] || '';
         };
 
         return (
@@ -1390,9 +1574,14 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
                         {result.criteriaResults.map((crit, idx) => (
                             <div key={idx} className="bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/80">
                                 <div className="flex justify-between items-center mb-3">
-                                    <h4 className="font-bold text-slate-900 dark:text-white text-base">
-                                        {getCustomLanguageCriteriaName(crit.name)}
-                                    </h4>
+                                    <div className="flex flex-col">
+                                        <h4 className="font-bold text-slate-900 dark:text-white text-base">
+                                            {crit.name}
+                                        </h4>
+                                        <span className="text-xs text-indigo-500 font-bold uppercase tracking-wider mt-0.5">
+                                            {getMetricWeight(crit.name)}
+                                        </span>
+                                    </div>
                                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                                         crit.score >= 85 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' :
                                         crit.score >= 70 ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400' :
@@ -1410,7 +1599,92 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
                     </div>
                 </div>
 
-                {/* Strengths & General feedback */}
+                {/* Conversation Breakdown Section */}
+                <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 p-6 md:p-10 shadow-lg space-y-8 mb-8">
+                    <div>
+                        <h3 className="text-xl font-serif font-bold text-slate-900 dark:text-white mb-2">Conversation Breakdown</h3>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm">Key strengths, grammar/vocabulary mistakes, and natural local phrasings.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Strengths */}
+                        <div className="bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-100 dark:border-emerald-900/30 p-6 rounded-2xl">
+                            <div className="flex items-center gap-2 mb-4 text-emerald-700 dark:text-emerald-400 font-bold">
+                                <CheckCircle size={20} />
+                                <h4>Strengths</h4>
+                            </div>
+                            {result.strengths && result.strengths.length > 0 ? (
+                                <ul className="space-y-3">
+                                    {result.strengths.map((strength, sIdx) => (
+                                        <li key={sIdx} className="flex gap-2.5 text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                                            <span className="text-emerald-500 font-bold select-none">•</span>
+                                            <span>{strength}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-sm text-slate-400">No specific strengths captured.</p>
+                            )}
+                        </div>
+
+                        {/* Mistakes */}
+                        <div className="bg-rose-50/50 dark:bg-rose-950/10 border border-rose-100 dark:border-rose-900/30 p-6 rounded-2xl">
+                            <div className="flex items-center gap-2 mb-4 text-rose-700 dark:text-rose-400 font-bold">
+                                <X size={20} className="text-rose-500" />
+                                <h4>Mistakes & Adjustments</h4>
+                            </div>
+                            {result.mistakes && result.mistakes.length > 0 ? (
+                                <ul className="space-y-3">
+                                    {result.mistakes.map((mistake, mIdx) => (
+                                        <li key={mIdx} className="flex gap-2.5 text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                                            <span className="text-rose-500 font-bold select-none">•</span>
+                                            <span>{mistake}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-sm text-slate-400">No major mistakes detected.</p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Native Alternatives */}
+                    <div>
+                        <div className="flex items-center gap-2 mb-4 text-indigo-700 dark:text-indigo-400 font-bold">
+                            <Sparkles size={18} />
+                            <h4>Native Speaker Alternatives</h4>
+                        </div>
+                        {result.nativeAlternatives && result.nativeAlternatives.length > 0 ? (
+                            <div className="space-y-4">
+                                {result.nativeAlternatives.map((alt, aIdx) => (
+                                    <div key={aIdx} className="bg-slate-50 dark:bg-slate-950 rounded-xl p-5 border border-slate-100 dark:border-slate-800/80">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                                            <div>
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">What You Said</p>
+                                                <p className="text-sm text-rose-600 dark:text-rose-400 font-mono line-through bg-rose-500/5 px-2.5 py-1.5 rounded-lg border border-rose-500/10">
+                                                    "{alt.original}"
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-emerald-500 uppercase tracking-wider mb-1">What a Native Would Say</p>
+                                                <p className="text-sm text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-500/5 px-2.5 py-1.5 rounded-lg border border-emerald-500/10">
+                                                    "{alt.better}"
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                                            <strong className="text-indigo-500">Why?</strong> {alt.explanation}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-slate-400">No phrasing alternatives suggested for this session.</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* AI Assessment */}
                 <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 p-6 md:p-10 shadow-lg space-y-6">
                     <div>
                         <h3 className="text-xl font-serif font-bold text-slate-900 dark:text-white mb-1">AI Teacher Assessment</h3>
