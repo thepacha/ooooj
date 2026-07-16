@@ -43,16 +43,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
   
   const allNavItems: { id: ViewState; label: string; icon: React.ReactNode; roles: string[] }[] = [
     { id: 'dashboard', label: t('nav.dashboard'), icon: <LayoutDashboard size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
-    { id: 'analyze', label: t('nav.analyze'), icon: <FileText size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
-    { id: 'training', label: t('nav.training'), icon: <GraduationCap size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
+    { id: 'analyze', label: t('nav.analyze'), icon: <FileText size={20} />, roles: ['admin'] },
+    { id: 'training', label: t('nav.training'), icon: <GraduationCap size={20} />, roles: ['admin'] },
     { id: 'ai-conversation', label: t('nav.ai_conversation'), icon: <Languages size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
-    { id: 'assembly-test', label: 'AssemblyAI Test', icon: <Mic size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
-    { id: 'deepgram-tts', label: 'Deepgram & Gemini TTS', icon: <Mic size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
+    { id: 'assembly-test', label: 'AssemblyAI Test', icon: <Mic size={20} />, roles: ['admin'] },
+    { id: 'deepgram-tts', label: 'Deepgram & Gemini TTS', icon: <Mic size={20} />, roles: ['admin'] },
     { id: 'notifications', label: 'Notifications', icon: <Bell size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
     { id: 'history', label: t('nav.history'), icon: <History size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
-    { id: 'roster', label: t('nav.roster'), icon: <Users size={20} />, roles: ['manager', 'org_admin', 'admin'] },
+    { id: 'roster', label: t('nav.roster'), icon: <Users size={20} />, roles: ['admin'] },
     { id: 'usage', label: t('nav.usage'), icon: <PieChart size={20} />, roles: ['manager', 'org_admin', 'admin'] },
-    { id: 'settings', label: t('nav.settings'), icon: <Settings size={20} />, roles: ['manager', 'org_admin', 'admin'] },
+    { id: 'settings', label: t('nav.settings'), icon: <Settings size={20} />, roles: ['admin'] },
   ];
 
   const navItems = allNavItems.filter(item => item.roles.includes(role));

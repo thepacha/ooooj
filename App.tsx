@@ -731,6 +731,21 @@ function AppContent() {
   };
 
   const renderAppView = () => {
+    // Role protection for Admin-only views
+    const isAdminView = ['analyze', 'training', 'assembly-test', 'deepgram-tts', 'roster', 'settings', 'admin'].includes(currentView);
+    if (isAdminView && user?.role !== 'admin') {
+      return (
+        <Dashboard 
+          history={history.filter(h => !h.isDeleted)} 
+          setView={handleNavigate} 
+          onFilterSelect={(filter) => {
+              setHistoryFilter(filter);
+              handleNavigate('history');
+          }}
+        />
+      );
+    }
+
     switch (currentView) {
       case 'dashboard':
         return (
