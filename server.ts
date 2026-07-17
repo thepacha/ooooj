@@ -518,6 +518,18 @@ async function startServer() {
     }
   });
 
+  app.get("/api/gemini-key", (req, res) => {
+    const key = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    if (!key) {
+      console.error("GEMINI_API_KEY is not configured on the server environment.");
+      return res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
+    }
+    return res.status(200).json({
+      key: key,
+      apiKey: key
+    });
+  });
+
   app.post("/api/contact", async (req, res) => {
     try {
       const { name, email, message, company, topic } = req.body;
@@ -1389,7 +1401,7 @@ async function startServer() {
 
           // Connect to Gemini Live
           session = await localAi.live.connect({
-            model: "gemini-3.1-flash-live-preview",
+            model: "gemini-2.0-flash",
             config: {
               responseModalities: [Modality.AUDIO],
               speechConfig: {
