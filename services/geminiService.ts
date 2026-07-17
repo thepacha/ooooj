@@ -347,75 +347,96 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
   const directConnect = async () => {
     try {
       console.log("Connecting directly to Gemini Live API client-side...");
-      const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new Error("VITE_GEMINI_API_KEY environment variable is not configured on the client.");
-      }
+      
+      // Fetch the API Key securely from our own backend
+      const keyResponse = await fetch('/api/gemini-key');
+      const { apiKey } = await keyResponse.json();
 
-      const ai = new GoogleGenAI({
-        apiKey: apiKey,
-        httpOptions: {
-          headers: {
-            'User-Agent': 'aistudio-build',
-          }
-        }
-      });
+      if (!apiKey) {
+        throw new Error("GEMINI_API_KEY environment variable is not configured on the server.");
+      }
 
       const GEMINI_VOICES = ["Puck", "Charon", "Kore", "Fenrir", "Zephyr", "Aoede"];
       const geminiVoice = (scenario.voice && GEMINI_VOICES.includes(scenario.voice)) ? scenario.voice : "Zephyr";
 
-      const session = await ai.live.connect({
-        model: "gemini-3.1-flash-live-preview",
-        config: {
-          responseModalities: [Modality.AUDIO],
-          speechConfig: {
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: geminiVoice } },
-          },
-          systemInstruction: strictVoiceProtocol,
-          outputAudioTranscription: {},
-          inputAudioTranscription: {},
-        },
-        callbacks: {
-          onopen: () => {
-            console.log("Direct Gemini Live session connected client-side");
-            callbacks.onOpen();
-          },
-          onmessage: (message: any) => {
-            callbacks.onMessage(message);
-          },
-          onclose: () => {
-            console.log("Direct Gemini Live session closed client-side");
-            callbacks.onClose();
-          },
-          onerror: (err: any) => {
-            console.error("Direct Gemini Live client-side error:", err);
-            callbacks.onError(err);
+      const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidirectionalGenerateContent?key=${apiKey}`;
+      const ws = new WebSocket(url);
+
+      ws.onopen = () => {
+        console.log("Direct Gemini Live raw WebSocket connected client-side");
+        
+        // Send the setup message according to standard Gemini Multimodal Live API specifications
+        ws.send(JSON.stringify({
+          setup: {
+            model: "models/gemini-2.0-flash-exp",
+            generationConfig: {
+              responseModalities: ["AUDIO"],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: {
+                    voiceName: geminiVoice
+                  }
+                }
+              }
+            },
+            systemInstruction: {
+              parts: [
+                {
+                  text: strictVoiceProtocol
+                }
+              ]
+            }
           }
+        }));
+
+        callbacks.onOpen();
+      };
+
+      ws.onmessage = async (event) => {
+        try {
+          let dataText = "";
+          if (event.data instanceof Blob) {
+            dataText = await event.data.text();
+          } else {
+            dataText = event.data;
+          }
+          const rawMsg = JSON.parse(dataText);
+          callbacks.onMessage(rawMsg);
+        } catch (e) {
+          console.error("Error parsing direct Gemini Live message:", e);
         }
-      });
+      };
+
+      ws.onclose = () => {
+        console.log("Direct Gemini Live raw WebSocket closed client-side");
+        callbacks.onClose();
+      };
+
+      ws.onerror = (err) => {
+        console.error("Direct Gemini Live raw WebSocket error client-side:", err);
+        callbacks.onError(err);
+      };
 
       return {
         sendRealtimeInput: (input: any) => {
-          if (input.media?.data) {
-            session.sendRealtimeInput({
-              audio: { data: input.media.data, mimeType: "audio/pcm;rate=16000" }
-            });
-          } else if (input.media?.inlineData?.data) {
-            session.sendRealtimeInput({
-              audio: { data: input.media.inlineData.data, mimeType: "audio/pcm;rate=16000" }
-            });
-          } else if (input.audio?.data) {
-            session.sendRealtimeInput({
-              audio: { data: input.audio.data, mimeType: "audio/pcm;rate=16000" }
-            });
-          } else if (input.audio) {
-            session.sendRealtimeInput({
-              audio: { data: input.audio, mimeType: "audio/pcm;rate=16000" }
-            });
+          if (ws.readyState === WebSocket.OPEN) {
+            const base64Data = input.media?.data || input.media?.inlineData?.data || input.audio?.data || input.audio;
+            if (base64Data) {
+              ws.send(JSON.stringify({
+                realtimeInput: {
+                  mediaChunks: [
+                    {
+                      mimeType: "audio/pcm",
+                      data: base64Data
+                    }
+                  ]
+                }
+              }));
+            }
           }
         },
         close: () => {
-          try { session.close(); } catch(e){}
+          try { ws.close(); } catch (e) {}
         }
       };
     } catch (err: any) {

@@ -20,6 +20,10 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  app.get("/api/gemini-key", (req, res) => {
+    res.json({ apiKey: process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || "" });
+  });
+
   // SEO-friendly Landing V2 route
   app.get("/landing-v2", (req, res) => {
     const html = `
