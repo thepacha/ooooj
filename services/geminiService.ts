@@ -319,7 +319,18 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
   onClose: () => void
 }): Promise<any> => {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const socketUrl = `${protocol}//${window.location.host}/api/gemini-live`;
+  const wsUrlConfig = (import.meta as any).env?.VITE_WEBSOCKET_URL;
+  let socketUrl = "";
+  if (wsUrlConfig) {
+    if (wsUrlConfig.startsWith("ws://") || wsUrlConfig.startsWith("wss://")) {
+      socketUrl = wsUrlConfig;
+    } else {
+      const cleanUrl = wsUrlConfig.replace(/^https?:\/\//, "");
+      socketUrl = `${protocol}//${cleanUrl}/api/gemini-live`;
+    }
+  } else {
+    socketUrl = `${protocol}//${window.location.host}/api/gemini-live`;
+  }
   const ws = new WebSocket(socketUrl);
 
   const strictVoiceProtocol = `
