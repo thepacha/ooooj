@@ -1,4 +1,5 @@
 import { AnalysisResult, Criteria, TrainingResult, TrainingScenario } from "../types";
+import { GoogleGenAI } from "@google/genai";
 
 export enum Modality {
   AUDIO = "AUDIO",
@@ -318,21 +319,6 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
   onError: (e: any) => void,
   onClose: () => void
 }): Promise<any> => {
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const wsUrlConfig = (import.meta as any).env?.VITE_WEBSOCKET_URL;
-  let socketUrl = "";
-  if (wsUrlConfig) {
-    if (wsUrlConfig.startsWith("ws://") || wsUrlConfig.startsWith("wss://")) {
-      socketUrl = wsUrlConfig;
-    } else {
-      const cleanUrl = wsUrlConfig.replace(/^https?:\/\//, "");
-      socketUrl = `${protocol}//${cleanUrl}/api/gemini-live`;
-    }
-  } else {
-    socketUrl = `${protocol}//${window.location.host}/api/gemini-live`;
-  }
-  const ws = new WebSocket(socketUrl);
-
   const strictVoiceProtocol = `
       You are a friendly, realistic, native conversation partner.
       You are having a casual, real-life conversation with a Learner practicing the target language (${scenario.language || 'English'}).
@@ -358,55 +344,201 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
 
   const selectedVoice = scenario.voice || 'Puck';
 
-  ws.onopen = () => {
-    ws.send(JSON.stringify({
-      type: "setup",
-      voice: selectedVoice,
-      systemInstruction: strictVoiceProtocol
-    }));
+  const directConnect = async () => {
+    try {
+      console.log("Connecting directly to Gemini Live API client-side...");
+      const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error("VITE_GEMINI_API_KEY environment variable is not configured on the client.");
+      }
+
+      const ai = new GoogleGenAI({
+        apiKey: apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          }
+        }
+      });
+
+      const GEMINI_VOICES = ["Puck", "Charon", "Kore", "Fenrir", "Zephyr", "Aoede"];
+      const geminiVoice = (scenario.voice && GEMINI_VOICES.includes(scenario.voice)) ? scenario.voice : "Zephyr";
+
+      const session = await ai.live.connect({
+        model: "gemini-3.1-flash-live-preview",
+        config: {
+          responseModalities: [Modality.AUDIO],
+          speechConfig: {
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: geminiVoice } },
+          },
+          systemInstruction: strictVoiceProtocol,
+          outputAudioTranscription: {},
+          inputAudioTranscription: {},
+        },
+        callbacks: {
+          onopen: () => {
+            console.log("Direct Gemini Live session connected client-side");
+            callbacks.onOpen();
+          },
+          onmessage: (message: any) => {
+            callbacks.onMessage(message);
+          },
+          onclose: () => {
+            console.log("Direct Gemini Live session closed client-side");
+            callbacks.onClose();
+          },
+          onerror: (err: any) => {
+            console.error("Direct Gemini Live client-side error:", err);
+            callbacks.onError(err);
+          }
+        }
+      });
+
+      return {
+        sendRealtimeInput: (input: any) => {
+          if (input.media?.data) {
+            session.sendRealtimeInput({
+              audio: { data: input.media.data, mimeType: "audio/pcm;rate=16000" }
+            });
+          } else if (input.media?.inlineData?.data) {
+            session.sendRealtimeInput({
+              audio: { data: input.media.inlineData.data, mimeType: "audio/pcm;rate=16000" }
+            });
+          } else if (input.audio?.data) {
+            session.sendRealtimeInput({
+              audio: { data: input.audio.data, mimeType: "audio/pcm;rate=16000" }
+            });
+          } else if (input.audio) {
+            session.sendRealtimeInput({
+              audio: { data: input.audio, mimeType: "audio/pcm;rate=16000" }
+            });
+          }
+        },
+        close: () => {
+          try { session.close(); } catch(e){}
+        }
+      };
+    } catch (err: any) {
+      console.error("Direct connection fallback failed:", err);
+      callbacks.onError(err);
+      throw err;
+    }
   };
 
-  ws.onmessage = (event) => {
-    try {
-      const msg = JSON.parse(event.data);
-      if (msg.type === "ready") {
-        callbacks.onOpen();
-      } else if (msg.type === "server_message") {
-        callbacks.onMessage(msg.message);
-      } else if (msg.type === "error") {
-        callbacks.onError(new Error(msg.error));
-      } else if (msg.type === "close") {
+  const isVercel = window.location.hostname.includes('vercel.app') || 
+                   window.location.hostname === 'app.revuqai.com';
+
+  if (isVercel) {
+    return directConnect();
+  }
+
+  // Otherwise, use local proxy with fallback on error
+  return new Promise((resolve) => {
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrlConfig = (import.meta as any).env?.VITE_WEBSOCKET_URL;
+    let socketUrl = "";
+    if (wsUrlConfig) {
+      if (wsUrlConfig.startsWith("ws://") || wsUrlConfig.startsWith("wss://")) {
+        socketUrl = wsUrlConfig;
+      } else {
+        const cleanUrl = wsUrlConfig.replace(/^https?:\/\//, "");
+        socketUrl = `${protocol}//${cleanUrl}/api/gemini-live`;
+      }
+    } else {
+      socketUrl = `${protocol}//${window.location.host}/api/gemini-live`;
+    }
+
+    console.log("Connecting to Gemini Live local proxy at:", socketUrl);
+    const ws = new WebSocket(socketUrl);
+    let hasFailed = false;
+
+    // Use a delegation wrapper
+    let activeSession: any = {
+      sendRealtimeInput: (input: any) => {
+        if (ws.readyState === WebSocket.OPEN) {
+          if (input.media?.data) {
+            ws.send(JSON.stringify({ audio: input.media.data }));
+          } else if (input.media?.inlineData?.data) {
+            ws.send(JSON.stringify({ audio: input.media.inlineData.data }));
+          } else if (input.audio?.data) {
+            ws.send(JSON.stringify({ audio: input.audio.data }));
+          } else if (input.audio) {
+            ws.send(JSON.stringify({ audio: input.audio }));
+          }
+        }
+      },
+      close: () => {
+        try { ws.close(); } catch(e){}
+      }
+    };
+
+    const fallbackToDirect = async () => {
+      if (hasFailed) return;
+      hasFailed = true;
+      console.warn("Local proxy connection failed. Falling back to direct connection...");
+      try {
+        const direct = await directConnect();
+        activeSession.sendRealtimeInput = direct.sendRealtimeInput;
+        activeSession.close = direct.close;
+      } catch (err) {
+        console.error("Fallback connection also failed:", err);
+      }
+    };
+
+    // Timeout if proxy doesn't open in 2 seconds
+    const timeoutId = setTimeout(() => {
+      if (ws.readyState !== WebSocket.OPEN) {
+        fallbackToDirect();
+      }
+    }, 2000);
+
+    ws.onopen = () => {
+      clearTimeout(timeoutId);
+      if (hasFailed) {
+        try { ws.close(); } catch(e){}
+        return;
+      }
+      ws.send(JSON.stringify({
+        type: "setup",
+        voice: selectedVoice,
+        systemInstruction: strictVoiceProtocol
+      }));
+    };
+
+    ws.onmessage = (event) => {
+      if (hasFailed) return;
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === "ready") {
+          callbacks.onOpen();
+        } else if (msg.type === "server_message") {
+          callbacks.onMessage(msg.message);
+        } else if (msg.type === "error") {
+          callbacks.onError(new Error(msg.error));
+        } else if (msg.type === "close") {
+          callbacks.onClose();
+        }
+      } catch (e) {
+        console.error("Error parsing websocket message in connectLiveTraining:", e);
+      }
+    };
+
+    ws.onerror = (err) => {
+      clearTimeout(timeoutId);
+      if (!hasFailed) {
+        fallbackToDirect();
+      } else {
+        callbacks.onError(err);
+      }
+    };
+
+    ws.onclose = () => {
+      clearTimeout(timeoutId);
+      if (!hasFailed) {
         callbacks.onClose();
       }
-    } catch (e) {
-      console.error("Error parsing websocket message in connectLiveTraining:", e);
-    }
-  };
+    };
 
-  ws.onerror = (err) => {
-    callbacks.onError(err);
-  };
-
-  ws.onclose = () => {
-    callbacks.onClose();
-  };
-
-  return {
-    sendRealtimeInput: (input: any) => {
-      if (ws.readyState === WebSocket.OPEN) {
-        if (input.media?.data) {
-          ws.send(JSON.stringify({ audio: input.media.data }));
-        } else if (input.media?.inlineData?.data) {
-          ws.send(JSON.stringify({ audio: input.media.inlineData.data }));
-        } else if (input.audio?.data) {
-          ws.send(JSON.stringify({ audio: input.audio.data }));
-        } else if (input.audio) {
-          ws.send(JSON.stringify({ audio: input.audio }));
-        }
-      }
-    },
-    close: () => {
-      ws.close();
-    }
-  };
+    resolve(activeSession);
+  });
 };
