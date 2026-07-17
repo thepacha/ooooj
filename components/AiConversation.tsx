@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { TrainingScenario, TrainingResult, User, AnalysisResult, CriteriaResult } from '../types';
-import { createTrainingSession, evaluateTrainingSession, connectLiveTraining, generateAIScenario, generateTrainingTopic, GenerateScenarioParams, transcribeMedia } from '../services/geminiService';
-import { Shield, TrendingUp, Wrench, ArrowRight, RefreshCw, CheckCircle, Loader2, Send, Phone, PhoneOff, MessageSquare, Copy, Check, Plus, Sparkles, X, Calendar, Trash2, AlertTriangle, HelpCircle, Heart, Zap, Trophy, Target, Frown, Meh, Smile, MinusCircle, Clock, FileText, BarChart3, Timer, Mic, Building2, ChevronRight, Globe, Award, Languages, BookOpen, Volume2, Square } from 'lucide-react';
+import { createTrainingSession, evaluateTrainingSession, connectLiveTraining, generateAIScenario, generateTrainingTopic, GenerateScenarioParams } from '../services/geminiService';
+import { Shield, TrendingUp, Wrench, ArrowRight, RefreshCw, CheckCircle, Loader2, Send, Phone, PhoneOff, MessageSquare, Copy, Check, Plus, Sparkles, X, Calendar, Trash2, AlertTriangle, HelpCircle, Heart, Zap, Trophy, Target, Frown, Meh, Smile, MinusCircle, Clock, FileText, BarChart3, Timer, Mic, Building2, ChevronRight, Globe, Award, Languages, BookOpen } from 'lucide-react';
 import { incrementUsage, COSTS, checkLimit } from '../lib/usageService';
 import { generateId } from '../lib/utils';
 import { supabase } from '../lib/supabase';
@@ -190,17 +190,6 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
     const [mode, setMode] = useState<'text' | 'voice'>('text');
     const [isCopied, setIsCopied] = useState(false);
     const [sessionDuration, setSessionDuration] = useState(0);
-    
-    // Turn-Based Voice Session States
-    const [isTurnBasedVoice, setIsTurnBasedVoice] = useState(false);
-    const [isRecording, setIsRecording] = useState(false);
-    const [isTranscribing, setIsTranscribing] = useState(false);
-    const [isAIPointingAudio, setIsAIPointingAudio] = useState(false);
-
-    // Turn-Based Refs
-    const mediaRecorderRef = useRef<any>(null);
-    const audioChunksRef = useRef<Blob[]>([]);
-    const activeAudioRef = useRef<HTMLAudioElement | null>(null);
     
     const [scenarios, setScenarios] = useState<TrainingScenario[]>([]);
     const [isLoadingScenarios, setIsLoadingScenarios] = useState(false);
@@ -484,9 +473,6 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
         
         chatSession.current = null;
 
-        const isServerless = window.location.hostname === 'app.revuqai.com' || window.location.hostname.includes('vercel.app');
-        setIsTurnBasedVoice(isServerless);
-
         if (mode === 'text') {
             try {
                 chatSession.current = createTrainingSession(activeScenario);
@@ -495,164 +481,9 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
                 console.error(e);
                 alert("Failed to start session. Check API Key configuration.");
             }
-        } else if (isServerless) {
-            try {
-                chatSession.current = createTrainingSession(activeScenario);
-                setMessages([{ role: 'model', text: activeScenario.initialMessage }]);
-                setView('active');
-                setTimeout(() => {
-                    playTurnBasedTTS(activeScenario.initialMessage, activeScenario.voice || '', activeScenario.language || 'English', activeScenario.dialect || '');
-                }, 1000);
-            } catch (e) {
-                console.error(e);
-                alert("Failed to start fallback voice session.");
-            }
         } else {
             setView('active');
             startVoiceConnection(activeScenario);
-        }
-    };
-
-    const startRecording = async () => {
-        audioChunksRef.current = [];
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const options = { mimeType: 'audio/webm' };
-            
-            let recorder;
-            try {
-                recorder = new MediaRecorder(stream, options);
-            } catch (e) {
-                recorder = new MediaRecorder(stream);
-            }
-            
-            mediaRecorderRef.current = recorder;
-            
-            recorder.ondataavailable = (event) => {
-                if (event.data && event.data.size > 0) {
-                    audioChunksRef.current.push(event.data);
-                }
-            };
-            
-            recorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
-                
-                setIsTranscribing(true);
-                try {
-                    const reader = new FileReader();
-                    reader.readAsDataURL(audioBlob);
-                    reader.onloadend = async () => {
-                        const base64String = (reader.result as string).split(',')[1];
-                        
-                        // Transcribe
-                        const transcribedText = await transcribeMedia(base64String, recorder.mimeType || 'audio/webm');
-                        const cleanText = transcribedText.replace(/^(Learner|You|Agent|Customer|Partner|User|AI|Learner\/AI Partner|AI Partner):\s*/i, '').trim();
-                        
-                        if (cleanText) {
-                            setMessages(prev => [...prev, { role: 'user', text: cleanText }]);
-                            
-                            // Send to chat proxy
-                            if (chatSession.current) {
-                                const response = await chatSession.current.sendMessage({ message: cleanText });
-                                setMessages(prev => [...prev, { role: 'model', text: response.text }]);
-                                
-                                // Play TTS
-                                playTurnBasedTTS(response.text, activeScenario!.voice || '', activeScenario!.language || 'English', activeScenario!.dialect || '');
-                            }
-                        } else {
-                            alert("We couldn't hear any words. Please try again!");
-                        }
-                        setIsTranscribing(false);
-                    };
-                } catch (err: any) {
-                    console.error("Transcription error:", err);
-                    alert("Failed to transcribe audio: " + (err.message || String(err)));
-                    setIsTranscribing(false);
-                }
-            };
-            
-            recorder.start();
-            setIsRecording(true);
-        } catch (err) {
-            console.error("Failed to start recording:", err);
-            alert("Microphone access denied or error starting recording.");
-        }
-    };
-
-    const stopRecording = () => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-            mediaRecorderRef.current.stop();
-            setIsRecording(false);
-            
-            try {
-                mediaRecorderRef.current.stream.getTracks().forEach((track: any) => track.stop());
-            } catch (e) {}
-        }
-    };
-
-    const playTurnBasedTTS = async (text: string, voice: string, language: string, dialect: string) => {
-        setIsAIPointingAudio(true);
-        try {
-            let response;
-            const GEMINI_VOICES = ["Puck", "Charon", "Kore", "Fenrir", "Zephyr", "Aoede"];
-            const isCartesiaVoice = voice ? !GEMINI_VOICES.includes(voice) : false;
-
-            if (isCartesiaVoice) {
-                response = await fetch('/api/cartesia/tts', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text, voiceId: voice })
-                });
-            } else if (language === 'Arabic') {
-                response = await fetch('/api/google/tts', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text, model: 'ar-XA-Wavenet-A' })
-                });
-            } else {
-                response = await fetch('/api/google/tts', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        text, 
-                        model: language === 'Spanish' ? 'es-ES-Neural2-F' : 
-                               language === 'French' ? 'fr-FR-Neural2-C' : 
-                               language === 'German' ? 'de-DE-Neural2-F' : 
-                               language === 'Japanese' ? 'ja-JP-Neural2-F' : 
-                               'en-US-Neural2-F' 
-                    })
-                });
-            }
-
-            if (!response.ok) {
-                throw new Error("TTS generation failed");
-            }
-
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            
-            if (activeAudioRef.current) {
-                activeAudioRef.current.pause();
-            }
-            
-            const audio = new Audio(url);
-            activeAudioRef.current = audio;
-            
-            audio.onended = () => {
-                setIsAIPointingAudio(false);
-                URL.revokeObjectURL(url);
-            };
-            
-            audio.onerror = (e) => {
-                console.error("Audio playback error", e);
-                setIsAIPointingAudio(false);
-                URL.revokeObjectURL(url);
-            };
-            
-            await audio.play();
-        } catch (err) {
-            console.error("TTS playback failed", err);
-            setIsAIPointingAudio(false);
         }
     };
 
@@ -918,11 +749,7 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
                 },
                 onError: (e) => {
                     console.error("Voice Error", e);
-                    if (window.location.hostname === 'app.revuqai.com' || window.location.hostname.includes('vercel.app')) {
-                        setConnectionError("Voice connection failed. Vercel's serverless hosting does not support persistent WebSockets. To run real-time AI Voice sessions, please deploy the application as a persistent container/server on Cloud Run or Render.");
-                    } else {
-                        setConnectionError("Voice session disconnected. Please check your network connection or model keys.");
-                    }
+                    setConnectionError("Voice session disconnected. Please check your network connection.");
                     setIsVoiceActive(false);
                     stopVoiceSession();
                 },
@@ -943,26 +770,6 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
 
     const stopVoiceSession = () => {
         setIsVoiceActive(false);
-        setIsRecording(false);
-        setIsTranscribing(false);
-        setIsAIPointingAudio(false);
-
-        if (activeAudioRef.current) {
-            try {
-                activeAudioRef.current.pause();
-                activeAudioRef.current = null;
-            } catch (e) {}
-        }
-
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-            try {
-                mediaRecorderRef.current.stop();
-            } catch (e) {}
-            try {
-                mediaRecorderRef.current.stream.getTracks().forEach((track: any) => track.stop());
-            } catch (e) {}
-        }
-
         if (inputAudioContext.current) {
             inputAudioContext.current.close().catch(console.error);
             inputAudioContext.current = null;
@@ -1620,39 +1427,15 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
                 </div>
 
                 {connectionError && (
-                    <div className="bg-red-50 dark:bg-red-900/30 p-4 border-b border-red-100 dark:border-red-900/50 flex flex-col sm:flex-row sm:items-center gap-3 animate-in slide-in-from-top-2">
-                        <div className="flex items-center gap-3">
-                            <AlertTriangle className="text-red-600 dark:text-red-400" size={20} />
-                            <span className="text-sm font-medium text-red-700 dark:text-red-300">{connectionError}</span>
-                        </div>
-                        <div className="flex gap-2 sm:ms-auto mt-2 sm:mt-0">
-                            <button 
-                                onClick={async () => {
-                                    setConnectionError(null);
-                                    setIsTurnBasedVoice(true);
-                                    try {
-                                        chatSession.current = createTrainingSession(activeScenario!);
-                                        setMessages([{ role: 'model', text: activeScenario!.initialMessage }]);
-                                        setView('active');
-                                        setTimeout(() => {
-                                            playTurnBasedTTS(activeScenario!.initialMessage, activeScenario!.voice || '', activeScenario!.language || 'English', activeScenario!.dialect || '');
-                                        }, 500);
-                                    } catch (e) {
-                                        console.error(e);
-                                        alert("Failed to start fallback voice session.");
-                                    }
-                                }}
-                                className="text-xs bg-indigo-600 text-white border border-transparent px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors font-bold whitespace-nowrap"
-                            >
-                                Switch to Turn-Based Voice
-                            </button>
-                            <button 
-                                onClick={() => confirmStartSession()}
-                                className="text-xs bg-white dark:bg-red-900/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900 transition-colors whitespace-nowrap"
-                            >
-                                Retry WebSockets
-                            </button>
-                        </div>
+                    <div className="bg-red-50 dark:bg-red-900/30 p-4 border-b border-red-100 dark:border-red-900/50 flex items-center gap-3 animate-in slide-in-from-top-2">
+                        <AlertTriangle className="text-red-600 dark:text-red-400" size={20} />
+                        <span className="text-sm font-medium text-red-700 dark:text-red-300">{connectionError}</span>
+                        <button 
+                            onClick={() => confirmStartSession()}
+                            className="ms-auto text-xs bg-white dark:bg-red-900/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900 transition-colors"
+                        >
+                            Retry
+                        </button>
                     </div>
                 )}
 
@@ -1710,65 +1493,6 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
                             >
                                 <Send size={20} />
                             </button>
-                        </div>
-                    ) : isTurnBasedVoice ? (
-                        <div className="max-w-md mx-auto text-center py-4 flex flex-col items-center justify-center">
-                            {isAIPointingAudio ? (
-                                <div className="flex flex-col items-center">
-                                    <div className="w-20 h-20 bg-blue-100 dark:bg-blue-950/40 text-[#0500e2] dark:text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4 relative">
-                                        <Volume2 size={36} className="animate-bounce" />
-                                        <span className="absolute inset-0 rounded-full ring-4 ring-blue-400/20 animate-ping"></span>
-                                    </div>
-                                    <p className="font-bold text-slate-900 dark:text-white">AI Partner is speaking...</p>
-                                    <p className="text-xs text-slate-500 mt-1">Listen carefully to practice comprehension!</p>
-                                    <button 
-                                        onClick={() => {
-                                            if (activeAudioRef.current) {
-                                                activeAudioRef.current.pause();
-                                                setIsAIPointingAudio(false);
-                                            }
-                                        }}
-                                        className="mt-4 px-4 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors"
-                                    >
-                                        Skip / Mute Voice
-                                    </button>
-                                </div>
-                            ) : isTranscribing ? (
-                                <div className="flex flex-col items-center">
-                                    <div className="w-20 h-20 bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-4 relative">
-                                        <Loader2 size={36} className="animate-spin" />
-                                    </div>
-                                    <p className="font-bold text-slate-900 dark:text-white">Processing your voice...</p>
-                                    <p className="text-xs text-slate-500 mt-1">Analyzing pronunciation and meaning...</p>
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center">
-                                    {isRecording ? (
-                                        <>
-                                            <button 
-                                                onClick={stopRecording}
-                                                className="w-24 h-24 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-500/30 transition-transform active:scale-95 animate-pulse relative"
-                                            >
-                                                <Square size={36} />
-                                                <span className="absolute -inset-2 rounded-full ring-4 ring-red-400/25 animate-ping"></span>
-                                            </button>
-                                            <p className="font-bold text-red-600 dark:text-red-400">Recording... Speak Now!</p>
-                                            <p className="text-xs text-slate-500 mt-1">Tap the red button when you are done speaking.</p>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <button 
-                                                onClick={startRecording}
-                                                className="w-24 h-24 bg-[#0500e2] hover:bg-[#0400c0] text-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30 transition-transform active:scale-95"
-                                            >
-                                                <Mic size={36} />
-                                            </button>
-                                            <p className="font-bold text-slate-900 dark:text-white">Tap to Speak</p>
-                                            <p className="text-xs text-slate-500 mt-1">Click the microphone to record your response in {activeScenario.language}.</p>
-                                        </>
-                                    )}
-                                </div>
-                            )}
                         </div>
                     ) : (
                         <div className="max-w-md mx-auto text-center py-6">
