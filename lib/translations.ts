@@ -3,7 +3,7 @@
 export const translations = {
   en: {
     // Sidebar
-    'nav.dashboard': 'Dashboard',
+    'nav.dashboard': 'Home',
     'nav.analyze': 'Analyze New',
     'nav.training': 'AI Training',
     'nav.history': 'History',
@@ -20,6 +20,7 @@ export const translations = {
     'nav.gemini_arabic_tts': 'Gemini Arabic TTS',
     'nav.notifications': 'Notifications',
     'nav.ai_conversation': 'AI-Conversation',
+    'nav.ai_conversation_dashboard': 'Home',
 
     // Dashboard
     'dash.welcome': 'Welcome back',
@@ -500,7 +501,7 @@ export const translations = {
   },
   ar: {
     // Sidebar
-    'nav.dashboard': 'لوحة التحكم',
+    'nav.dashboard': 'الرئيسية',
     'nav.analyze': 'تحليل جديد',
     'nav.training': 'تدريب الذكاء الاصطناعي',
     'nav.history': 'السجل',
@@ -517,6 +518,7 @@ export const translations = {
     'nav.gemini_arabic_tts': 'Gemini Arabic TTS',
     'nav.notifications': 'التنبيهات',
     'nav.ai_conversation': 'محادثة الذكاء الاصطناعي',
+    'nav.ai_conversation_dashboard': 'الرئيسية',
 
     // Dashboard
     'dash.welcome': 'مرحباً بعودتك',

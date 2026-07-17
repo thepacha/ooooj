@@ -22,6 +22,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
   const getPageTitle = (view: string) => {
     switch (view) {
       case 'dashboard': return t('nav.dashboard');
+      case 'ai-conversation-dashboard': return t('nav.ai_conversation_dashboard');
       case 'analyze': return t('nav.analyze');
       case 'evaluation': return 'Evaluation Details';
       case 'training': return t('nav.training');
@@ -46,6 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
     { id: 'analyze', label: t('nav.analyze'), icon: <FileText size={20} />, roles: ['admin'] },
     { id: 'training', label: t('nav.training'), icon: <GraduationCap size={20} />, roles: ['admin'] },
     { id: 'ai-conversation', label: t('nav.ai_conversation'), icon: <Languages size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
+    { id: 'ai-conversation-dashboard', label: t('nav.ai_conversation_dashboard'), icon: <LayoutDashboard size={20} />, roles: ['admin'] },
     { id: 'assembly-test', label: 'AssemblyAI Test', icon: <Mic size={20} />, roles: ['admin'] },
     { id: 'deepgram-tts', label: 'Deepgram & Gemini TTS', icon: <Mic size={20} />, roles: ['admin'] },
     { id: 'notifications', label: 'Notifications', icon: <Bell size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },

@@ -672,7 +672,11 @@ export const Training: React.FC<TrainingProps> = ({ user, history, onAnalysisCom
                 },
                 onError: (e) => {
                     console.error("Voice Error", e);
-                    setConnectionError("Voice session disconnected. Please check your network connection.");
+                    if (window.location.hostname === 'app.revuqai.com' || window.location.hostname.includes('vercel.app')) {
+                        setConnectionError("Voice connection failed. Vercel's serverless hosting does not support persistent WebSockets. To run real-time AI Voice sessions, please deploy the application as a persistent container/server on Cloud Run or Render.");
+                    } else {
+                        setConnectionError("Voice session disconnected. Please check your network connection or model keys.");
+                    }
                     setIsVoiceActive(false);
                     stopVoiceSession();
                 },

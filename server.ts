@@ -9,12 +9,11 @@ import { GoogleGenAI, Modality, LiveServerMessage, Type } from "@google/genai";
 
 dotenv.config();
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
+const app = express();
+const PORT = 3000;
 
-  // API routes FIRST
-  app.use(express.json());
+// API routes FIRST
+app.use(express.json());
   
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
@@ -1166,37 +1165,40 @@ async function startServer() {
   });
 
   // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { 
-        middlewareMode: true,
-        hmr: {
-          port: 0,
+  async function initVite() {
+    if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+      const vite = await createViteServer({
+        server: { 
+          middlewareMode: true,
+          hmr: {
+            port: 0,
+          }
+        },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+    } else {
+      const distPath = path.join(process.cwd(), "dist");
+      
+      // Serve static landing page for main domain root
+      app.get("/", (req, res, next) => {
+        const hostname = req.hostname;
+        if (hostname === 'revuqai.com' || hostname === 'www.revuqai.com') {
+          // Serve the static landing page HTML
+          // We can reuse the landing-v2 logic or just send a file if we had one
+          // For now, let's redirect to /landing-v2 or serve it directly
+          return res.redirect('/landing-v2');
         }
-      },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), "dist");
-    
-    // Serve static landing page for main domain root
-    app.get("/", (req, res, next) => {
-      const hostname = req.hostname;
-      if (hostname === 'revuqai.com' || hostname === 'www.revuqai.com') {
-        // Serve the static landing page HTML
-        // We can reuse the landing-v2 logic or just send a file if we had one
-        // For now, let's redirect to /landing-v2 or serve it directly
-        return res.redirect('/landing-v2');
-      }
-      next();
-    });
+        next();
+      });
 
-    app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
+      app.use(express.static(distPath));
+      app.get("*", (req, res) => {
+        res.sendFile(path.join(distPath, "index.html"));
+      });
+    }
   }
+  initVite();
 
   const server = http.createServer(app);
   
@@ -1472,16 +1474,17 @@ async function startServer() {
     });
   };
 
-  startListening();
+  if (!process.env.VERCEL) {
+    startListening();
 
-  process.on('SIGTERM', () => {
-    console.log('SIGTERM signal received. Closing servers...');
-    ttsWss.close();
-    assemblyWss.close();
-    server.close(() => {
-      process.exit(0);
+    process.on('SIGTERM', () => {
+      console.log('SIGTERM signal received. Closing servers...');
+      ttsWss.close();
+      assemblyWss.close();
+      server.close(() => {
+        process.exit(0);
+      });
     });
-  });
-}
+  }
 
-startServer();
+export default app;

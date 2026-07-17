@@ -5,6 +5,7 @@ import { TopHeader } from './components/TopHeader';
 import { motion, AnimatePresence } from 'motion/react';
 import { Analyzer } from './components/Analyzer';
 import { Dashboard } from './components/Dashboard';
+import { AiConversationDashboard } from './components/AiConversationDashboard';
 import { History } from './components/History';
 import { Settings } from './components/Settings';
 import { Account } from './components/Account';
@@ -735,10 +736,10 @@ function AppContent() {
     const isAdminView = ['analyze', 'training', 'assembly-test', 'deepgram-tts', 'roster', 'settings', 'admin'].includes(currentView);
     if (isAdminView && user?.role !== 'admin') {
       return (
-        <Dashboard 
+        <AiConversationDashboard 
           history={history.filter(h => !h.isDeleted)} 
           setView={handleNavigate} 
-          onFilterSelect={(filter) => {
+          onFilterSelect={(filter: 'all' | 'high' | 'low') => {
               setHistoryFilter(filter);
               handleNavigate('history');
           }}
@@ -748,11 +749,34 @@ function AppContent() {
 
     switch (currentView) {
       case 'dashboard':
+        if (user?.role === 'admin') {
+          return (
+            <Dashboard 
+              history={history.filter(h => !h.isDeleted)} 
+              setView={handleNavigate} 
+              onFilterSelect={(filter: 'all' | 'high' | 'low') => {
+                  setHistoryFilter(filter);
+                  handleNavigate('history');
+              }}
+            />
+          );
+        }
         return (
-          <Dashboard 
+          <AiConversationDashboard 
             history={history.filter(h => !h.isDeleted)} 
             setView={handleNavigate} 
-            onFilterSelect={(filter) => {
+            onFilterSelect={(filter: 'all' | 'high' | 'low') => {
+                setHistoryFilter(filter);
+                handleNavigate('history');
+            }}
+          />
+        );
+      case 'ai-conversation-dashboard':
+        return (
+          <AiConversationDashboard 
+            history={history.filter(h => !h.isDeleted)} 
+            setView={handleNavigate} 
+            onFilterSelect={(filter: 'all' | 'high' | 'low') => {
                 setHistoryFilter(filter);
                 handleNavigate('history');
             }}
@@ -968,10 +992,10 @@ function AppContent() {
       case 'admin':
         if (user?.role !== 'admin') {
             return (
-                <Dashboard 
+                <AiConversationDashboard 
                     history={history.filter(h => !h.isDeleted)} 
                     setView={handleNavigate} 
-                    onFilterSelect={(filter) => {
+                    onFilterSelect={(filter: 'all' | 'high' | 'low') => {
                         setHistoryFilter(filter);
                         handleNavigate('history');
                     }}
@@ -993,7 +1017,10 @@ function AppContent() {
           />
         );
       default:
-        return <Dashboard history={history.filter(h => !h.isDeleted)} setView={handleNavigate} />;
+        if (user?.role === 'admin') {
+          return <Dashboard history={history.filter(h => !h.isDeleted)} setView={handleNavigate} />;
+        }
+        return <AiConversationDashboard history={history.filter(h => !h.isDeleted)} setView={handleNavigate} />;
     }
   };
 

@@ -91,7 +91,7 @@ export interface UsageHistory {
   chat_messages_count: number;
 }
 
-export type ViewState = 'dashboard' | 'analyze' | 'history' | 'settings' | 'evaluation' | 'usage' | 'roster' | 'pricing' | 'training' | 'admin' | 'terms' | 'privacy' | 'account' | 'notifications' | 'assembly-test' | 'deepgram-tts' | 'gemini-arabic-tts' | 'contact' | 'ai-conversation';
+export type ViewState = 'dashboard' | 'analyze' | 'history' | 'settings' | 'evaluation' | 'usage' | 'roster' | 'pricing' | 'training' | 'admin' | 'terms' | 'privacy' | 'account' | 'notifications' | 'assembly-test' | 'deepgram-tts' | 'gemini-arabic-tts' | 'contact' | 'ai-conversation' | 'ai-conversation-dashboard';
 
 export const DEFAULT_CRITERIA: Criteria[] = [
   { id: '1', name: 'Empathy & Tone', description: 'Did the agent demonstrate empathy and maintain a professional tone?', weight: 9 },
