@@ -349,7 +349,7 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
   
   let ws: WebSocket | null = null;
   let useFallback = false;
-  let hasOpened = false;
+  let proxyReady = false;
 
   const connectDirectly = async () => {
     console.log("Connecting directly to Gemini Live API client-side...");
@@ -371,11 +371,10 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
 
       wsDirect.onopen = () => {
         console.log("Connected directly to Gemini Live API client-side");
-        hasOpened = true;
         // Send raw Gemini Live setup frame
         const setupFrame = {
           setup: {
-            model: "models/gemini-2.0-flash",
+            model: "models/gemini-3.1-flash-live-preview",
             generationConfig: {
               responseModalities: ["AUDIO"],
               speechConfig: {
@@ -447,7 +446,6 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
 
       wsProxy.onopen = () => {
         console.log("Connected to Gemini Live local proxy server");
-        hasOpened = true;
         wsProxy.send(JSON.stringify({
           type: "setup",
           voice: selectedVoice,
@@ -459,13 +457,14 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
         try {
           const msg = JSON.parse(event.data);
           if (msg.type === "ready") {
+            proxyReady = true;
             callbacks.onOpen();
           } else if (msg.type === "server_message") {
             callbacks.onMessage(msg.message);
           } else if (msg.type === "error") {
             // If the proxy returns an error before we've successfully established a connection,
             // try to fall back to direct connection
-            if (!hasOpened && !useFallback) {
+            if (!proxyReady && !useFallback) {
               console.warn("Proxy connection error, trying fallback:", msg.error);
               wsProxy.close();
               connectDirectly();
@@ -481,7 +480,7 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
       };
 
       wsProxy.onerror = (err) => {
-        if (!hasOpened && !useFallback) {
+        if (!proxyReady && !useFallback) {
           console.warn("Proxy connection error, trying direct fallback");
           wsProxy.close();
           connectDirectly();
@@ -491,7 +490,7 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
       };
 
       wsProxy.onclose = () => {
-        if (!hasOpened && !useFallback) {
+        if (!proxyReady && !useFallback) {
           console.warn("Proxy closed before open, trying direct fallback");
           connectDirectly();
         } else {

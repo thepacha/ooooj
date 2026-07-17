@@ -1367,19 +1367,22 @@ async function startServer() {
   });
 
   geminiLiveWss.on("connection", (clientWs) => {
-    console.log("Client connected to Gemini Live local proxy");
+    console.log("[PROXY] Client connected to Gemini Live local proxy");
     
     let session: any = null;
 
     clientWs.on("message", async (data) => {
       try {
         const msg = JSON.parse(data.toString());
+        console.log("[PROXY] Received message from client. Keys:", Object.keys(msg));
+        
         if (msg.type === "setup") {
           const { voice, systemInstruction } = msg;
-          console.log("Setting up Gemini Live Session with voice:", voice);
+          console.log("[PROXY] Setting up Gemini Live Session. Voice:", voice, "System Instruction length:", systemInstruction?.length);
           
           const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
           if (!apiKey) {
+            console.error("[PROXY] GEMINI_API_KEY is missing on server env!");
             clientWs.send(JSON.stringify({ type: "error", error: "GEMINI_API_KEY is not configured on the server." }));
             safeClose(clientWs, 4001, "API Key Missing");
             return;
@@ -1398,27 +1401,39 @@ async function startServer() {
           // Cartesia voice UUIDs will cause the upstream connection to fail.
           const GEMINI_VOICES = ["Puck", "Charon", "Kore", "Fenrir", "Zephyr", "Aoede"];
           const geminiVoice = (voice && GEMINI_VOICES.includes(voice)) ? voice : "Zephyr";
+          console.log("[PROXY] Mapping voice to prebuilt voice name:", geminiVoice);
+
+          const modelName = "gemini-3.1-flash-live-preview";
+          console.log("[PROXY] Connecting upstream to Gemini Live using model:", modelName);
 
           // Connect to Gemini Live
           session = await localAi.live.connect({
-            model: "gemini-2.0-flash",
+            model: modelName,
             config: {
               responseModalities: [Modality.AUDIO],
               speechConfig: {
                 voiceConfig: { prebuiltVoiceConfig: { voiceName: geminiVoice } },
               },
-              systemInstruction: systemInstruction || "You are a helpful language tutor.",
+              systemInstruction: {
+                parts: [{ text: systemInstruction || "You are a helpful language tutor." }]
+              },
               outputAudioTranscription: {},
               inputAudioTranscription: {},
             },
             callbacks: {
               onopen: () => {
-                console.log("Gemini Live session connected upstream");
+                console.log("[PROXY] Gemini Live session connected upstream successfully");
                 if (clientWs.readyState === clientWs.OPEN) {
                   clientWs.send(JSON.stringify({ type: "ready" }));
                 }
               },
               onmessage: (message: LiveServerMessage) => {
+                console.log("[PROXY] Received message from Gemini Live upstream. ServerContent keys:", message.serverContent ? Object.keys(message.serverContent) : "none");
+                if (message.serverContent?.modelTurn?.parts) {
+                  message.serverContent.modelTurn.parts.forEach((p, idx) => {
+                    console.log(`[PROXY] Part ${idx} keys:`, Object.keys(p), p.inlineData ? `inlineData length: ${p.inlineData.data?.length}` : `text: ${p.text}`);
+                  });
+                }
                 if (clientWs.readyState === clientWs.OPEN) {
                   clientWs.send(JSON.stringify({
                     type: "server_message",
@@ -1426,14 +1441,14 @@ async function startServer() {
                   }));
                 }
               },
-              onclose: () => {
-                console.log("Gemini Live session closed upstream");
+              onclose: (closeEvent?: any) => {
+                console.log("[PROXY] Gemini Live session closed upstream. CloseEvent:", closeEvent);
                 if (clientWs.readyState === clientWs.OPEN) {
                   clientWs.send(JSON.stringify({ type: "close" }));
                 }
               },
               onerror: (err: any) => {
-                console.error("Gemini Live upstream error:", err);
+                console.error("[PROXY] Gemini Live upstream error callback triggered! Error:", err);
                 if (clientWs.readyState === clientWs.OPEN) {
                   clientWs.send(JSON.stringify({ type: "error", error: err.message || String(err) }));
                 }
@@ -1443,26 +1458,32 @@ async function startServer() {
 
         } else if (msg.audio) {
           if (session) {
+            console.log("[PROXY] Forwarding audio chunk to Gemini upstream. Base64 length:", msg.audio.length);
             session.sendRealtimeInput({
               audio: { data: msg.audio, mimeType: "audio/pcm;rate=16000" },
             });
+          } else {
+            console.warn("[PROXY] Received audio from client but no Gemini session is active yet!");
           }
+        } else {
+          console.log("[PROXY] Received unhandled message from client:", msg);
         }
       } catch (e: any) {
-        console.error("Error in Gemini Live Proxy message handler:", e);
+        console.error("[PROXY] Error in Gemini Live Proxy message handler:", e);
         if (clientWs.readyState === clientWs.OPEN) {
           clientWs.send(JSON.stringify({ type: "error", error: e.message || String(e) }));
         }
       }
     });
 
-    clientWs.on("close", () => {
-      console.log("Client disconnected from Gemini Live local proxy");
+    clientWs.on("close", (code, reason) => {
+      console.log(`[PROXY] Client disconnected from Gemini Live local proxy. Code: ${code}, Reason: ${reason}`);
       if (session) {
         try {
+          console.log("[PROXY] Closing upstream Gemini session due to client disconnect");
           session.close();
         } catch (e) {
-          console.error("Error closing session on disconnect:", e);
+          console.error("[PROXY] Error closing session on disconnect:", e);
         }
       }
     });
