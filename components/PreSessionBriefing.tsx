@@ -115,10 +115,38 @@ export const CARTESIA_LANG_VOICES: Record<string, { id: string; name: string; ge
   ]
 };
 
+export const NATIVE_VOICES = [
+  { id: 'Puck', name: 'Puck (Male - Energetic)', gender: 'Male' },
+  { id: 'Charon', name: 'Charon (Male - Deep)', gender: 'Male' },
+  { id: 'Kore', name: 'Kore (Female - Friendly)', gender: 'Female' },
+  { id: 'Fenrir', name: 'Fenrir (Male - Steady)', gender: 'Male' },
+  { id: 'Aoede', name: 'Aoede (Female - Clear)', gender: 'Female' }
+];
+
 export const PreSessionBriefing: React.FC<PreSessionBriefingProps> = ({ scenario, mode, onStart, onBack, bestScore = 0, attempts }) => {
   const cleanLang = scenario.language ? scenario.language.split(' ')[0] : 'English';
   const voiceOptions = CARTESIA_LANG_VOICES[cleanLang] || CARTESIA_LANG_VOICES['English'];
-  const [selectedVoiceId, setSelectedVoiceId] = useState(voiceOptions[0]?.id || '244a2c5f-5ca1-4202-b0b2-3be91636c92d');
+
+  const defaultIsNative = !scenario.voice || ['Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'].includes(scenario.voice);
+  const [voiceEngine, setVoiceEngine] = useState<'native' | 'cartesia'>(defaultIsNative ? 'native' : 'cartesia');
+  const [selectedVoiceId, setSelectedVoiceId] = useState(() => {
+    if (defaultIsNative && scenario.voice) {
+      return scenario.voice;
+    }
+    if (defaultIsNative) {
+      return 'Kore';
+    }
+    return voiceOptions[0]?.id || '244a2c5f-5ca1-4202-b0b2-3be91636c92d';
+  });
+
+  const handleEngineChange = (engine: 'native' | 'cartesia') => {
+    setVoiceEngine(engine);
+    if (engine === 'native') {
+      setSelectedVoiceId(scenario.voice && ['Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'].includes(scenario.voice) ? scenario.voice : 'Kore');
+    } else {
+      setSelectedVoiceId(voiceOptions[0]?.id || '244a2c5f-5ca1-4202-b0b2-3be91636c92d');
+    }
+  };
 
   const [isMicTesting, setIsMicTesting] = useState(false);
   const [micLevel, setMicLevel] = useState<number[]>(new Array(20).fill(0.1)); // Increased bars for smoother look
@@ -508,22 +536,61 @@ export const PreSessionBriefing: React.FC<PreSessionBriefingProps> = ({ scenario
 
                     {mode === 'voice' && (
                         <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 text-left space-y-3 mb-4">
-                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">
-                                🗣️ Select AI Partner Voice (Cartesia Multilingual)
+                            <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                🗣️ Voice Engine
+                            </label>
+                            
+                            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl">
+                                <button
+                                    type="button"
+                                    onClick={() => handleEngineChange('native')}
+                                    className={`py-2 px-3 text-xs font-black rounded-lg transition-all ${
+                                        voiceEngine === 'native'
+                                            ? 'bg-white dark:bg-slate-800 text-[#0500e2] shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                                    }`}
+                                >
+                                    ⚡ Native (Ultra-Fast)
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleEngineChange('cartesia')}
+                                    className={`py-2 px-3 text-xs font-black rounded-lg transition-all ${
+                                        voiceEngine === 'cartesia'
+                                            ? 'bg-white dark:bg-slate-800 text-[#0500e2] shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                                    }`}
+                                >
+                                    ✨ Premium (Cartesia)
+                                </button>
+                            </div>
+
+                            <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider pt-1">
+                                Select Partner Voice
                             </label>
                             <select
                                 value={selectedVoiceId}
                                 onChange={(e) => setSelectedVoiceId(e.target.value)}
                                 className="w-full p-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-[#0500e2] text-slate-900 dark:text-white"
                             >
-                                {voiceOptions.map(v => (
-                                    <option key={v.id} value={v.id}>
-                                        {v.name} ({v.gender})
-                                    </option>
-                                ))}
+                                {voiceEngine === 'native' ? (
+                                    NATIVE_VOICES.map(v => (
+                                        <option key={v.id} value={v.id}>
+                                            {v.name}
+                                        </option>
+                                    ))
+                                ) : (
+                                    voiceOptions.map(v => (
+                                        <option key={v.id} value={v.id}>
+                                            {v.name} ({v.gender})
+                                        </option>
+                                    ))
+                                )}
                             </select>
-                            <p className="text-[11px] text-slate-400">
-                                Powered by Cartesia Sonic Multilingual for premium native-accented voice quality.
+                            <p className="text-[11px] text-slate-400 leading-relaxed">
+                                {voiceEngine === 'native' 
+                                    ? '⚡ Runs on native Gemini Live for direct, real-time audio streaming and ultra-low latency response.' 
+                                    : '✨ Powered by Cartesia Sonic Multilingual for premium native-accented voice quality.'}
                             </p>
                         </div>
                     )}

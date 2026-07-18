@@ -85,9 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
       `}>
         <div className="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
-            <span className="font-sans font-bold text-lg md:text-xl text-slate-800 dark:text-slate-100 tracking-tight">
-              {getPageTitle(currentView)}
-            </span>
+            <RevuLogo className="h-12 md:h-14 w-auto" />
           </div>
           {/* Close button for mobile */}
           <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-slate-900 dark:hover:text-white">

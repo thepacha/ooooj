@@ -653,8 +653,8 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
                         if (isCartesiaVoice) {
                             cartesiaSentenceBuffer.current += newText;
                             
-                            // Regex to match a complete sentence ending with standard punctuation or newline
-                            const sentenceRegex = /([^.?!。？！\n\r]+[.?!。？！\n\r]+)/g;
+                            // Match sentences or clauses ending with standard punctuation, commas, colons, semicolons, or newlines
+                            const sentenceRegex = /([^.?!,;:。？！，；：\n\r]+[.?!,;:。？！，；：\n\r]+)/g;
                             let match;
                             let lastIndex = 0;
                             const currentBufferText = cartesiaSentenceBuffer.current;
@@ -670,17 +670,42 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
                             if (lastIndex > 0) {
                                 cartesiaSentenceBuffer.current = currentBufferText.substring(lastIndex);
                             }
+
+                            // Fallback split: If the pending buffer is growing long (e.g., > 50 characters) and has a space,
+                            // split at the last space to avoid delayed playback for long run-on sentences.
+                            if (cartesiaSentenceBuffer.current.length > 50) {
+                                const lastSpace = cartesiaSentenceBuffer.current.lastIndexOf(' ');
+                                if (lastSpace > 15) {
+                                    const sentence = cartesiaSentenceBuffer.current.substring(0, lastSpace).trim();
+                                    if (sentence.length > 0) {
+                                        queueAndFetchSentence(sentence, scenario.voice || '');
+                                    }
+                                    cartesiaSentenceBuffer.current = cartesiaSentenceBuffer.current.substring(lastSpace + 1);
+                                }
+                            }
+                        }
+                    }
+
+                    if (message.serverContent?.interrupted) {
+                        // User speech detected (barge-in interruption)! Stop all playing audio immediately
+                        sources.current.forEach(src => {
+                            try { src.stop(); } catch(e){}
+                        });
+                        sources.current.clear();
+                        nextStartTime.current = 0;
+                        if (isCartesiaVoice) {
+                            resetCartesiaQueue();
                         }
                     } else if (message.serverContent?.inputTranscription) {
                         currentInputTranscription.current += message.serverContent.inputTranscription.text;
                         
-                        // User started speaking/interrupted! Stop any playing Cartesia audio immediately and clear the queue
+                        // User started speaking/interrupted! Stop all playing audio immediately and clear the queue
+                        sources.current.forEach(src => {
+                            try { src.stop(); } catch(e){}
+                        });
+                        sources.current.clear();
+                        nextStartTime.current = 0;
                         if (isCartesiaVoice) {
-                            sources.current.forEach(src => {
-                                try { src.stop(); } catch(e){}
-                            });
-                            sources.current.clear();
-                            nextStartTime.current = 0;
                             resetCartesiaQueue();
                         }
                     }
