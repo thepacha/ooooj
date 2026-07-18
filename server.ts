@@ -8,6 +8,9 @@ import { supabase } from "./lib/supabase";
 import { GoogleGenAI, Modality, LiveServerMessage, Type } from "@google/genai";
 import geminiHandler from "./api/gemini";
 
+// Polyfill global WebSocket for Google GenAI Live API connection in Node.js
+globalThis.WebSocket = WebSocket as any;
+
 dotenv.config();
 
 async function startServer() {
@@ -676,7 +679,7 @@ async function startServer() {
   };
 
   server.on('upgrade', (request, socket, head) => {
-    const pathname = new URL(request.url!, `http://${request.headers.host}`).pathname;
+    const pathname = request.url ? new URL(request.url, 'http://localhost').pathname : '';
 
     if (pathname === '/api/tts') {
       ttsWss.handleUpgrade(request, socket, head, (ws) => {
