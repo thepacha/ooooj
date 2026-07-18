@@ -43,7 +43,7 @@ class ServerSideChatProxy {
 
   async sendMessage(params: { message: string }) {
     this.history.push({ role: 'user', parts: [{ text: params.message }] });
-    const response = await fetch('/api/gemini/chat', {
+    const response = await fetch('/api/gemini?action=chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -64,7 +64,7 @@ class ServerSideChatProxy {
 
   async sendMessageStream(params: { message: string }) {
     this.history.push({ role: 'user', parts: [{ text: params.message }] });
-    const response = await fetch('/api/gemini/chat-stream', {
+    const response = await fetch('/api/gemini?action=chat-stream', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -126,7 +126,7 @@ class ServerSideChatProxy {
 class GoogleGenAIProxy {
   models = {
     generateContent: async (params: { model: string, contents: any, config?: any }) => {
-      const response = await fetch('/api/gemini/generate-content', {
+      const response = await fetch('/api/gemini?action=generate-content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(params)
@@ -194,7 +194,7 @@ export const createTrainingSession = (scenario: TrainingScenario): any => {
 };
 
 export const analyzeTranscript = async (transcript: string, criteria: Criteria[], userId?: string): Promise<any> => {
-  const response = await fetch('/api/gemini/analyze-transcript', {
+  const response = await fetch('/api/gemini?action=analyze-transcript', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ transcript, criteria, userId })
@@ -207,7 +207,7 @@ export const analyzeTranscript = async (transcript: string, criteria: Criteria[]
 };
 
 export const generateMockTranscript = async (): Promise<string> => {
-  const response = await fetch('/api/gemini/generate-mock-transcript', {
+  const response = await fetch('/api/gemini?action=generate-mock-transcript', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' }
   });
@@ -220,7 +220,7 @@ export const generateMockTranscript = async (): Promise<string> => {
 };
 
 export const transcribeMedia = async (base64Data: string, mimeType: string, userId?: string): Promise<string> => {
-  const response = await fetch('/api/gemini/transcribe-media', {
+  const response = await fetch('/api/gemini?action=transcribe-media', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ base64Data, mimeType, userId })
@@ -234,7 +234,7 @@ export const transcribeMedia = async (base64Data: string, mimeType: string, user
 };
 
 export const generateTrainingTopic = async (params?: GenerateScenarioParams): Promise<string> => {
-  const response = await fetch('/api/gemini/generate-training-topic', {
+  const response = await fetch('/api/gemini?action=generate-training-topic', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ params })
@@ -248,7 +248,7 @@ export const generateTrainingTopic = async (params?: GenerateScenarioParams): Pr
 };
 
 export const generateAIScenario = async (params: GenerateScenarioParams): Promise<any> => {
-  const response = await fetch('/api/gemini/generate-ai-scenario', {
+  const response = await fetch('/api/gemini?action=generate-ai-scenario', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ params })
@@ -261,7 +261,7 @@ export const generateAIScenario = async (params: GenerateScenarioParams): Promis
 };
 
 export const generateTrainingBatch = async (): Promise<any[]> => {
-  const response = await fetch('/api/gemini/generate-training-batch', {
+  const response = await fetch('/api/gemini?action=generate-training-batch', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' }
   });
@@ -273,7 +273,7 @@ export const generateTrainingBatch = async (): Promise<any[]> => {
 };
 
 export const generateSmartOpeners = async (scenario: any): Promise<string[]> => {
-  const response = await fetch('/api/gemini/generate-smart-openers', {
+  const response = await fetch('/api/gemini?action=generate-smart-openers', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ scenario })
@@ -286,7 +286,7 @@ export const generateSmartOpeners = async (scenario: any): Promise<string[]> => 
 };
 
 export const evaluateTrainingSession = async (transcript: string, scenario: any): Promise<any> => {
-  const response = await fetch('/api/gemini/evaluate-training-session', {
+  const response = await fetch('/api/gemini?action=evaluate-training-session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ transcript, scenario })
@@ -299,7 +299,7 @@ export const evaluateTrainingSession = async (transcript: string, scenario: any)
 };
 
 export const generateArabicTTS = async (text: string, dialect: string, voice: string = 'Kore'): Promise<string> => {
-  const response = await fetch('/api/gemini/generate-arabic-tts', {
+  const response = await fetch('/api/gemini?action=generate-arabic-tts', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text, dialect, voice })
