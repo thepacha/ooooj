@@ -7,6 +7,26 @@ import dotenv from "dotenv";
 import { supabase } from "./lib/supabase";
 import { GoogleGenAI, Modality, LiveServerMessage, Type } from "@google/genai";
 import geminiHandler from "./api/gemini";
+import fs from "fs";
+
+// Create a log file stream in the workspace root
+const logStream = fs.createWriteStream(path.join(process.cwd(), "server_debug.log"), { flags: "a" });
+const originalLog = console.log;
+const originalError = console.error;
+
+console.log = function (...args) {
+  const timestamp = new Date().toISOString();
+  const msg = `[${timestamp}] ` + args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' ') + '\n';
+  logStream.write(msg);
+  originalLog.apply(console, args);
+};
+
+console.error = function (...args) {
+  const timestamp = new Date().toISOString();
+  const msg = `[${timestamp}] [ERROR] ` + args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' ') + '\n';
+  logStream.write(msg);
+  originalError.apply(console, args);
+};
 
 // Polyfill global WebSocket for Google GenAI Live API connection in Node.js
 globalThis.WebSocket = WebSocket as any;
@@ -679,21 +699,31 @@ async function startServer() {
   };
 
   server.on('upgrade', (request, socket, head) => {
-    const pathname = request.url ? new URL(request.url, 'http://localhost').pathname : '';
+    try {
+      const pathname = request.url ? new URL(request.url, 'http://localhost').pathname : '';
+      console.log(`WebSocket Upgrade requested for pathname: "${pathname}"`);
 
-    if (pathname === '/api/tts') {
-      ttsWss.handleUpgrade(request, socket, head, (ws) => {
-        ttsWss.emit('connection', ws, request);
-      });
-    } else if (pathname === '/api/assemblyai') {
-      assemblyWss.handleUpgrade(request, socket, head, (ws) => {
-        assemblyWss.emit('connection', ws, request);
-      });
-    } else if (pathname === '/api/gemini-live') {
-      geminiLiveWss.handleUpgrade(request, socket, head, (ws) => {
-        geminiLiveWss.emit('connection', ws, request);
-      });
-    } else {
+      // Normalize by stripping trailing slash
+      const cleanPath = pathname.replace(/\/$/, "");
+
+      if (cleanPath === '/api/tts') {
+        ttsWss.handleUpgrade(request, socket, head, (ws) => {
+          ttsWss.emit('connection', ws, request);
+        });
+      } else if (cleanPath === '/api/assemblyai') {
+        assemblyWss.handleUpgrade(request, socket, head, (ws) => {
+          assemblyWss.emit('connection', ws, request);
+        });
+      } else if (cleanPath === '/api/gemini-live') {
+        geminiLiveWss.handleUpgrade(request, socket, head, (ws) => {
+          geminiLiveWss.emit('connection', ws, request);
+        });
+      } else {
+        console.log(`Destroying socket for unhandled upgrade path: "${pathname}"`);
+        socket.destroy();
+      }
+    } catch (err) {
+      console.error("Error during WebSocket upgrade:", err);
       socket.destroy();
     }
   });

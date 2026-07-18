@@ -13,7 +13,7 @@ export const getUsage = async (userId: string): Promise<UsageMetrics> => {
     .from('user_usage')
     .select('*')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
 
   if (error || !data) {
     // Return default/free tier if no record exists yet
@@ -72,7 +72,7 @@ export const getUsage = async (userId: string): Promise<UsageMetrics> => {
         })
         .eq('user_id', userId)
         .select()
-        .single();
+        .maybeSingle();
 
     if (!updateError && updatedData) {
         return updatedData as UsageMetrics;
@@ -119,7 +119,7 @@ export const getUsageHistory = async (userId: string): Promise<UsageHistory[]> =
             .from('usage_history')
             .insert(seedRecord)
             .select()
-            .single();
+            .maybeSingle();
             
         if (!insertError && insertedData) {
             console.log("Automatically seeded usage history.");

@@ -409,7 +409,7 @@ function AppContent() {
                 .from('profiles')
                 .select('*')
                 .eq('id', session.user.id)
-                .single();
+                .maybeSingle();
             
             if (profile && mounted) {
                 setUser(prev => prev ? ({ 
