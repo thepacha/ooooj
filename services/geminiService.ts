@@ -393,9 +393,21 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
         ws.send(JSON.stringify(setupMessage));
       };
 
-      ws.onmessage = (event) => {
+      ws.onmessage = async (event) => {
         try {
-          const msg = JSON.parse(event.data);
+          let rawData = "";
+          if (event.data instanceof Blob) {
+            rawData = await event.data.text();
+          } else if (typeof event.data === "string") {
+            rawData = event.data;
+          } else if (event.data instanceof ArrayBuffer) {
+            rawData = new TextDecoder("utf-8").decode(event.data);
+          } else {
+            console.warn("Unexpected WebSocket event data type:", typeof event.data);
+            return;
+          }
+
+          const msg = JSON.parse(rawData);
           
           if (msg.setupComplete) {
             console.log("Upstream Live session ready!");
@@ -484,9 +496,21 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
     }));
   };
 
-  ws.onmessage = (event) => {
+  ws.onmessage = async (event) => {
     try {
-      const msg = JSON.parse(event.data);
+      let rawData = "";
+      if (event.data instanceof Blob) {
+        rawData = await event.data.text();
+      } else if (typeof event.data === "string") {
+        rawData = event.data;
+      } else if (event.data instanceof ArrayBuffer) {
+        rawData = new TextDecoder("utf-8").decode(event.data);
+      } else {
+        console.warn("Unexpected WebSocket event data type in connectLiveTraining:", typeof event.data);
+        return;
+      }
+
+      const msg = JSON.parse(rawData);
       if (msg.type === "ready") {
         callbacks.onOpen();
       } else if (msg.type === "server_message") {
