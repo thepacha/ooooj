@@ -370,7 +370,7 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
         console.log("Direct connection established. Sending setup message...");
         const setupMessage = {
           setup: {
-            model: "models/gemini-2.5-flash-native-audio-preview-12-2025",
+            model: "models/gemini-3.1-flash-live-preview",
             generationConfig: {
               responseModalities: ["AUDIO"],
               speechConfig: {
@@ -387,7 +387,9 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
                   text: strictVoiceProtocol
                 }
               ]
-            }
+            },
+            inputAudioTranscription: {},
+            outputAudioTranscription: {}
           }
         };
         ws.send(JSON.stringify(setupMessage));
