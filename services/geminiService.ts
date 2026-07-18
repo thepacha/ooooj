@@ -393,31 +393,76 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
         ws.send(JSON.stringify(setupMessage));
       };
 
+      const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+        let binary = "";
+        const bytes = new Uint8Array(buffer);
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa(binary);
+      };
+
+      const handleAudioChunk = (buffer: ArrayBuffer) => {
+        const base64 = arrayBufferToBase64(buffer);
+        callbacks.onMessage({
+          serverContent: {
+            modelTurn: {
+              parts: [
+                {
+                  inlineData: {
+                    mimeType: "audio/pcm;rate=24000",
+                    data: base64
+                  }
+                }
+              ]
+            }
+          }
+        });
+      };
+
+      const handleGeminiMessage = (msg: any) => {
+        if (msg.setupComplete) {
+          console.log("Upstream Live session ready!");
+          callbacks.onOpen();
+        } else if (msg.serverContent) {
+          // Forward formatted to match what the component expects
+          callbacks.onMessage({ serverContent: msg.serverContent });
+        }
+      };
+
       ws.onmessage = async (event) => {
         try {
-          let rawData = "";
-          if (event.data instanceof Blob) {
-            rawData = await event.data.text();
-          } else if (typeof event.data === "string") {
-            rawData = event.data;
-          } else if (event.data instanceof ArrayBuffer) {
-            rawData = new TextDecoder("utf-8").decode(event.data);
-          } else {
-            console.warn("Unexpected WebSocket event data type:", typeof event.data);
+          const isBlob = event.data instanceof Blob || (event.data && (typeof (event.data as any).text === "function" || (event.data as any).constructor?.name === "Blob"));
+          const isArrayBuffer = event.data instanceof ArrayBuffer || (event.data && (event.data as any).constructor?.name === "ArrayBuffer");
+
+          if (isBlob) {
+            console.log("Received Blob from Gemini Live");
+            const text = await (event.data as any).text();
+            try {
+              const message = JSON.parse(text);
+              handleGeminiMessage(message);
+            } catch {
+              const audioBuffer = await (event.data as any).arrayBuffer();
+              handleAudioChunk(audioBuffer);
+            }
             return;
           }
 
-          const msg = JSON.parse(rawData);
-          
-          if (msg.setupComplete) {
-            console.log("Upstream Live session ready!");
-            callbacks.onOpen();
-          } else if (msg.serverContent) {
-            // Forward formatted to match what the component expects
-            callbacks.onMessage({ serverContent: msg.serverContent });
+          if (isArrayBuffer) {
+            handleAudioChunk(event.data);
+            return;
           }
-        } catch (e) {
-          console.error("Error parsing upstream WebSocket message:", e);
+
+          if (typeof event.data === "string") {
+            const message = JSON.parse(event.data);
+            handleGeminiMessage(message);
+            return;
+          }
+
+          console.warn("Unknown Gemini Live message type", event.data);
+        } catch (err) {
+          console.error("Gemini Live message handling error", err);
         }
       };
 
@@ -496,32 +541,75 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
     }));
   };
 
+  const handleProxyMessage = (msg: any) => {
+    if (msg.type === "ready") {
+      callbacks.onOpen();
+    } else if (msg.type === "server_message") {
+      callbacks.onMessage(msg.message);
+    } else if (msg.type === "error") {
+      callbacks.onError(new Error(msg.error));
+    } else if (msg.type === "close") {
+      callbacks.onClose();
+    }
+  };
+
+  const handleProxyAudioChunk = (buffer: ArrayBuffer) => {
+    let binary = "";
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = window.btoa(binary);
+
+    callbacks.onMessage({
+      serverContent: {
+        modelTurn: {
+          parts: [
+            {
+              inlineData: {
+                mimeType: "audio/pcm;rate=24000",
+                data: base64
+              }
+            }
+          ]
+        }
+      }
+    });
+  };
+
   ws.onmessage = async (event) => {
     try {
-      let rawData = "";
-      if (event.data instanceof Blob) {
-        rawData = await event.data.text();
-      } else if (typeof event.data === "string") {
-        rawData = event.data;
-      } else if (event.data instanceof ArrayBuffer) {
-        rawData = new TextDecoder("utf-8").decode(event.data);
-      } else {
-        console.warn("Unexpected WebSocket event data type in connectLiveTraining:", typeof event.data);
+      const isBlob = event.data instanceof Blob || (event.data && (typeof (event.data as any).text === "function" || (event.data as any).constructor?.name === "Blob"));
+      const isArrayBuffer = event.data instanceof ArrayBuffer || (event.data && (event.data as any).constructor?.name === "ArrayBuffer");
+
+      if (isBlob) {
+        console.log("Received Blob from Gemini Live proxy");
+        const text = await (event.data as any).text();
+        try {
+          const message = JSON.parse(text);
+          handleProxyMessage(message);
+        } catch {
+          const audioBuffer = await (event.data as any).arrayBuffer();
+          handleProxyAudioChunk(audioBuffer);
+        }
         return;
       }
 
-      const msg = JSON.parse(rawData);
-      if (msg.type === "ready") {
-        callbacks.onOpen();
-      } else if (msg.type === "server_message") {
-        callbacks.onMessage(msg.message);
-      } else if (msg.type === "error") {
-        callbacks.onError(new Error(msg.error));
-      } else if (msg.type === "close") {
-        callbacks.onClose();
+      if (isArrayBuffer) {
+        handleProxyAudioChunk(event.data);
+        return;
       }
-    } catch (e) {
-      console.error("Error parsing websocket message in connectLiveTraining:", e);
+
+      if (typeof event.data === "string") {
+        const message = JSON.parse(event.data);
+        handleProxyMessage(message);
+        return;
+      }
+
+      console.warn("Unknown Gemini Live proxy message type", event.data);
+    } catch (err) {
+      console.error("Gemini Live proxy message handling error", err);
     }
   };
 
