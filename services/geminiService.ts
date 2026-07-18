@@ -318,35 +318,6 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
   onError: (e: any) => void,
   onClose: () => void
 }): Promise<any> => {
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  
-  // Handle WebSocket routing with fallbacks for serverless environments (e.g. Vercel)
-  const customWsUrl = import.meta.env.VITE_WS_URL || import.meta.env.VITE_BACKEND_URL;
-  let socketUrl = "";
-  
-  if (customWsUrl) {
-    if (customWsUrl.startsWith("ws://") || customWsUrl.startsWith("wss://")) {
-      // If full ws protocol is specified, use it directly (excluding trailing slashes/paths)
-      const baseUrl = customWsUrl.replace(/\/+$/, "");
-      socketUrl = baseUrl.endsWith("/api/gemini-live") ? baseUrl : `${baseUrl}/api/gemini-live`;
-    } else {
-      const cleanHost = customWsUrl.replace(/^https?:\/\//, "").replace(/\/+$/, "");
-      socketUrl = `${protocol}//${cleanHost}/api/gemini-live`;
-    }
-  } else {
-    const isVercelOrCustom = window.location.hostname.includes("vercel") || 
-                             window.location.hostname.includes("revuqai.com");
-    if (isVercelOrCustom) {
-      // Automatically fallback to the stable Cloud Run container backend which supports WebSockets
-      socketUrl = "wss://ais-pre-i3rbxweh47euyezi3wnvsb-312452967229.europe-west2.run.app/api/gemini-live";
-    } else {
-      socketUrl = `${protocol}//${window.location.host}/api/gemini-live`;
-    }
-  }
-  
-  console.log(`Connecting to Gemini Live WebSocket at: ${socketUrl}`);
-  const ws = new WebSocket(socketUrl);
-
   const strictVoiceProtocol = `
       You are a friendly, realistic, native conversation partner.
       You are having a casual, real-life conversation with a Learner practicing the target language (${scenario.language || 'English'}).
@@ -370,7 +341,140 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
       4. Be extremely patient and encouraging. If they stumble, encourage them and help them carry on with the casual conversation.
   `;
 
-  const selectedVoice = scenario.voice || 'Puck';
+  const selectedVoice = scenario.voice || 'Zephyr';
+
+  // Check if we are running in a serverless/Vercel environment or custom domain
+  const isVercelOrCustom = window.location.hostname.includes("vercel") || 
+                           window.location.hostname.includes("revuqai.com");
+
+  if (isVercelOrCustom) {
+    try {
+      console.log("Serverless/Vercel environment detected. Fetching API key for direct browser-to-upstream Gemini Live connection...");
+      const keyRes = await fetch("/api/gemini?action=get-live-key");
+      const { apiKey } = await keyRes.json();
+      
+      if (!apiKey) {
+        throw new Error("Gemini API key is not configured on the server.");
+      }
+
+      // Standard Gemini Live prebuilt voices
+      const GEMINI_VOICES = ["Puck", "Charon", "Kore", "Fenrir", "Zephyr", "Aoede"];
+      const geminiVoice = GEMINI_VOICES.includes(selectedVoice) ? selectedVoice : "Zephyr";
+
+      // Direct upstream Gemini Multimodal Live API endpoint
+      const upstreamUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${apiKey}`;
+      console.log("Connecting directly to upstream Google Gemini Live API...");
+      const ws = new WebSocket(upstreamUrl);
+
+      ws.onopen = () => {
+        console.log("Direct connection established. Sending setup message...");
+        const setupMessage = {
+          setup: {
+            model: "models/gemini-2.0-flash-exp",
+            generationConfig: {
+              responseModalities: ["AUDIO"],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: {
+                    voiceName: geminiVoice
+                  }
+                }
+              },
+              systemInstruction: {
+                parts: [
+                  {
+                    text: strictVoiceProtocol
+                  }
+                ]
+              }
+            }
+          }
+        };
+        ws.send(JSON.stringify(setupMessage));
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          
+          if (msg.setupComplete) {
+            console.log("Upstream Live session ready!");
+            callbacks.onOpen();
+          } else if (msg.serverContent) {
+            // Forward formatted to match what the component expects
+            callbacks.onMessage({ serverContent: msg.serverContent });
+          }
+        } catch (e) {
+          console.error("Error parsing upstream WebSocket message:", e);
+        }
+      };
+
+      ws.onerror = (err) => {
+        console.error("Direct WebSocket error:", err);
+        callbacks.onError(err);
+      };
+
+      ws.onclose = () => {
+        console.log("Direct WebSocket closed.");
+        callbacks.onClose();
+      };
+
+      return {
+        sendRealtimeInput: (input: any) => {
+          if (ws.readyState === WebSocket.OPEN) {
+            let base64Audio = "";
+            if (input.media?.data) {
+              base64Audio = input.media.data;
+            } else if (input.media?.inlineData?.data) {
+              base64Audio = input.media.inlineData.data;
+            } else if (input.audio?.data) {
+              base64Audio = input.audio.data;
+            } else if (input.audio) {
+              base64Audio = input.audio;
+            }
+
+            if (base64Audio) {
+              ws.send(JSON.stringify({
+                realtimeInput: {
+                  mediaChunks: [
+                    {
+                      mimeType: "audio/pcm;rate=16000",
+                      data: base64Audio
+                    }
+                  ]
+                }
+              }));
+            }
+          }
+        },
+        close: () => {
+          ws.close();
+        }
+      };
+    } catch (err: any) {
+      console.warn("Direct connection setup failed. Falling back to WebSocket proxy:", err);
+    }
+  }
+
+  // Fallback to local server proxy (e.g. Cloud Run, dev environment)
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const customWsUrl = import.meta.env.VITE_WS_URL || import.meta.env.VITE_BACKEND_URL;
+  let socketUrl = "";
+  
+  if (customWsUrl) {
+    if (customWsUrl.startsWith("ws://") || customWsUrl.startsWith("wss://")) {
+      const baseUrl = customWsUrl.replace(/\/+$/, "");
+      socketUrl = baseUrl.endsWith("/api/gemini-live") ? baseUrl : `${baseUrl}/api/gemini-live`;
+    } else {
+      const cleanHost = customWsUrl.replace(/^https?:\/\//, "").replace(/\/+$/, "");
+      socketUrl = `${protocol}//${cleanHost}/api/gemini-live`;
+    }
+  } else {
+    socketUrl = `${protocol}//${window.location.host}/api/gemini-live`;
+  }
+  
+  console.log(`Connecting to Gemini Live WebSocket at: ${socketUrl}`);
+  const ws = new WebSocket(socketUrl);
 
   ws.onopen = () => {
     ws.send(JSON.stringify({

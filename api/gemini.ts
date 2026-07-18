@@ -28,6 +28,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const client = getGeminiClient();
 
     switch (action) {
+      case 'get-live-key': {
+        const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+        return res.status(200).json({ apiKey });
+      }
+
       case 'generate-content': {
         const { model, contents, config } = req.body;
         const response = await client.models.generateContent({
