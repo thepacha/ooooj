@@ -319,7 +319,32 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
   onClose: () => void
 }): Promise<any> => {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const socketUrl = `${protocol}//${window.location.host}/api/gemini-live`;
+  
+  // Handle WebSocket routing with fallbacks for serverless environments (e.g. Vercel)
+  const customWsUrl = import.meta.env.VITE_WS_URL || import.meta.env.VITE_BACKEND_URL;
+  let socketUrl = "";
+  
+  if (customWsUrl) {
+    if (customWsUrl.startsWith("ws://") || customWsUrl.startsWith("wss://")) {
+      // If full ws protocol is specified, use it directly (excluding trailing slashes/paths)
+      const baseUrl = customWsUrl.replace(/\/+$/, "");
+      socketUrl = baseUrl.endsWith("/api/gemini-live") ? baseUrl : `${baseUrl}/api/gemini-live`;
+    } else {
+      const cleanHost = customWsUrl.replace(/^https?:\/\//, "").replace(/\/+$/, "");
+      socketUrl = `${protocol}//${cleanHost}/api/gemini-live`;
+    }
+  } else {
+    const isVercelOrCustom = window.location.hostname.includes("vercel") || 
+                             window.location.hostname.includes("revuqai.com");
+    if (isVercelOrCustom) {
+      // Automatically fallback to the stable Cloud Run container backend which supports WebSockets
+      socketUrl = "wss://ais-pre-i3rbxweh47euyezi3wnvsb-312452967229.europe-west2.run.app/api/gemini-live";
+    } else {
+      socketUrl = `${protocol}//${window.location.host}/api/gemini-live`;
+    }
+  }
+  
+  console.log(`Connecting to Gemini Live WebSocket at: ${socketUrl}`);
   const ws = new WebSocket(socketUrl);
 
   const strictVoiceProtocol = `
