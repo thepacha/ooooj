@@ -379,14 +379,14 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
                     voiceName: geminiVoice
                   }
                 }
-              },
-              systemInstruction: {
-                parts: [
-                  {
-                    text: strictVoiceProtocol
-                  }
-                ]
               }
+            },
+            systemInstruction: {
+              parts: [
+                {
+                  text: strictVoiceProtocol
+                }
+              ]
             }
           }
         };
@@ -414,8 +414,8 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
         callbacks.onError(err);
       };
 
-      ws.onclose = () => {
-        console.log("Direct WebSocket closed.");
+      ws.onclose = (event) => {
+        console.log(`Direct WebSocket closed. Code: ${event.code}, Reason: ${event.reason || 'No reason specified'}, wasClean: ${event.wasClean}`);
         callbacks.onClose();
       };
 
@@ -458,7 +458,7 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
 
   // Fallback to local server proxy (e.g. Cloud Run, dev environment)
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const customWsUrl = import.meta.env.VITE_WS_URL || import.meta.env.VITE_BACKEND_URL;
+  const customWsUrl = (import.meta as any).env.VITE_WS_URL || (import.meta as any).env.VITE_BACKEND_URL;
   let socketUrl = "";
   
   if (customWsUrl) {
