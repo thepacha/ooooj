@@ -920,6 +920,14 @@ async function startServer() {
             }
           });
 
+        } else if (msg.realtimeInput?.audio?.data) {
+          if (session) {
+            const audioData = msg.realtimeInput.audio.data;
+            const mimeType = msg.realtimeInput.audio.mimeType || "audio/pcm;rate=16000";
+            session.sendRealtimeInput({
+              audio: { data: audioData, mimeType: mimeType },
+            });
+          }
         } else if (msg.audio) {
           if (session) {
             session.sendRealtimeInput({

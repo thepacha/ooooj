@@ -492,18 +492,22 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
               base64Audio = input.audio;
             }
 
-            if (base64Audio) {
-              ws.send(JSON.stringify({
-                realtimeInput: {
-                  mediaChunks: [
-                    {
-                      mimeType: "audio/pcm;rate=16000",
-                      data: base64Audio
-                    }
-                  ]
-                }
-              }));
+            if (!base64Audio || base64Audio.trim() === "") {
+              console.warn("Direct connection audio validation failed: audio data is empty or missing.");
+              return;
             }
+
+            const payload = {
+              realtimeInput: {
+                audio: {
+                  mimeType: "audio/pcm;rate=16000",
+                  data: base64Audio
+                }
+              }
+            };
+
+            console.log("Sending audio payload:", payload);
+            ws.send(JSON.stringify(payload));
           }
         },
         close: () => {
@@ -626,15 +630,33 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
   return {
     sendRealtimeInput: (input: any) => {
       if (ws.readyState === WebSocket.OPEN) {
+        let base64Audio = "";
         if (input.media?.data) {
-          ws.send(JSON.stringify({ audio: input.media.data }));
+          base64Audio = input.media.data;
         } else if (input.media?.inlineData?.data) {
-          ws.send(JSON.stringify({ audio: input.media.inlineData.data }));
+          base64Audio = input.media.inlineData.data;
         } else if (input.audio?.data) {
-          ws.send(JSON.stringify({ audio: input.audio.data }));
+          base64Audio = input.audio.data;
         } else if (input.audio) {
-          ws.send(JSON.stringify({ audio: input.audio }));
+          base64Audio = input.audio;
         }
+
+        if (!base64Audio || base64Audio.trim() === "") {
+          console.warn("Fallback connection audio validation failed: audio data is empty or missing.");
+          return;
+        }
+
+        const payload = {
+          realtimeInput: {
+            audio: {
+              mimeType: "audio/pcm;rate=16000",
+              data: base64Audio
+            }
+          }
+        };
+
+        console.log("Sending audio payload:", payload);
+        ws.send(JSON.stringify(payload));
       }
     },
     close: () => {
