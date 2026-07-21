@@ -275,7 +275,7 @@ async function decodeAudioData(
 interface AIParamsState {
     topic: string;
     difficulty: string;
-    category: 'Sales' | 'Support' | 'Technical';
+    category: string;
     funnelStage: string;
     persona: string;
     mood: string;

@@ -186,33 +186,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         let contextStr = '';
         if (params) {
           contextStr = `
-          Please tailor the topic to the following parameters:
-          - Language: ${params.language}
-          - Buyer Mode: ${params.mood}
-          - Persona: ${params.persona}
-          - Difficulty: ${params.difficulty}
-          - Industry: ${params.industry}
-          - Funnel Stage: ${params.funnelStage}
-          - Category: ${params.category}
+          Please tailor the topic to the following language learning parameters:
+          - Target Language to practice: ${params.language}
+          - Dialect (if any): ${params.dialect}
+          - Category / Context: ${params.category}
+          - Target Fluency Difficulty: ${params.difficulty}
+          - Conversational Partner Persona: ${params.persona} (${params.mood} mood)
           `;
         }
         const prompt = `
-          Generate a single, concise, and creative scenario description for a customer service or sales roleplay training session.
-          It should be 1-2 sentences.
+          Generate a single, highly creative, realistic, and engaging roleplay topic/situation for language practice speaking and chatting.
+          It should be 1 sentence, written in English, describing an immersive real-life situation.
           ${contextStr}
           
           Examples:
-          - "A long-time customer is threatening to cancel because a competitor offered a lower price."
-          - "A confused user cannot find the export button and is getting frustrated."
-          - "A potential client is interested in the Enterprise plan but thinks the implementation time is too long."
+          - "Buying a train ticket and asking a friendly local for directions to the main square in Istanbul."
+          - "Ordering a local delicacy at a busy street food market and bargaining for the price."
+          - "A job interview simulation for a marketing specialist role at a fast-growing local technology startup."
+          - "Discussing physical symptoms and refilling an allergy prescription with a pharmacist at a city drugstore."
+          - "Checking in to a boutique hotel, asking for a room with a nice view, and getting dinner recommendations."
           
-          Return ONLY the text of the scenario description. No JSON, no markdown.
+          Return ONLY the text of the language scenario description. No JSON, no markdown, no quotes around the result.
         `;
         const response = await client.models.generateContent({
           model: 'gemini-3.5-flash',
           contents: prompt
         });
-        return res.status(200).json({ text: response.text?.trim() || "" });
+        return res.status(200).json({ text: response.text?.trim().replace(/^"|"$/g, '') || "" });
       }
 
       case 'generate-ai-scenario': {
@@ -221,16 +221,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { topic, category, difficulty, funnelStage, persona, mood, industry, language, dialect } = params || {};
 
         const prompt = `
-          Create a rich, complex training roleplay scenario for a ${category || 'Support'} agent.
+          Create a rich, complex language learning roleplay scenario.
           Random Seed: ${seed}
           
-          CORE CONTEXT: ${topic || 'General customer issue'}
-          ${industry ? `INDUSTRY: ${industry} (Ensure terminology and context is specific to this industry)` : ''}
-          DIFFICULTY: ${difficulty || 'Intermediate'}
+          CORE CONTEXT: ${topic || 'General conversation situation'}
+          ${industry ? `INDUSTRY: ${industry}` : ''}
+          DIFFICULTY LEVEL: ${difficulty || 'B1'} (Must be one of A1, A2, B1, B2, C1, C2)
           
-          ${funnelStage ? `SALES STAGE: ${funnelStage} (Ensure the customer behavior reflects this specific stage of the funnel)` : ''}
-          ${persona ? `BUYER PERSONA: ${persona}` : 'PERSONA: Create a random realistic persona'}
-          ${mood ? `CUSTOMER MOOD: ${mood}` : ''}
+          ${persona ? `PARTNER PERSONA: ${persona}` : 'PERSONA: Create a random realistic persona'}
+          ${mood ? `PARTNER ATTITUDE/MOOD: ${mood}` : ''}
           ${language ? `LANGUAGE: ${language}` : 'LANGUAGE: English'}
           ${dialect ? `DIALECT: ${dialect}` : ''}
           
@@ -242,21 +241,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
              - 'Kore' (Female, Professional)
              - 'Fenrir' (Male, Authoritative)
              - 'Aoede' (Female, Soft/High)
-          3. Define "HIDDEN CONTEXT": Secrets the customer holds (e.g., budget constraints, hidden decision makers, technical limitations).
-          4. Write a detailed System Instruction that forces the AI to stay in character. 
-             If Sales Stage is 'Closing', make them negotiate terms.
-             If Sales Stage is 'Discovery', make them answer questions but be guarded.
-             If Mood is '${mood}', reflect that in sentence length and tone.
+          3. Write a detailed System Instruction that forces the AI to stay in character.
+             
+             CRITICAL INSTRUCTION FOR 65% TO 80% USER SPEAKING TIME:
+             To ensure the Learner speaks 65% to 80% of the conversation so that the call is mostly spoken with the user:
+             - The AI's responses MUST be extremely concise, brief, and supportive.
+             - Never speak more than 1 or 2 short sentences.
+             - End almost every turn with an open-ended question or supportive prompt that passes the floor back to the user, prompting them for longer answers.
+             - Under no circumstances should the AI dominate the conversation or give long paragraphs.
+             
              The AI MUST speak in the requested LANGUAGE (${language || 'English'})${dialect ? ` and DIALECT (${dialect})` : ''}.
-           5. Be creative!
-           6. Generate 5 distinct "Mission Objectives" for the agent relevant to the ${funnelStage || 'situation'}.
-           7. Generate 6 "Suggested Talk Tracks" (direct quotes/phrases) in the requested language.
-           8. Generate 4 "Smart Openers" - effective opening lines for the agent to use in this specific scenario, in the requested language.
-           9. The initialMessage MUST be in the requested language and dialect.
-           
-           IMPORTANT: Ensure the scenario details (Name, Context, Secret) are fresh and creative.
-
-           Return JSON.
+          4. Be creative!
+          5. Generate 3 to 5 distinct "Mission Objectives" for the user/learner.
+          6. Generate 6 "Suggested Talk Tracks" (direct quotes/phrases) in the requested language.
+          7. Generate 4 "Smart Openers" - effective opening lines for the user/learner to use in this specific scenario, in the requested language.
+          8. Generate a concise high-level "Objective" statement in the requested language for the scenario (assigned to \`objectiveText\`).
+          9. Generate 4 to 6 target words or expressions that the learner should try to use (assigned to \`expectedVocabulary\` array, in the requested language).
+          10. The \`estimatedDuration\` MUST always be "15 Minutes Max".
+          11. The initialMessage MUST be in the requested language and dialect.
+          
+          Return JSON.
         `;
 
         const response = await client.models.generateContent({
@@ -269,8 +273,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               properties: {
                 title: { type: Type.STRING },
                 description: { type: Type.STRING },
-                difficulty: { type: Type.STRING, enum: ['Beginner', 'Intermediate', 'Advanced'] },
-                category: { type: Type.STRING, enum: ['Sales', 'Support', 'Technical'] },
+                difficulty: { type: Type.STRING, enum: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] },
+                category: { type: Type.STRING, enum: ['Sales', 'Support', 'Technical', 'Social Conversation', 'Travel & Shopping', 'Professional & Business', 'Daily Life & Routine', 'Academic & Study', 'Technical & IT', 'Health & Medical', 'Leisure & Hobbies', 'Culture & Arts', 'Sports & Fitness', 'Emergency Situations'] },
                 initialMessage: { type: Type.STRING },
                 systemInstruction: { type: Type.STRING },
                 voice: { type: Type.STRING, enum: ['Puck', 'Charon', 'Kore', 'Fenrir', 'Aoede'] },
@@ -278,9 +282,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 dialect: { type: Type.STRING },
                 objectives: { type: Type.ARRAY, items: { type: Type.STRING } },
                 talkTracks: { type: Type.ARRAY, items: { type: Type.STRING } },
-                openers: { type: Type.ARRAY, items: { type: Type.STRING } }
+                openers: { type: Type.ARRAY, items: { type: Type.STRING } },
+                objectiveText: { type: Type.STRING },
+                expectedVocabulary: { type: Type.ARRAY, items: { type: Type.STRING } },
+                estimatedDuration: { type: Type.STRING }
               },
-              required: ['title', 'description', 'difficulty', 'category', 'initialMessage', 'systemInstruction', 'voice', 'objectives', 'talkTracks', 'openers']
+              required: ['title', 'description', 'difficulty', 'category', 'initialMessage', 'systemInstruction', 'voice', 'objectives', 'talkTracks', 'openers', 'objectiveText', 'expectedVocabulary', 'estimatedDuration']
             }
           }
         });

@@ -4,7 +4,7 @@ export const translations = {
   en: {
     // Sidebar
     'nav.dashboard': 'Home',
-    'nav.analyze': 'Analyze New',
+    'nav.analyze': 'Speaking Review',
     'nav.training': 'AI Training',
     'nav.history': 'History',
     'nav.roster': 'Team Roster',
@@ -16,7 +16,7 @@ export const translations = {
     'nav.dark_mode': 'Dark Mode',
     'nav.logout': 'Log out',
     'nav.guest': 'Guest User',
-    'nav.deepgram_tts': 'Deepgram TTS',
+    'nav.deepgram_tts': 'Pronunciation',
     'nav.gemini_arabic_tts': 'Gemini Arabic TTS',
     'nav.notifications': 'Notifications',
     'nav.ai_conversation': 'AI-Conversation',
@@ -40,8 +40,8 @@ export const translations = {
     'dash.no_data': 'No data available yet',
 
     // Analyzer
-    'analyzer.title': 'Intelligence Engine',
-    'analyzer.subtitle': 'Select your input method to begin automated analysis.',
+    'analyzer.title': 'Speaking Review',
+    'analyzer.subtitle': 'Record live audio to begin automated speaking analysis.',
     'analyzer.ready': 'System Ready',
     'analyzer.mode.transcript': 'Transcript',
     'analyzer.mode.upload': 'Upload File',
@@ -502,7 +502,7 @@ export const translations = {
   ar: {
     // Sidebar
     'nav.dashboard': 'الرئيسية',
-    'nav.analyze': 'تحليل جديد',
+    'nav.analyze': 'مراجعة التحدث',
     'nav.training': 'تدريب الذكاء الاصطناعي',
     'nav.history': 'السجل',
     'nav.roster': 'قائمة الفريق',
@@ -514,7 +514,7 @@ export const translations = {
     'nav.dark_mode': 'الوضع الليلي',
     'nav.logout': 'تسجيل الخروج',
     'nav.guest': 'مستخدم زائر',
-    'nav.deepgram_tts': 'Deepgram TTS',
+    'nav.deepgram_tts': 'النطق',
     'nav.gemini_arabic_tts': 'Gemini Arabic TTS',
     'nav.notifications': 'التنبيهات',
     'nav.ai_conversation': 'محادثة الذكاء الاصطناعي',
@@ -538,8 +538,8 @@ export const translations = {
     'dash.no_data': 'لا توجد بيانات متاحة بعد',
 
     // Analyzer
-    'analyzer.title': 'محرك الذكاء',
-    'analyzer.subtitle': 'اختر طريقة الإدخال لبدء التحليل الآلي.',
+    'analyzer.title': 'مراجعة التحدث',
+    'analyzer.subtitle': 'سجل صوتاً مباشراً لبدء تحليل التحدث التلقائي.',
     'analyzer.ready': 'النظام جاهز',
     'analyzer.mode.transcript': 'نص المحادثة',
     'analyzer.mode.upload': 'رفع ملف',

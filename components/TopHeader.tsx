@@ -22,12 +22,13 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ user, onLogout, setView, o
   const getPageTitle = (view: string) => {
     switch (view) {
       case 'dashboard': return t('nav.dashboard');
+      case 'ai-conversation-dashboard': return t('nav.ai_conversation_dashboard');
       case 'analyze': return t('nav.analyze');
       case 'evaluation': return 'Evaluation Details';
       case 'training': return t('nav.training');
       case 'ai-conversation': return 'AI-Conversation';
       case 'assembly-test': return 'AssemblyAI Test';
-      case 'deepgram-tts': return 'Deepgram & Gemini TTS';
+      case 'deepgram-tts': return t('nav.deepgram_tts');
       case 'notifications': return 'Notifications';
       case 'history': return t('nav.history');
       case 'roster': return t('nav.roster');

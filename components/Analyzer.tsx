@@ -88,7 +88,7 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
   const [processingStatus, setProcessingStatus] = useState<ProcessingStep>('idle');
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
-  const [inputMode, setInputMode] = useState<InputMode>('text');
+  const [inputMode, setInputMode] = useState<InputMode>('mic');
   const [dragActive, setDragActive] = useState(false);
   
   // Recording State
@@ -426,7 +426,7 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
   const handleReset = () => {
     setResult(null); 
     setTranscript(''); 
-    setInputMode('text');
+    setInputMode('mic');
     setProcessingStatus('idle');
   };
 
@@ -509,30 +509,6 @@ export const Analyzer: React.FC<AnalyzerProps> = ({ criteria, onAnalysisComplete
       {/* Main Card */}
       <div className="bg-white dark:bg-slate-800 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700">
         
-        {/* Mode Selector */}
-        <div className="border-b border-slate-200 dark:border-slate-700 p-4 sm:p-6 bg-slate-50/50 dark:bg-slate-900/50">
-            <div className="flex gap-1.5 sm:gap-2 bg-slate-200/50 dark:bg-slate-950 p-1.5 rounded-xl sm:rounded-2xl max-w-md mx-auto">
-                {[
-                    { id: 'text', icon: FileText, label: t('analyzer.mode.transcript') },
-                    { id: 'upload', icon: Upload, label: t('analyzer.mode.upload') },
-                    { id: 'mic', icon: Mic, label: t('analyzer.mode.mic') },
-                ].map((mode) => (
-                    <button
-                        key={mode.id}
-                        onClick={() => setInputMode(mode.id as InputMode)}
-                        className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                            inputMode === mode.id
-                            ? 'bg-white dark:bg-slate-800 text-[#0500e2] dark:text-white shadow-sm ring-1 ring-black/5'
-                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                        }`}
-                    >
-                        <mode.icon size={16} className="sm:w-[18px] sm:h-[18px]" />
-                        <span className="whitespace-nowrap">{mode.label}</span>
-                    </button>
-                ))}
-            </div>
-        </div>
-
         <div className="p-4 sm:p-8 md:p-10 min-h-[450px]">
             
             {/* TEXT MODE */}

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LayoutDashboard, FileText, History, Settings, X, Sun, Moon, PieChart, Users, GraduationCap, ShieldAlert, Globe, Bell, Mic, Languages } from 'lucide-react';
+import { LayoutDashboard, FileText, History, Settings, X, Sun, Moon, PieChart, Users, GraduationCap, ShieldAlert, Globe, Bell, Mic, Languages, AudioLines } from 'lucide-react';
 import { ViewState, User } from '../types';
 import { RevuLogo } from './RevuLogo';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -28,7 +28,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
       case 'training': return t('nav.training');
       case 'ai-conversation': return 'AI-Conversation';
       case 'assembly-test': return 'AssemblyAI Test';
-      case 'deepgram-tts': return 'Deepgram & Gemini TTS';
+      case 'deepgram-tts': return t('nav.deepgram_tts');
       case 'notifications': return 'Notifications';
       case 'history': return t('nav.history');
       case 'roster': return t('nav.roster');
@@ -44,12 +44,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
   
   const allNavItems: { id: ViewState; label: string; icon: React.ReactNode; roles: string[] }[] = [
     { id: 'dashboard', label: t('nav.dashboard'), icon: <LayoutDashboard size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
-    { id: 'analyze', label: t('nav.analyze'), icon: <FileText size={20} />, roles: ['admin'] },
+    { id: 'analyze', label: t('nav.analyze'), icon: <AudioLines size={20} />, roles: ['admin'] },
     { id: 'training', label: t('nav.training'), icon: <GraduationCap size={20} />, roles: ['admin'] },
     { id: 'ai-conversation', label: t('nav.ai_conversation'), icon: <Languages size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
     { id: 'ai-conversation-dashboard', label: t('nav.ai_conversation_dashboard'), icon: <LayoutDashboard size={20} />, roles: ['admin'] },
     { id: 'assembly-test', label: 'AssemblyAI Test', icon: <Mic size={20} />, roles: ['admin'] },
-    { id: 'deepgram-tts', label: 'Deepgram & Gemini TTS', icon: <Mic size={20} />, roles: ['admin'] },
+    { id: 'deepgram-tts', label: t('nav.deepgram_tts'), icon: <Mic size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
     { id: 'notifications', label: 'Notifications', icon: <Bell size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
     { id: 'history', label: t('nav.history'), icon: <History size={20} />, roles: ['agent', 'manager', 'org_admin', 'admin', 'user'] },
     { id: 'roster', label: t('nav.roster'), icon: <Users size={20} />, roles: ['admin'] },

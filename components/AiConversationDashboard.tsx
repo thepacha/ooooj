@@ -29,7 +29,9 @@ import {
   Star,
   Flame,
   Brain,
-  ShieldCheck
+  ShieldCheck,
+  Phone,
+  PhoneCall
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -78,7 +80,11 @@ export const AiConversationDashboard: React.FC<AiConversationDashboardProps> = (
       streaks: "Practice Streak",
       days: "days",
       skillsBreakdownDesc: "Detailed breakdown of conversational criteria analyzed by AI.",
-      recentSessionsDesc: "View and review feedback from your latest conversations."
+      recentSessionsDesc: "View and review feedback from your latest conversations.",
+      ctaPracticeTitle: "Ready to Speak Fluently?",
+      ctaPracticeDesc: "Connect instantly to an interactive speaking practice call with realistic, adaptive AI personas. Elevate your confidence, flow, and pronunciation today.",
+      ctaPracticeButton: "Start Speaking Practice Call",
+      ctaBadge: "Interactive Voice Call"
     },
     ar: {
       welcome: "مرحباً بعودتك",
@@ -113,7 +119,11 @@ export const AiConversationDashboard: React.FC<AiConversationDashboardProps> = (
       streaks: "سلسلة التدريب",
       days: "أيام",
       skillsBreakdownDesc: "تحليل مفصل لمعايير المحادثة التي تم فحصها بالذكاء الاصطناعي.",
-      recentSessionsDesc: "عرض ومراجعة الملاحظات من أحدث المحادثات الخاصة بك."
+      recentSessionsDesc: "عرض ومراجعة الملاحظات من أحدث المحادثات الخاصة بك.",
+      ctaPracticeTitle: "هل أنت جاهز للتحدث بطلاقة؟",
+      ctaPracticeDesc: "اتصل فوراً بمكالمة ممارسة تحدث تفاعلية ومباشرة مع شخصيات ذكاء اصطناعي متكيفة. ارتقِ بثقتك وتدفق حديثك ومخارج الحروف اليوم.",
+      ctaPracticeButton: "ابدأ مكالمة ممارسة التحدث",
+      ctaBadge: "مكالمة صوتية تفاعلية"
     }
   };
 
@@ -304,6 +314,34 @@ export const AiConversationDashboard: React.FC<AiConversationDashboardProps> = (
         >
           {loc.showAll}
         </button>
+      </div>
+
+      {/* Speaking Practice Call CTA Banner */}
+      <div className="bg-[#0500e2] dark:bg-[#0400c0] rounded-3xl p-6 md:p-8 border border-[#0500e2]/10 dark:border-white/10 shadow-xl shadow-[#0500e2]/15 relative overflow-hidden group">
+        
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="space-y-3 max-w-3xl">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 text-white text-[10px] md:text-xs font-bold tracking-wider uppercase backdrop-blur-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              {loc.ctaBadge}
+            </span>
+            <h2 className="text-xl md:text-3xl font-sans font-extrabold text-white tracking-tight leading-tight">
+              {loc.ctaPracticeTitle}
+            </h2>
+            <p className="text-white/80 text-xs md:text-sm leading-relaxed max-w-2xl font-normal">
+              {loc.ctaPracticeDesc}
+            </p>
+          </div>
+          
+          <button
+            onClick={() => setView('ai-conversation')}
+            className="w-full md:w-auto inline-flex items-center justify-center gap-3 px-6 py-3.5 bg-white hover:bg-slate-50 text-[#0500e2] font-bold rounded-xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all duration-200 cursor-pointer text-sm whitespace-nowrap"
+          >
+            <PhoneCall size={18} />
+            <span>{loc.ctaPracticeButton}</span>
+            <ArrowUpRight size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Hero Wide Card: Fluency & Level Up Tracker */}

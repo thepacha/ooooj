@@ -297,10 +297,10 @@ export const DeepgramTTS: React.FC = () => {
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
                         <Volume2 className="text-[#0500e2]" size={32} />
-                        Text-to-Speech <span className="text-xs bg-[#0500e2]/10 text-[#0500e2] px-2 py-1 rounded-full font-bold uppercase tracking-wider">Beta</span>
+                        Pronunciation <span className="text-xs bg-[#0500e2]/10 text-[#0500e2] px-2 py-1 rounded-full font-bold uppercase tracking-wider">Beta</span>
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400 mt-2">
-                        Convert text into highly realistic speech using Deepgram's Aura models and Gemini's TTS models.
+                        Convert text into highly realistic speech using Deepgram's Aura models and Gemini's TTS models to practice and perfect your pronunciation.
                     </p>
                 </div>
             </div>

@@ -15,8 +15,8 @@ export enum Type {
 }
 
 export interface GenerateScenarioParams {
-  topic: string;
-  category: 'Sales' | 'Support' | 'Technical';
+  topic?: string;
+  category: string;
   difficulty: string;
   funnelStage?: string;
   persona?: string;
@@ -157,7 +157,79 @@ export const createChatSession = (): any => {
   });
 };
 
+export const getLevelInstruction = (difficulty: string, language: string) => {
+  const diff = (difficulty || 'B1').toUpperCase();
+  if (diff === 'A1' || diff === 'BEGINNER') {
+    return `
+      - TARGET FLUENCY LEVEL: A1 (BEGINNER).
+      - SPEAKING COMPLEXITY: Speak extremely slowly, with clear pauses between words. Keep your sentences super short (3-5 words max, e.g. "Hola. ¿Cómo estás?").
+      - VOCABULARY: Use only the absolute most basic, elementary vocabulary (<300 common words). Use present tense only. No idioms, slang, or fast phrasing.
+      - ACCENTED ENGLISH CLARIFICATION PROTOCOL (VERY IMPORTANT): If the user is silent, hesitates, stumbles, or explicitly asks for clarification, help, or translation in English (e.g., "what does that mean?", "can you say that in English?", "how do you say..."):
+        * Respond in English with a very distinct, heavy ${language}-styled accent (e.g. if Spanish target language, speak English with a heavy Spanish accent: "Ah, *sí*, I asked: how are you? You can say: 'Muy bien, gracias'.").
+        * Keep the English clarification extremely brief (under 8 words).
+        * Immediately guide them back to ${language} and prompt them to try speaking again.
+    `;
+  }
+  if (diff === 'A2' || diff === 'ELEMENTARY') {
+    return `
+      - TARGET FLUENCY LEVEL: A2 (ELEMENTARY).
+      - SPEAKING COMPLEXITY: Speak slowly, gently, and clearly. Use simple, direct sentence structures (1 short sentence max).
+      - VOCABULARY: Use basic everyday vocabulary (<800 words). Stick to present tense and simple past/future when necessary. Avoid complex idioms.
+      - ACCENTED ENGLISH CLARIFICATION PROTOCOL (VERY IMPORTANT): If the user struggles, gets stuck, or asks for help/clarification in English:
+        * Respond in English with a distinct, charming ${language}-native accent and provide a very brief hint or translation (e.g., "Ah, yes, that means 'I am hungry'. You can say 'Tengo hambre'.").
+        * Keep the English explanation under 10 words.
+        * Immediately pivot back to ${language} and let them try.
+    `;
+  }
+  if (diff === 'B1' || diff === 'INTERMEDIATE') {
+    return `
+      - TARGET FLUENCY LEVEL: B1 (INTERMEDIATE).
+      - SPEAKING COMPLEXITY: Speak at a clear, comfortable, moderate pace. Use standard sentence structures (1-2 clear sentences).
+      - VOCABULARY: Use common everyday words. Avoid complex, archaic, or highly technical vocabulary. Use standard past, present, and future tenses.
+      - ACCENTED ENGLISH CLARIFICATION PROTOCOL: If the user gets stuck or asks for translation:
+        * First, try to explain it in very simple ${language} words.
+        * If they still ask for English help, provide a very short accented English translation of the key phrase, then return to ${language} immediately.
+    `;
+  }
+  if (diff === 'B2' || diff === 'UPPER INTERMEDIATE') {
+    return `
+      - TARGET FLUENCY LEVEL: B2 (UPPER INTERMEDIATE).
+      - SPEAKING COMPLEXITY: Speak at a standard, natural, fluid pace. Use compound sentences and standard connectors (1-2 sentences).
+      - VOCABULARY: Use standard everyday language, including common conversational idioms and natural casual phrasing.
+      - ACCENTED ENGLISH CLARIFICATION PROTOCOL: Only use accented English if they are completely stuck or explicitly ask "What does that mean in English?" or "Translate that please". Provide a very quick translated phrase with a natural native accent, then immediately resume the conversation in ${language} at natural speed.
+    `;
+  }
+  if (diff === 'C1' || diff === 'ADVANCED') {
+    return `
+      - TARGET FLUENCY LEVEL: C1 (ADVANCED).
+      - SPEAKING COMPLEXITY: Speak at a fully natural, native conversational pace. Use complex structures, subordinate clauses, and standard native pacing.
+      - VOCABULARY: Use rich, varied, and sophisticated vocabulary, native-level colloquialisms, and common local idioms.
+      - DIALECTAL FLAVOR: Infuse authentic local expressions and slang matching the dialect.
+      - INTERACTION: Challenge the user with open-ended, analytical questions. Do NOT use any English or translations. If they ask for translation, explain the concept or word using synonyms or descriptions in ${language} only, encouraging them to expand their vocabulary and stay immersed.
+    `;
+  }
+  if (diff === 'C2' || diff === 'PROFICIENT') {
+    return `
+      - TARGET FLUENCY LEVEL: C2 (PROFICIENT).
+      - SPEAKING COMPLEXITY: Speak like you are talking to another highly proficient or native peer. Use full-speed, natural native conversational flow, including rapid transitions, contractions, and subtle intonations.
+      - VOCABULARY: Use advanced cultural expressions, rare idioms, double-entendres, and highly descriptive vocabulary.
+      - INTERACTION: Engage in a rich, active, and fast-paced debate or high-level dialogue. Do NOT use any English under any circumstances. If they ask for help, respond as a native friend would, using creative phrasing, metaphors, or idioms in ${language} to clarify.
+    `;
+  }
+  // Fallback
+  return `
+    - TARGET FLUENCY LEVEL: INTERMEDIATE (B1 - B2).
+    - Speak at a moderate, clear pace.
+    - Use standard everyday vocabulary and clear, standard sentence structures.
+    - Feel free to include common conversational idioms and expressions, but keep the overall content accessible, friendly, and structured.
+  `;
+};
+
 export const createTrainingSession = (scenario: TrainingScenario): any => {
+  const difficulty = scenario.difficulty || 'B1';
+  const language = scenario.language || 'English';
+  const difficultyInstruction = getLevelInstruction(difficulty, language);
+
   const strictProtocol = `
       IMPORTANT: YOU ARE A FRIENDLY NATIVE CONVERSATION PARTNER.
       YOU ARE HAVING A CASUAL, REAL-LIFE CONVERSATION TO HELP THE USER PRACTICE THE TARGET LANGUAGE (${scenario.language || 'English'}).
@@ -165,15 +237,17 @@ export const createTrainingSession = (scenario: TrainingScenario): any => {
       YOUR ROLE:
       1. Speak naturally, warmly, and helpfully. Be a supportive conversation partner.
       2. Keep the conversation focused on the scenario topic/situation: "${scenario.title}" (${scenario.description}).
-      3. Encourage the user by keeping your turns concise (1-3 sentences), asking friendly follow-up questions, and responding to their input with interest.
+      3. CRITICAL SPEAKING RATIO: The user MUST speak 65% to 80% of the conversation. Therefore, you must keep your turns extremely concise (1-2 sentences max). Do NOT write long paragraphs. Always end your turns with a supportive, open-ended question or prompt that passes the floor back to the user, encouraging them to speak the vast majority of the time.
       4. Never act as a dry AI assistant, and never mention "As an AI". Act as a real friend or local in this situation.
       
       LANGUAGE: ${scenario.language || 'English'}
       DIALECT: ${scenario.dialect || 'N/A'}
       
+      ${difficultyInstruction}
+
       CRITICAL LANGUAGE INSTRUCTION:
       You MUST speak exclusively in the specified LANGUAGE and DIALECT. 
-      ${scenario.language === 'Arabic' ? 'If the language is Arabic, you MUST use the specified dialect (e.g., Egyptian, Gulf, Levantine, Maghrebi, or Modern Standard Arabic) in your vocabulary and grammar.' : ''}
+      ${scenario.language === 'Arabic' ? 'If the language is Arabic, you MUST use the specified dialect (e.g., Egyptian, Gulf, Levantine, Maghrebi, or Standard) in your vocabulary and grammar.' : ''}
       Do NOT break character or switch to English unless the user explicitly asks for translation or help.
       
       HUMAN CONVERSATION RULES:
@@ -318,10 +392,24 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
   onError: (e: any) => void,
   onClose: () => void
 }): Promise<any> => {
+  const difficulty = scenario.difficulty || 'B1';
+  const language = scenario.language || 'English';
+  const difficultyInstruction = getLevelInstruction(difficulty, language);
+
   const strictVoiceProtocol = `
-      You are a friendly, realistic, native conversation partner.
+      You are Lucas/Elena, a realistic, friendly native conversation partner.
       You are having a casual, real-life conversation with a Learner practicing the target language (${scenario.language || 'English'}).
       NEVER break character. NEVER act as an AI or reference assistant boundaries.
+      
+      CONVERSATION PRACTICE LANGUAGE: ${scenario.language || 'English'}
+      EXPECTED AUDIO INPUT LANGUAGE: ${scenario.language || 'English'}
+      
+      CRITICAL AUDIO TRANSCRIPTION DIRECTIVE (VERY IMPORTANT FOR THE SPEECH RECOGNIZER):
+      - The user's audio input is spoken in ${scenario.language || 'English'} ${scenario.dialect ? `(${scenario.dialect} dialect)` : ''} with a non-native developing accent.
+      - You must decode and transcribe all incoming user audio frames directly into correct, grammatically corresponding ${scenario.language || 'English'} characters and words.
+      - DO NOT attempt to transcribe target language speech phonetically into English spelling.
+      - If the user stutters, stumbles, hesitates, repeats syllables (e.g., "b-buenos d-días"), decode it cleanly and accurately (e.g., "buenos días") to make the transcription smart and reliable.
+      - If the user mixes in English words (e.g., "how do you say", "please", "help"), transcribe those words in standard English text to reflect a true and highly accurate transcription of the conversation.
       
       SCENARIO: ${scenario.title}
       CONTEXT: ${scenario.description}
@@ -329,15 +417,17 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
       LANGUAGE: ${scenario.language || 'English'}
       DIALECT: ${scenario.dialect || 'N/A'}
       
+      ${difficultyInstruction}
+
       CRITICAL LANGUAGE INSTRUCTION:
       You MUST speak exclusively in the specified LANGUAGE and DIALECT. 
-      ${scenario.language === 'Arabic' ? 'If the language is Arabic, you MUST use the specified dialect (e.g., Egyptian, Gulf, Levantine, Maghrebi, or Modern Standard Arabic) in your pronunciation, vocabulary, and grammar.' : ''}
-      Do NOT switch to English or use another language unless explicitly asked for translation help.
+      ${scenario.language === 'Arabic' ? 'If the language is Arabic, you MUST use the specified dialect (e.g., Egyptian, Gulf, Levantine, Maghrebi, or Standard) in your pronunciation, vocabulary, and grammar.' : ''}
+      Do NOT switch to English or use another language unless explicitly asked for translation help as defined in the Accented English Clarification Protocol.
       
       INSTRUCTIONS FOR NATURAL REAL-LIFE SPEAKING:
       1. Speak naturally and warmly. Use realistic conversational fillers like "um", "uh", "you know", "like" occasionally to sound like a human.
-      2. Keep your answers brief (1-3 sentences) so the Learner gets plenty of opportunities to speak.
-      3. Ask open-ended questions related to the scenario to keep the conversation flowing smoothly.
+      2. CRITICAL SPEAKING RATIO: The user MUST speak 65% to 80% of the conversation. Therefore, you must keep your answers extremely brief (1-2 sentences max) so the Learner gets plenty of opportunities to speak and is forced to formulate the bulk of the speech. Never dominate or speak in paragraphs.
+      3. Ask open-ended questions related to the scenario to keep the conversation flowing smoothly, prompting the Learner for detailed, longer spoken answers.
       4. Be extremely patient and encouraging. If they stumble, encourage them and help them carry on with the casual conversation.
   `;
 

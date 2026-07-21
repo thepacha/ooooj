@@ -15,11 +15,11 @@ const DIALECTS = [
 ];
 
 const VOICES = [
-  { id: 'Kore', name: 'Kore', gender: 'Female', description: 'Professional and clear' },
-  { id: 'Puck', name: 'Puck', gender: 'Male', description: 'Friendly and youthful' },
-  { id: 'Charon', name: 'Charon', gender: 'Male', description: 'Deep and authoritative' },
-  { id: 'Fenrir', name: 'Fenrir', gender: 'Male', description: 'Strong and resonant' },
-  { id: 'Aoede', name: 'Aoede', gender: 'Female', description: 'Soft and expressive' },
+  { id: 'Kore', name: 'كريمة', gender: 'Female', description: 'Professional and clear' },
+  { id: 'Puck', name: 'بشير', gender: 'Male', description: 'Friendly and youthful' },
+  { id: 'Charon', name: 'كمال', gender: 'Male', description: 'Deep and authoritative' },
+  { id: 'Fenrir', name: 'فارس', gender: 'Male', description: 'Strong and resonant' },
+  { id: 'Aoede', name: 'أمل', gender: 'Female', description: 'Soft and expressive' },
 ];
 
 export function GeminiArabicTTS() {

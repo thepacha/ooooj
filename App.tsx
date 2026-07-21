@@ -61,6 +61,7 @@ const APP_ROUTES: Record<string, ViewState> = {
   '/admin': 'admin',
   '/assembly-test': 'assembly-test',
   '/deepgram-tts': 'deepgram-tts',
+  '/pronunciation-checker': 'deepgram-tts',
   '/gemini-arabic-tts': 'gemini-arabic-tts',
   '/notifications': 'notifications',
   '/contact': 'contact'
@@ -74,7 +75,7 @@ const VIEW_TO_PATH: Record<string, string> = {
   'training': '/ai-training',
   'ai-conversation': '/ai-conversation',
   'assembly-test': '/assembly-test',
-  'deepgram-tts': '/deepgram-tts',
+  'deepgram-tts': '/pronunciation-checker',
   'gemini-arabic-tts': '/gemini-arabic-tts',
   'usage': '/usageandlimits',
   'history': '/history',
@@ -733,7 +734,7 @@ function AppContent() {
 
   const renderAppView = () => {
     // Role protection for Admin-only views
-    const isAdminView = ['analyze', 'training', 'assembly-test', 'deepgram-tts', 'roster', 'settings', 'admin'].includes(currentView);
+    const isAdminView = ['analyze', 'training', 'assembly-test', 'roster', 'settings', 'admin'].includes(currentView);
     if (isAdminView && user?.role !== 'admin') {
       return (
         <AiConversationDashboard 

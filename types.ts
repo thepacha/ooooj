@@ -30,9 +30,9 @@ export interface TrainingScenario {
   id: string;
   title: string;
   description: string;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-  category: 'Sales' | 'Support' | 'Technical';
-  icon: 'Shield' | 'TrendingUp' | 'Wrench';
+  difficulty: string;
+  category: 'Sales' | 'Support' | 'Technical' | string;
+  icon: 'Shield' | 'TrendingUp' | 'Wrench' | string;
   initialMessage: string;
   systemInstruction: string;
   voice?: string; // Voice selection (Gemini or Cartesia UUID)
@@ -41,6 +41,9 @@ export interface TrainingScenario {
   objectives?: string[]; // Specific goals for the scenario
   talkTracks?: string[]; // Suggested phrases
   openers?: string[]; // Smart opening lines tailored to the scenario
+  expectedVocabulary?: string[]; // Expected vocabulary list
+  estimatedDuration?: string; // e.g., "15 Minutes Max"
+  objectiveText?: string; // High-level objective statement
 }
 
 export interface NativeAlternative {
