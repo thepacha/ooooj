@@ -386,6 +386,52 @@ export const generateArabicTTS = async (text: string, dialect: string, voice: st
   return data.base64Audio;
 };
 
+export const GEMINI_MALE_VOICES = ["Puck", "Charon", "Fenrir"];
+export const GEMINI_FEMALE_VOICES = ["Zephyr", "Aoede", "Kore"];
+export const GEMINI_VOICES = [...GEMINI_MALE_VOICES, ...GEMINI_FEMALE_VOICES];
+
+const KNOWN_MALE_VOICE_IDS = new Set([
+  '56c7989e-7a5f-4d12-838f-e0f910e7356e', '3d83e30f-c31b-4f26-b442-7075feafa53a', 'eda5bbff-1ff1-4886-8ef1-4e69a77640a0',
+  '7e2a44d1-76b8-42b8-9507-fedfe3a803c8', '4b250449-c635-4b63-bd1d-b654b12ffcd4', 'af482421-80f4-4379-b00c-a118def29cde',
+  '0418348a-0ca2-4e90-9986-800fb8b3bbc0', '93c98a2b-7d15-4f7b-8236-294b1e02b1c0', '42f14755-88c3-4124-aae3-5cc3a9618e8f',
+  '2be00b67-d53f-4eb5-89e7-96c224d56fbc', 'e019ed7e-6079-4467-bc7f-b599a5dccf6f', '88b329db-85d7-47cc-a5c5-98225a756721',
+  '6b92f628-be90-497c-8f4c-3b035002df71', '9436e723-612d-4114-aeb0-fa00d4d639bf', 'f7755efb-1848-4321-aa22-5e5be5d32486',
+  '537a82ae-4926-4bfb-9aec-aff0b80a12a5', 'b603811e-54c2-4a0a-8854-09eab9ffa63f', '07b6f895-78b9-4921-8e10-8a21c99c2e8a',
+  '1e4176b1-3db9-44d6-a601-4fe68b041942', '888b7df4-e165-4852-bfec-0ab2b96aaa46', '3efb11f3-4c0e-43c2-bad5-85ab99e993e2',
+  '4853bafa-52cc-48c8-86a1-1edf8c76e429', '91e91d74-8eb4-43cd-97d3-7466c21db00d', '5a31e4fb-f823-4359-aa91-82c0ae9a991c',
+  '926e0766-f380-4d77-aeb0-9aa4ebb16b38', 'a466f9e2-28eb-4bb7-925c-8e8984950700'
+]);
+
+export function resolveVoiceForScenario(scenario: any): { voiceName: string; isMale: boolean } {
+  const voiceRaw = scenario?.voice || '';
+
+  if (GEMINI_VOICES.includes(voiceRaw)) {
+    const isM = GEMINI_MALE_VOICES.includes(voiceRaw);
+    return { voiceName: voiceRaw, isMale: isM };
+  }
+
+  if (KNOWN_MALE_VOICE_IDS.has(voiceRaw)) {
+    return { voiceName: 'Fenrir', isMale: true };
+  }
+
+  const text = `${scenario?.title || ''} ${scenario?.description || ''} ${scenario?.systemInstruction || ''} ${voiceRaw}`.toLowerCase();
+  
+  const maleKeywords = [
+    'lucas', 'tristan', 'wade', 'kai', 'jian', 'jeroen', 'antoine', 'mathieu', 'jan', 'dieter', 
+    'luca', 'giuseppe', 'kenji', 'katsuya', 'ryeowook', 'minho', 'bruno', 'rafael', 'sergei', 
+    'dmitri', 'eduardo', 'alonso', 'aykut', 'murat', 'soren', 'søren', 'baritone', 'doctor', 
+    'male', 'he', 'him', 'his', 'guy', 'mülakat', 'mülakatı yapan', 'bay'
+  ];
+
+  const isMale = maleKeywords.some(kw => text.includes(kw));
+
+  if (isMale) {
+    return { voiceName: 'Fenrir', isMale: true };
+  }
+
+  return { voiceName: 'Aoede', isMale: false };
+}
+
 export const connectLiveTraining = async (scenario: TrainingScenario, callbacks: {
   onOpen: () => void,
   onMessage: (msg: any) => void,
@@ -396,20 +442,28 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
   const language = scenario.language || 'English';
   const difficultyInstruction = getLevelInstruction(difficulty, language);
 
+  const { voiceName: resolvedVoiceName, isMale } = resolveVoiceForScenario(scenario);
+
+  const partnerPersona = scenario.systemInstruction || `You are ${scenario.title || 'a friendly conversation partner'}.`;
+
   const strictVoiceProtocol = `
-      You are Lucas/Elena, a realistic, friendly native conversation partner.
-      You are having a casual, real-life conversation with a Learner practicing the target language (${scenario.language || 'English'}).
-      NEVER break character. NEVER act as an AI or reference assistant boundaries.
+      ROLE & PERSONA:
+      ${partnerPersona}
+      
+      CRITICAL ROLEPLAY DIRECTIVES:
+      - You MUST strictly embody the role and persona defined above.
+      - NEVER break character. NEVER claim your name is "Lucas" or "Elena" unless your specific scenario persona explicitly specifies that name.
+      - GENDER IDENTITY: You are a ${isMale ? 'MALE' : 'FEMALE'} speaker with a natural ${isMale ? 'male' : 'female'} voice (${resolvedVoiceName}).
       
       CONVERSATION PRACTICE LANGUAGE: ${scenario.language || 'English'}
       EXPECTED AUDIO INPUT LANGUAGE: ${scenario.language || 'English'}
       
-      CRITICAL AUDIO TRANSCRIPTION DIRECTIVE (VERY IMPORTANT FOR THE SPEECH RECOGNIZER):
-      - The user's audio input is spoken in ${scenario.language || 'English'} ${scenario.dialect ? `(${scenario.dialect} dialect)` : ''} with a non-native developing accent.
-      - You must decode and transcribe all incoming user audio frames directly into correct, grammatically corresponding ${scenario.language || 'English'} characters and words.
-      - DO NOT attempt to transcribe target language speech phonetically into English spelling.
-      - If the user stutters, stumbles, hesitates, repeats syllables (e.g., "b-buenos d-días"), decode it cleanly and accurately (e.g., "buenos días") to make the transcription smart and reliable.
-      - If the user mixes in English words (e.g., "how do you say", "please", "help"), transcribe those words in standard English text to reflect a true and highly accurate transcription of the conversation.
+      CRITICAL AUDIO TRANSCRIPTION DIRECTIVE:
+      - Transcribe all user spoken audio accurately into text as uttered.
+      - ALWAYS output the user's spoken audio transcription so the user can review what they said.
+      - The user is practicing ${scenario.language || 'English'} ${scenario.dialect ? `(${scenario.dialect} dialect)` : ''}.
+      - If the user speaks in ${scenario.language || 'English'}, continue the practice naturally in ${scenario.language || 'English'}.
+      - If the user speaks in another language (e.g. French, Spanish, Portuguese, Hindi), transcribe their spoken text accurately, and respond in ${scenario.language || 'English'} encouraging them to speak in ${scenario.language || 'English'}.
       
       SCENARIO: ${scenario.title}
       CONTEXT: ${scenario.description}
@@ -424,14 +478,16 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
       ${scenario.language === 'Arabic' ? 'If the language is Arabic, you MUST use the specified dialect (e.g., Egyptian, Gulf, Levantine, Maghrebi, or Standard) in your pronunciation, vocabulary, and grammar.' : ''}
       Do NOT switch to English or use another language unless explicitly asked for translation help as defined in the Accented English Clarification Protocol.
       
-      INSTRUCTIONS FOR NATURAL REAL-LIFE SPEAKING:
-      1. Speak naturally and warmly. Use realistic conversational fillers like "um", "uh", "you know", "like" occasionally to sound like a human.
-      2. CRITICAL SPEAKING RATIO: The user MUST speak 65% to 80% of the conversation. Therefore, you must keep your answers extremely brief (1-2 sentences max) so the Learner gets plenty of opportunities to speak and is forced to formulate the bulk of the speech. Never dominate or speak in paragraphs.
-      3. Ask open-ended questions related to the scenario to keep the conversation flowing smoothly, prompting the Learner for detailed, longer spoken answers.
-      4. Be extremely patient and encouraging. If they stumble, encourage them and help them carry on with the casual conversation.
+      INSTRUCTIONS FOR HUMAN, SPONTANEOUS REAL-LIFE SPEAKING:
+      1. Be smart, adaptive, highly human, and spontaneous. NEVER use repetitive, robotic, or canned openers or responses. Vary your sentence structure, vocabulary, and phrasing every single turn.
+      2. Speak naturally and warmly. Use realistic conversational fillers like "um", "uh", "you know", "like" occasionally to sound 100% human.
+      3. CRITICAL SPEAKING RATIO: The user MUST speak 65% to 80% of the conversation. Therefore, you must keep your answers extremely brief (1-2 sentences max) so the Learner gets plenty of opportunities to speak and is forced to formulate the bulk of the speech. Never dominate or speak in paragraphs.
+      4. Ask engaging open-ended questions related to the scenario to keep the conversation flowing smoothly, prompting the Learner for detailed spoken answers.
+      5. Be patient and encouraging.
+      6. HUMAN LAUGHTER & EMOTION: When responding to jokes, humor, or lighthearted moments, express natural warmth and laughter using emotion tags like [laughter] or [chuckle] (e.g. "Oh that's hilarious! [laughter]"). NEVER output plain text spellings like "haha", "hahaha", "ha-ha", or "LOL".
   `;
 
-  const selectedVoice = scenario.voice || 'Zephyr';
+  const selectedVoice = resolvedVoiceName;
 
   // Check if we are running in a serverless/Vercel environment or custom domain
   const isVercelOrCustom = window.location.hostname.includes("vercel") || 

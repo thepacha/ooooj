@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { preprocessCartesiaText } from '../../lib/utils';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -20,6 +21,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: "CARTESIA_API_KEY is not configured in environment variables." });
     }
 
+    const formattedTranscript = preprocessCartesiaText(text);
+
     let response = await fetch("https://api.cartesia.ai/tts/bytes", {
       method: "POST",
       headers: {
@@ -29,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       body: JSON.stringify({
         model_id: "sonic-3.5",
-        transcript: text,
+        transcript: formattedTranscript,
         voice: {
           mode: "id",
           id: voiceId
@@ -54,7 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         },
         body: JSON.stringify({
           model_id: "sonic-3.5",
-          transcript: text,
+          transcript: formattedTranscript,
           voice: {
             mode: "id",
             id: fallbackVoiceId

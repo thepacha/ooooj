@@ -4,7 +4,7 @@ import { TrainingScenario, TrainingResult, User, AnalysisResult, CriteriaResult 
 import { createTrainingSession, evaluateTrainingSession, connectLiveTraining, generateAIScenario, generateTrainingTopic, GenerateScenarioParams, getAI } from '../services/geminiService';
 import { Shield, TrendingUp, Wrench, ArrowRight, RefreshCw, CheckCircle, Loader2, Send, Phone, PhoneOff, MessageSquare, Copy, Check, Plus, Sparkles, X, Calendar, Trash2, AlertTriangle, HelpCircle, Heart, Zap, Trophy, Target, Frown, Meh, Smile, MinusCircle, Clock, FileText, BarChart3, Timer, Mic, MicOff, Building2, ChevronRight, Globe, Award, Languages, BookOpen, Compass, Briefcase, Volume2, Pause, Square } from 'lucide-react';
 import { incrementUsage, COSTS, checkLimit } from '../lib/usageService';
-import { generateId } from '../lib/utils';
+import { generateId, preprocessCartesiaText, stripAudioTags } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { PreSessionBriefing } from './PreSessionBriefing';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -229,7 +229,125 @@ const generateDefaultLanguageScenarios = (): TrainingScenario[] => {
     ];
 };
 
-// --- Audio Helpers ---
+// --- Audio & Language Helpers ---
+export interface LanguageCheckResult {
+    isOffTarget: boolean;
+    detectedLangName?: string;
+}
+
+export function detectLanguageAndCheckTarget(text: string, targetLanguage: string): LanguageCheckResult {
+    if (!text || !text.trim() || !targetLanguage) {
+        return { isOffTarget: false };
+    }
+
+    const cleanText = text.trim();
+    const lowerText = cleanText.toLowerCase();
+    const targetLower = targetLanguage.toLowerCase().trim();
+
+    // 1. Script checks
+    const isDevanagari = /[\u0900-\u097F]/.test(cleanText);
+    const isCyrillic = /[\u0400-\u04FF]/.test(cleanText);
+    const isArabicScript = /[\u0600-\u06FF]/.test(cleanText);
+    const isCJK = /[\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/.test(cleanText);
+
+    if (isDevanagari && !['hindi', 'nepali', 'marathi', 'sanskrit'].includes(targetLower)) {
+        return { isOffTarget: true, detectedLangName: 'Hindi / Devanagari' };
+    }
+    if (isCyrillic && !['russian', 'ukrainian', 'bulgarian', 'serbian', 'belarusian'].includes(targetLower)) {
+        return { isOffTarget: true, detectedLangName: 'Russian / Cyrillic' };
+    }
+    if (isArabicScript && !['arabic', 'persian', 'farsi', 'urdu'].includes(targetLower)) {
+        return { isOffTarget: true, detectedLangName: 'Arabic' };
+    }
+    if (isCJK && !['chinese', 'japanese', 'korean', 'mandarin', 'cantonese'].includes(targetLower)) {
+        return { isOffTarget: true, detectedLangName: 'Asian Script' };
+    }
+
+    // 2. Word tokenization & stop word dictionaries
+    const words = lowerText.replace(/[^\w\s\u00C0-\u024F\u0100-\u017F]/gi, ' ').split(/\s+/).filter(Boolean);
+    if (words.length === 0) return { isOffTarget: false };
+
+    const profiles: { [key: string]: { name: string; words: Set<string> } } = {
+        french: {
+            name: 'French',
+            words: new Set(['même', 'meme', 'nous', 'donne', 'avec', 'dans', 'pour', 'est', 'pas', 'cest', 'c\'est', 'bonjour', 'merci', 'votre', 'notre', 'mais', 'sur', 'elle', 'vous', 'tout', 'faire', 'bien'])
+        },
+        spanish: {
+            name: 'Spanish',
+            words: new Set(['hola', 'como', 'esta', 'gracias', 'por', 'favor', 'muy', 'bien', 'tambien', 'pero', 'donde', 'porque', 'buenos', 'dias', 'tardes', 'noches', 'mucho', 'gusto', 'tengo'])
+        },
+        portuguese: {
+            name: 'Portuguese',
+            words: new Set(['acho', 'era', 'voce', 'você', 'obrigado', 'obrigada', 'muito', 'bem', 'tambem', 'também', 'para', 'com', 'nao', 'não', 'esta', 'está', 'falar', 'tudo'])
+        },
+        english: {
+            name: 'English',
+            words: new Set(['the', 'and', 'that', 'have', 'for', 'not', 'with', 'you', 'this', 'but', 'from', 'they', 'what', 'their', 'there', 'would', 'hello', 'doing', 'where', 'which', 'about'])
+        },
+        turkish: {
+            name: 'Turkish',
+            words: new Set(['bir', 've', 'bu', 'da', 'de', 'için', 'icin', 'çok', 'cok', 'daha', 'var', 'yok', 'ama', 'gibi', 'kadar', 'sonra', 'evet', 'hayır', 'hayir', 'ben', 'sen', 'biz', 'siz', 'ne', 'nasıl', 'nasil', 'merhaba', 'teşekkürler', 'tesekkurler', 'güzel', 'guzel', 'oldu', 'ederim', 'sayın', 'sayin', 'günaydın', 'gunaydin', 'hoş', 'hos', 'geldiniz'])
+        },
+        german: {
+            name: 'German',
+            words: new Set(['und', 'die', 'der', 'das', 'ist', 'nicht', 'mit', 'fuer', 'für', 'sind', 'dass', 'wir', 'aber', 'guten', 'morgen', 'tag', 'danke', 'bitte'])
+        },
+        italian: {
+            name: 'Italian',
+            words: new Set(['che', 'per', 'non', 'sono', 'questo', 'questa', 'grazie', 'ciao', 'molto', 'anche', 'buongiorno', 'bene', 'come', 'stai'])
+        }
+    };
+
+    let targetKey = targetLower;
+    if (targetKey.includes('turk')) targetKey = 'turkish';
+    else if (targetKey.includes('fren')) targetKey = 'french';
+    else if (targetKey.includes('span')) targetKey = 'spanish';
+    else if (targetKey.includes('port')) targetKey = 'portuguese';
+    else if (targetKey.includes('engl')) targetKey = 'english';
+    else if (targetKey.includes('germ')) targetKey = 'german';
+    else if (targetKey.includes('ital')) targetKey = 'italian';
+
+    const scores: { [key: string]: number } = {};
+    for (const [langKey, profile] of Object.entries(profiles)) {
+        let matches = 0;
+        for (const word of words) {
+            if (profile.words.has(word)) matches++;
+        }
+        scores[langKey] = matches;
+    }
+
+    const targetScore = scores[targetKey] || 0;
+
+    let maxForeignScore = 0;
+    let bestForeignLang = '';
+    for (const [langKey, score] of Object.entries(scores)) {
+        if (langKey !== targetKey && score > maxForeignScore) {
+            maxForeignScore = score;
+            bestForeignLang = profiles[langKey].name;
+        }
+    }
+
+    if (maxForeignScore >= 1 && maxForeignScore > targetScore) {
+        return { isOffTarget: true, detectedLangName: bestForeignLang };
+    }
+
+    // Specific French character sequence check when target is not French
+    if (targetKey !== 'french' && (lowerText.includes('même') || lowerText.includes('nous') || lowerText.includes('donne') || lowerText.includes('est-ce'))) {
+        return { isOffTarget: true, detectedLangName: 'French' };
+    }
+
+    // Specific Portuguese check when target is not Portuguese
+    if (targetKey !== 'portuguese' && (lowerText.includes('acho') || lowerText.includes('voce') || lowerText.includes('obrigado'))) {
+        return { isOffTarget: true, detectedLangName: 'Portuguese' };
+    }
+
+    return { isOffTarget: false };
+}
+
+function sanitizeTranscription(text: string, language: string): string {
+    return text || '';
+}
+
 function encode(bytes: Uint8Array) {
   let binary = '';
   const len = bytes.byteLength;
@@ -308,6 +426,8 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
     const [translations, setTranslations] = useState<Record<number, string>>({});
     const [translatingIdx, setTranslatingIdx] = useState<Record<number, boolean>>({});
     const [hint, setHint] = useState<string | null>(null);
+    const [isHintVisible, setIsHintVisible] = useState<boolean>(false);
+    const [hintMsgCount, setHintMsgCount] = useState<number>(-1);
     const [isGettingHint, setIsGettingHint] = useState(false);
 
     const [playingMsgIdx, setPlayingMsgIdx] = useState<number | null>(null);
@@ -353,7 +473,7 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    text: text,
+                    text: preprocessCartesiaText(text),
                     voiceId: getCartesiaVoiceId(activeScenario?.voice || 'c2ad7092-0447-47ea-948b-61fbb6faf153', activeScenario?.language || 'English')
                 })
             });
@@ -423,28 +543,50 @@ Text: "${text}"`;
         }
     };
 
-    const handleGetHint = async () => {
+    const handleGetHint = async (forceRegenerate: boolean = false) => {
         if (!activeScenario) return;
+
+        // Toggle visibility if already visible and not forcing a regenerate
+        if (isHintVisible && !forceRegenerate) {
+            setIsHintVisible(false);
+            return;
+        }
+
+        // Reuse cached hint if no new messages have been added since generation
+        if (!forceRegenerate && hint && hintMsgCount === messages.length) {
+            setIsHintVisible(true);
+            return;
+        }
+
         setIsGettingHint(true);
+        setIsHintVisible(true);
         try {
             const ai = getAI();
             const lastPartnerMsg = [...messages].reverse().find(m => m.role === 'model')?.text || activeScenario.initialMessage;
-            const prompt = `You are a helpful language assistant. The user is practicing ${activeScenario.language} in this scenario: "${activeScenario.title}: ${activeScenario.description}".
-The AI partner just said: "${lastPartnerMsg}".
-Suggest a natural, short, helpful reply (1-2 sentences max) in ${activeScenario.language} that the user could say to continue the conversation.
-Also provide its English translation in parentheses.
-Format the output exactly like this:
-"[Suggested Reply in ${activeScenario.language}] (English translation)"
-Provide ONLY this response, no other explanation or wrapper.`;
+            const prompt = `You are an expert ${activeScenario.language} native conversation coach.
+The user is practicing ${activeScenario.language} in this scenario: "${activeScenario.title}: ${activeScenario.description}".
+The conversation partner just said: "${lastPartnerMsg}".
+
+Provide a substantial, lengthy, well-crafted conversational response (3 to 5 full, natural sentences) in ${activeScenario.language} that the user could speak or send to keep the discussion engaging and detailed.
+
+CRITICAL MANDATES:
+1. Write ENTIRELY in ${activeScenario.language}.
+2. DO NOT include any English translation, parentheses, or phonetic guides.
+3. DO NOT include intros or quotation marks.
+4. Output ONLY the response text in ${activeScenario.language}.`;
+
             const response = await ai.models.generateContent({
                 model: 'gemini-3.5-flash',
                 contents: [{ role: 'user', parts: [{ text: prompt }] }]
             });
-            const suggestion = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text || "No suggestion available.";
-            setHint(suggestion.trim());
+            const suggestion = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            const cleanedHint = suggestion.trim().replace(/^"/, '').replace(/"$/, '').trim();
+            setHint(cleanedHint);
+            setHintMsgCount(messages.length);
         } catch (e) {
             console.error("Hint generation failed:", e);
-            setHint("Could not get a hint. Try again!");
+            setHint("Could not generate a hint. Please try again!");
+            setHintMsgCount(messages.length);
         } finally {
             setIsGettingHint(false);
         }
@@ -631,22 +773,25 @@ Provide ONLY this response, no other explanation or wrapper.`;
         if (error) console.error("Failed to save scenarios to DB:", error);
     };
 
-    // Auto-scroll natively using ResizeObserver to eliminate any scroll lag and layout jumps
+    // Gently scroll down to the latest message whenever user or AI speaks or finishes speaking
+    const scrollToBottomSmooth = (behavior: ScrollBehavior = 'smooth') => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior, block: 'end' });
+        } else if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTo({
+                top: chatContainerRef.current.scrollHeight,
+                behavior
+            });
+        }
+    };
+
     useEffect(() => {
-        const container = chatContainerRef.current;
-        const content = chatContentRef.current;
-        if (!container || !content) return;
-
-        const observer = new ResizeObserver(() => {
-            container.scrollTop = container.scrollHeight;
-        });
-
-        observer.observe(content);
-
-        return () => {
-            observer.disconnect();
-        };
-    }, []);
+        if (view !== 'active') return;
+        const timer = setTimeout(() => {
+            scrollToBottomSmooth('smooth');
+        }, 60);
+        return () => clearTimeout(timer);
+    }, [messages, liveInputTranscription, liveOutputTranscription, view]);
 
     // Scroll to top of page/container when sub-view shifts within AiConversation
     useEffect(() => {
@@ -789,10 +934,12 @@ Provide ONLY this response, no other explanation or wrapper.`;
     };
 
     const queueAndFetchSentence = (text: string, voiceId: string) => {
+        const cleanedText = preprocessCartesiaText(text);
+        if (!cleanedText) return;
         const sentenceId = nextSentenceId.current++;
         const item = {
             id: sentenceId,
-            text,
+            text: cleanedText,
             audioBuffer: null,
             isFetching: true,
             error: false
@@ -1030,16 +1177,21 @@ Provide ONLY this response, no other explanation or wrapper.`;
                         // Commit whatever partial response the AI was saying before being interrupted
                         const modelText = currentOutputTranscription.current;
                         if (modelText.trim()) {
-                            setMessages(prev => {
-                                const lastModelMsg = [...prev].reverse().find(m => m.role === 'model');
-                                if (lastModelMsg && lastModelMsg.text.startsWith(modelText)) return prev;
-                                return [...prev, {role: 'model', text: modelText + '...'}];
-                            });
+                            const cleanText = stripAudioTags(modelText);
+                            if (cleanText) {
+                                setMessages(prev => {
+                                    const lastModelMsg = [...prev].reverse().find(m => m.role === 'model');
+                                    if (lastModelMsg && lastModelMsg.text.startsWith(cleanText)) return prev;
+                                    return [...prev, {role: 'model', text: cleanText + '...'}];
+                                });
+                            }
                         }
                         currentOutputTranscription.current = '';
                         setLiveOutputTranscription(''); // User cut-off the AI
                     } else if (message.serverContent?.inputTranscription) {
-                        currentInputTranscription.current += message.serverContent.inputTranscription.text;
+                        const rawText = message.serverContent.inputTranscription.text;
+                        const cleanChunk = sanitizeTranscription(rawText, scenario.language || 'English');
+                        currentInputTranscription.current += cleanChunk;
                         setLiveInputTranscription(currentInputTranscription.current);
                         setLiveOutputTranscription(''); // Clear output while user speaks
                         
@@ -1074,11 +1226,14 @@ Provide ONLY this response, no other explanation or wrapper.`;
                             });
                         }
                         if (modelText.trim()) {
-                            setMessages(prev => {
-                                const lastModelMsg = [...prev].reverse().find(m => m.role === 'model');
-                                if (lastModelMsg && lastModelMsg.text === modelText) return prev;
-                                return [...prev, {role: 'model', text: modelText}];
-                            });
+                            const cleanText = stripAudioTags(modelText);
+                            if (cleanText) {
+                                setMessages(prev => {
+                                    const lastModelMsg = [...prev].reverse().find(m => m.role === 'model');
+                                    if (lastModelMsg && lastModelMsg.text === cleanText) return prev;
+                                    return [...prev, {role: 'model', text: cleanText}];
+                                });
+                            }
 
                             if (isCartesiaVoice) {
                                 // Flush any remaining text in the sentence buffer
@@ -1251,7 +1406,7 @@ Provide ONLY this response, no other explanation or wrapper.`;
         }
         
         setIsAnalyzing(true);
-        const transcript = messages.map(m => `${m.role === 'user' ? 'Learner' : 'AI Partner'}: ${m.text}`).join('\n');
+        const transcript = messages.map(m => `${m.role === 'user' ? 'Learner' : 'AI Partner'}: ${stripAudioTags(m.text)}`).join('\n');
         
         try {
             const evalResult = await evaluateTrainingSession(transcript, activeScenario);
@@ -1430,7 +1585,7 @@ Provide ONLY this response, no other explanation or wrapper.`;
     };
 
     const handleCopyTranscript = async () => {
-        const transcript = messages.map(m => `${m.role === 'user' ? 'Learner' : 'AI Partner'}: ${m.text}`).join('\n');
+        const transcript = messages.map(m => `${m.role === 'user' ? 'Learner' : 'AI Partner'}: ${stripAudioTags(m.text)}`).join('\n');
         try {
             await navigator.clipboard.writeText(transcript);
             setIsCopied(true);
@@ -1974,15 +2129,40 @@ Provide ONLY this response, no other explanation or wrapper.`;
                                         ? 'bg-[#0500e2] text-white rounded-br-none' 
                                         : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-850 text-slate-800 dark:text-slate-100 rounded-bl-none'
                                     }`}>
-                                        <div className="text-[10px] uppercase tracking-wider opacity-75 mb-1.5 font-extrabold flex items-center gap-1.5">
+                                        <div className="text-[10px] uppercase tracking-wider mb-1.5 font-extrabold flex items-center justify-between gap-1.5 w-full">
                                             {msg.role === 'user' ? (
-                                                <>You</>
+                                                <>
+                                                    <span className="opacity-75">You</span>
+                                                    {(() => {
+                                                        const langCheck = detectLanguageAndCheckTarget(msg.text, activeScenario?.language || 'English');
+                                                        if (langCheck.isOffTarget) {
+                                                            return (
+                                                                <div className="relative group/warn inline-flex items-center">
+                                                                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-400 text-amber-950 shadow-xs cursor-help border border-amber-300">
+                                                                        <AlertTriangle size={11} className="text-amber-900 shrink-0" />
+                                                                        <span>Non-{activeScenario?.language} Speech</span>
+                                                                    </span>
+                                                                    <div className="absolute right-0 bottom-full mb-1.5 hidden group-hover/warn:flex group-focus/warn:flex flex-col w-60 sm:w-64 p-3 bg-slate-900 text-slate-100 text-xs rounded-xl shadow-2xl z-50 pointer-events-none border border-amber-500/40 normal-case tracking-normal">
+                                                                        <div className="font-extrabold text-amber-300 flex items-center gap-1.5 mb-1 text-[11px] uppercase tracking-wider">
+                                                                            <AlertTriangle size={12} className="text-amber-400 shrink-0" />
+                                                                            Language Warning
+                                                                        </div>
+                                                                        <p className="text-[11px] leading-relaxed text-slate-200 font-normal">
+                                                                            You spoke in <strong className="text-amber-300">{langCheck.detectedLangName || 'a non-target language'}</strong> instead of <strong className="text-white">{activeScenario?.language}</strong>. Speak in <strong>{activeScenario?.language}</strong> for best results!
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        return null;
+                                                    })()}
+                                                </>
                                             ) : (
-                                                <>{activeScenario.title.split(':')[1]?.trim() || 'Partner'}</>
+                                                <span className="opacity-75">{activeScenario?.title?.split(':')[1]?.trim() || 'Partner'}</span>
                                             )}
                                         </div>
                                         <div className="font-normal text-sm md:text-base leading-relaxed break-words">
-                                            {msg.text ? msg.text : (
+                                            {msg.text ? stripAudioTags(msg.text) : (
                                                 <span className="flex gap-1 items-center py-1.5">
                                                     <span className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
                                                     <span className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
@@ -2054,13 +2234,38 @@ Provide ONLY this response, no other explanation or wrapper.`;
                                 className="flex justify-end"
                             >
                                 <div className="max-w-[85%] md:max-w-[70%] rounded-2xl px-5 py-3.5 text-sm md:text-base leading-relaxed shadow-sm bg-[#0500e2]/90 dark:bg-[#4b53fa]/95 text-white rounded-br-none border border-[#0500e2]/20 dark:border-[#4b53fa]/20 animate-pulse">
-                                    <div className="text-[10px] uppercase tracking-wider opacity-75 mb-1.5 font-extrabold flex items-center gap-1.5">
-                                        <span>You (Speaking...)</span>
-                                        <span className="flex gap-0.5 items-center">
-                                            <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                                            <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                                            <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                                        </span>
+                                    <div className="text-[10px] uppercase tracking-wider mb-1.5 font-extrabold flex items-center justify-between gap-1.5 w-full">
+                                        <div className="flex items-center gap-1.5 opacity-75">
+                                            <span>You (Speaking...)</span>
+                                            <span className="flex gap-0.5 items-center">
+                                                <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                                                <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                                                <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                                            </span>
+                                        </div>
+                                        {(() => {
+                                            const langCheck = detectLanguageAndCheckTarget(liveInputTranscription, activeScenario?.language || 'English');
+                                            if (langCheck.isOffTarget) {
+                                                return (
+                                                    <div className="relative group/warn inline-flex items-center">
+                                                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-400 text-amber-950 shadow-xs cursor-help border border-amber-300">
+                                                            <AlertTriangle size={11} className="text-amber-900 shrink-0" />
+                                                            <span>Non-{activeScenario?.language}</span>
+                                                        </span>
+                                                        <div className="absolute right-0 bottom-full mb-1.5 hidden group-hover/warn:flex group-focus/warn:flex flex-col w-60 sm:w-64 p-3 bg-slate-900 text-slate-100 text-xs rounded-xl shadow-2xl z-50 pointer-events-none border border-amber-500/40 normal-case tracking-normal">
+                                                            <div className="font-extrabold text-amber-300 flex items-center gap-1.5 mb-1 text-[11px] uppercase tracking-wider">
+                                                                <AlertTriangle size={12} className="text-amber-400 shrink-0" />
+                                                                Language Warning
+                                                            </div>
+                                                            <p className="text-[11px] leading-relaxed text-slate-200 font-normal">
+                                                                You are speaking in <strong className="text-amber-300">{langCheck.detectedLangName || 'another language'}</strong> instead of <strong className="text-white">{activeScenario?.language}</strong>.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        })()}
                                     </div>
                                     <div className="font-normal italic">{liveInputTranscription}</div>
                                 </div>
@@ -2083,7 +2288,7 @@ Provide ONLY this response, no other explanation or wrapper.`;
                                             <span className="w-1.5 h-1.5 bg-indigo-600 dark:bg-[#4b53fa] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                                         </span>
                                     </div>
-                                    <div className="font-normal">{liveOutputTranscription}</div>
+                                    <div className="font-normal">{stripAudioTags(liveOutputTranscription)}</div>
                                 </div>
                             </motion.div>
                         )}
@@ -2093,55 +2298,71 @@ Provide ONLY this response, no other explanation or wrapper.`;
                 </div>
 
                 {/* Compact Live Assistance Widget */}
-                <div className="mx-auto max-w-4xl w-full px-5 py-3 bg-slate-50 dark:bg-slate-900 border-t border-b border-slate-200/65 dark:border-slate-800/80 flex flex-col gap-2 shrink-0">
+                <div className="mx-auto max-w-4xl w-full px-3 sm:px-5 py-2.5 sm:py-3 bg-slate-50 dark:bg-slate-900 border-t border-b border-slate-200/65 dark:border-slate-800/80 flex flex-col shrink-0">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                            <Sparkles size={11} className="text-amber-500 animate-pulse" />
+                        <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            <Sparkles size={12} className="text-amber-500 animate-pulse" />
                             <span>Live Assistance</span>
                         </div>
                         <button 
-                            onClick={handleGetHint}
+                            onClick={() => handleGetHint(false)}
                             disabled={isGettingHint}
-                            className="flex items-center gap-1 px-3 py-1 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 text-white rounded-full text-[10px] font-extrabold transition-all active:scale-95 cursor-pointer shadow-xs"
+                            className="flex items-center gap-1 px-3 py-1.5 sm:py-1 bg-amber-500 hover:bg-amber-600 active:scale-95 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 text-white rounded-full text-[10px] sm:text-xs font-extrabold transition-all cursor-pointer shadow-xs min-h-[30px]"
                         >
                             {isGettingHint ? (
                                 <>
-                                    <Loader2 size={10} className="animate-spin" />
+                                    <Loader2 size={11} className="animate-spin" />
                                     <span>Getting Hint...</span>
                                 </>
                             ) : (
                                 <>
-                                    <HelpCircle size={10} />
-                                    <span>Hint Reply</span>
+                                    <HelpCircle size={11} />
+                                    <span>{isHintVisible ? "Hide Hint" : "Hint Reply"}</span>
                                 </>
                             )}
                         </button>
                     </div>
-                    {hint && (
-                        <div className="p-3 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 rounded-xl flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200 animate-fade-in">
-                            <div className="flex-1 font-medium leading-relaxed">
-                                {hint}
-                            </div>
-                            <div className="flex gap-1.5 shrink-0">
-                                <button 
-                                    onClick={() => {
-                                        const cleanReply = hint.split('(')[0].trim().replace(/^"/, '').replace(/"$/, '').trim();
-                                        setInput(cleanReply);
-                                        setHint(null);
-                                    }}
-                                    className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/40 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 rounded-lg font-bold text-[9px] transition-colors cursor-pointer border border-amber-200/20"
-                                >
-                                    Use Hint
-                                </button>
-                                <button 
-                                    onClick={() => setHint(null)}
-                                    className="text-amber-500 hover:text-amber-700 dark:hover:text-amber-350 p-1 cursor-pointer transition-colors"
-                                >
-                                    <X size={10} />
-                                </button>
-                            </div>
-                        </div>
-                    )}
+                    <AnimatePresence>
+                        {isHintVisible && hint && (
+                            <motion.div 
+                                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                                animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
+                                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                                className="overflow-hidden"
+                            >
+                                <div className="p-3 sm:p-4 bg-amber-50/95 dark:bg-amber-950/40 border border-amber-200/70 dark:border-amber-900/60 rounded-xl sm:rounded-2xl flex flex-col gap-2.5 text-xs sm:text-sm text-amber-950 dark:text-amber-100 shadow-sm">
+                                    <div className="flex items-center justify-between border-b border-amber-200/60 dark:border-amber-900/50 pb-2">
+                                        <span className="font-extrabold text-[10px] sm:text-[11px] uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                                            <Sparkles size={12} className="text-amber-500 shrink-0" />
+                                            Suggested {activeScenario.language} Response
+                                        </span>
+                                        <button 
+                                            onClick={() => setIsHintVisible(false)}
+                                            className="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 p-1.5 cursor-pointer transition-colors rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50 min-h-[32px] min-w-[32px] flex items-center justify-center"
+                                            title="Close hint"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                    <p className="font-normal leading-relaxed break-words text-xs sm:text-sm md:text-base text-slate-800 dark:text-slate-100 max-h-36 sm:max-h-52 overflow-y-auto pr-1">
+                                        {hint}
+                                    </p>
+                                    <div className="flex items-center justify-end gap-2 pt-1">
+                                        <button 
+                                            onClick={() => {
+                                                setInput(hint.trim());
+                                                setIsHintVisible(false);
+                                            }}
+                                            className="w-full sm:w-auto min-h-[38px] px-4 py-2 bg-[#0500e2] hover:bg-[#0400b8] active:scale-95 text-white rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
+                                        >
+                                            Use Response
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 {/* Chat Input */}

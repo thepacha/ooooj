@@ -5,6 +5,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import http from "http";
 import dotenv from "dotenv";
 import { supabase } from "./lib/supabase";
+import { preprocessCartesiaText } from "./lib/utils";
 import { GoogleGenAI, Modality, LiveServerMessage, Type } from "@google/genai";
 import geminiHandler from "./api/gemini";
 import fs from "fs";
@@ -314,6 +315,8 @@ async function startServer() {
         return res.status(500).json({ error: "CARTESIA_API_KEY is not configured in environment variables." });
       }
 
+      const formattedTranscript = preprocessCartesiaText(text);
+
       let response = await fetch("https://api.cartesia.ai/tts/bytes", {
         method: "POST",
         headers: {
@@ -323,7 +326,7 @@ async function startServer() {
         },
         body: JSON.stringify({
           model_id: "sonic-3.5",
-          transcript: text,
+          transcript: formattedTranscript,
           voice: {
             mode: "id",
             id: voiceId
@@ -349,7 +352,7 @@ async function startServer() {
           },
           body: JSON.stringify({
             model_id: "sonic-3.5",
-            transcript: text,
+            transcript: formattedTranscript,
             voice: {
               mode: "id",
               id: fallbackVoiceId
@@ -419,112 +422,6 @@ async function startServer() {
     } catch (error: any) {
       console.error("Error in Cartesia TTS route:", error);
       res.status(500).json({ error: error.message || "Internal server error" });
-    }
-  });
-
-  app.post("/api/google/tts", async (req, res) => {
-    try {
-      const { text, model } = req.body;
-      
-      if (!text) {
-        return res.status(400).json({ error: "Text is required" });
-      }
-
-      const apiKey = process.env.GOOGLE_TTS_API_KEY;
-      if (!apiKey) {
-        console.error("GOOGLE_TTS_API_KEY is missing");
-        return res.status(500).json({ error: "Google TTS API key is not configured in environment variables." });
-      }
-
-      // 1. Fetch available voices dynamically
-      const voicesUrl = `https://texttospeech.googleapis.com/v1/voices?key=${apiKey}`;
-      const voicesResponse = await fetch(voicesUrl);
-      if (!voicesResponse.ok) {
-        throw new Error("Failed to fetch available voices from Google TTS API");
-      }
-      const voicesData = await voicesResponse.json();
-      const availableVoices = voicesData.voices || [];
-
-      // 2. Filter voices for Arabic
-      const arabicVoices = availableVoices.filter((v: any) => 
-        v.languageCodes.some((lc: string) => lc.startsWith("ar"))
-      );
-
-      if (arabicVoices.length === 0) {
-        throw new Error("No Arabic voices found in Google TTS API");
-      }
-
-      // 3. Select a valid voice or fallback
-      let selectedVoice = arabicVoices.find((v: any) => v.name === model);
-      let finalVoiceName = model;
-      let finalLanguageCode = model.split('-').slice(0, 2).join('-');
-
-      if (!selectedVoice) {
-        // Fallback strategy: pick the first available Arabic voice
-        selectedVoice = arabicVoices[0];
-        finalVoiceName = selectedVoice.name;
-        finalLanguageCode = selectedVoice.languageCodes[0];
-        console.warn(`Requested voice '${model}' not found. Falling back to '${finalVoiceName}' (${finalLanguageCode}).`);
-      } else {
-        finalLanguageCode = selectedVoice.languageCodes[0];
-        console.log(`Selected voice: '${finalVoiceName}' (${finalLanguageCode})`);
-      }
-
-      // Google TTS has a limit of 5000 characters. We'll use a safer limit of 4000.
-      const chunks = splitText(text, 4000);
-      const audioBuffers: Buffer[] = [];
-
-      for (const chunk of chunks) {
-        const googleUrl = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
-        
-        const response = await fetch(googleUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            input: { text: chunk },
-            voice: {
-              languageCode: finalLanguageCode,
-              name: finalVoiceName
-            },
-            audioConfig: {
-              audioEncoding: "MP3"
-            }
-          })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.error("Google TTS API Error Response:", JSON.stringify(errorData, null, 2));
-          
-          const errorMessage = errorData.error?.message || "Google Cloud TTS API error";
-          const errorCode = errorData.error?.status || "UNKNOWN";
-          
-          throw new Error(`Google TTS API Error (${errorCode}): ${errorMessage}`);
-        }
-
-        const data = await response.json();
-        if (data.audioContent) {
-          audioBuffers.push(Buffer.from(data.audioContent, 'base64'));
-        }
-      }
-
-      if (audioBuffers.length === 0) {
-        throw new Error("No audio content generated");
-      }
-
-      const finalBuffer = Buffer.concat(audioBuffers);
-
-      res.setHeader("Content-Type", "audio/mpeg");
-      res.send(finalBuffer);
-
-    } catch (error: any) {
-      console.error("Error in Google TTS route:", error);
-      res.status(500).json({ 
-        error: error.message || "Internal server error",
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      });
     }
   });
 
@@ -873,10 +770,32 @@ async function startServer() {
             }
           });
 
-          // Ensure we only pass standard prebuilt voice names to Gemini Live upstream.
-          // Cartesia voice UUIDs will cause the upstream connection to fail.
+          // Ensure we pass standard prebuilt voice names to Gemini Live upstream.
           const GEMINI_VOICES = ["Puck", "Charon", "Kore", "Fenrir", "Zephyr", "Aoede"];
-          const geminiVoice = (voice && GEMINI_VOICES.includes(voice)) ? voice : "Zephyr";
+          let geminiVoice = "Aoede";
+
+          if (voice && GEMINI_VOICES.includes(voice)) {
+            geminiVoice = voice;
+          } else {
+            const KNOWN_MALE_VOICE_IDS = [
+              '56c7989e-7a5f-4d12-838f-e0f910e7356e', '3d83e30f-c31b-4f26-b442-7075feafa53a', 'eda5bbff-1ff1-4886-8ef1-4e69a77640a0',
+              '7e2a44d1-76b8-42b8-9507-fedfe3a803c8', '4b250449-c635-4b63-bd1d-b654b12ffcd4', 'af482421-80f4-4379-b00c-a118def29cde',
+              '0418348a-0ca2-4e90-9986-800fb8b3bbc0', '93c98a2b-7d15-4f7b-8236-294b1e02b1c0', '42f14755-88c3-4124-aae3-5cc3a9618e8f',
+              '2be00b67-d53f-4eb5-89e7-96c224d56fbc', 'e019ed7e-6079-4467-bc7f-b599a5dccf6f', '88b329db-85d7-47cc-a5c5-98225a756721',
+              '6b92f628-be90-497c-8f4c-3b035002df71', '9436e723-612d-4114-aeb0-fa00d4d639bf', 'f7755efb-1848-4321-aa22-5e5be5d32486',
+              '537a82ae-4926-4bfb-9aec-aff0b80a12a5', 'b603811e-54c2-4a0a-8854-09eab9ffa63f', '07b6f895-78b9-4921-8e10-8a21c99c2e8a',
+              '1e4176b1-3db9-44d6-a601-4fe68b041942', '888b7df4-e165-4852-bfec-0ab2b96aaa46', '3efb11f3-4c0e-43c2-bad5-85ab99e993e2',
+              '4853bafa-52cc-48c8-86a1-1edf8c76e429', '91e91d74-8eb4-43cd-97d3-7466c21db00d', '5a31e4fb-f823-4359-aa91-82c0ae9a991c',
+              '926e0766-f380-4d77-aeb0-9aa4ebb16b38', 'a466f9e2-28eb-4bb7-925c-8e8984950700'
+            ];
+            const textToCheck = `${voice || ''} ${systemInstruction || ''}`.toLowerCase();
+            const isMaleId = KNOWN_MALE_VOICE_IDS.some(id => (voice || '').includes(id));
+            const isMaleKeyword = ['lucas', 'tristan', 'wade', 'kai', 'jian', 'jeroen', 'antoine', 'mathieu', 'jan', 'dieter', 'luca', 'giuseppe', 'kenji', 'katsuya', 'ryeowook', 'minho', 'bruno', 'rafael', 'sergei', 'dmitri', 'eduardo', 'alonso', 'aykut', 'murat', 'soren', 'søren', 'male', 'he', 'him', 'his', 'bay'].some(kw => textToCheck.includes(kw));
+
+            if (isMaleId || isMaleKeyword) {
+              geminiVoice = "Fenrir";
+            }
+          }
 
           // Connect to Gemini Live
           session = await localAi.live.connect({
