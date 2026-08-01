@@ -1,0 +1,322 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Bell, Search, User as UserIcon, Settings, LogOut, Check, CheckCircle2, AlertCircle, FileText, Crown, Menu, TrendingUp, Info, Sun, Moon } from 'lucide-react';
+import { User } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
+import { RevuLogo } from './RevuLogo';
+import { useNotifications, Notification } from '../hooks/useNotifications';
+
+interface TopHeaderProps {
+  user: User | null;
+  onLogout: () => void;
+  setView: (view: any) => void;
+  onMenuClick: () => void;
+  notifications: Notification[];
+  markAsRead: (id: string) => void;
+  markAllAsRead: () => void;
+  currentView?: string;
+  theme?: 'light' | 'dark';
+  toggleTheme?: () => void;
+}
+
+export const TopHeader: React.FC<TopHeaderProps> = ({ user, onLogout, setView, onMenuClick, notifications, markAsRead, markAllAsRead, currentView, theme, toggleTheme }) => {
+  const { t } = useLanguage();
+
+  const getPageTitle = (view: string) => {
+    switch (view) {
+      case 'dashboard': return t('nav.dashboard');
+      case 'ai-conversation-dashboard': return t('nav.ai_conversation_dashboard');
+      case 'analyze': return t('nav.analyze');
+      case 'evaluation': return 'Evaluation Details';
+      case 'training': return t('nav.training');
+      case 'ai-conversation': return 'AI-Conversation';
+      case 'assembly-test': return 'AssemblyAI Test';
+      case 'deepgram-tts': return t('nav.deepgram_tts');
+      case 'notifications': return 'Notifications';
+      case 'history': return t('nav.history');
+      case 'roster': return t('nav.roster');
+      case 'usage': return t('nav.usage');
+      case 'settings': return t('nav.settings');
+      case 'admin': return t('nav.admin');
+      case 'account': return t('account.title');
+      default: return view ? view.charAt(0).toUpperCase() + view.slice(1) : '';
+    }
+  };
+
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [notificationFilter, setNotificationFilter] = useState<'all' | 'unread'>('all');
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+  const filteredNotifications = notifications.filter(n => notificationFilter === 'all' || !n.read);
+  const recentNotifications = filteredNotifications.slice(0, 5);
+
+  const userInitials = user?.name 
+    ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() 
+    : 'JD';
+
+  const orgName = user?.orgName || user?.company || 'Acme Corp';
+  const planName = 'Pro Plan'; // Mock plan name
+
+  const formatTime = (timestamp: number) => {
+    const diff = Date.now() - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
+
+  return (
+    <header className="h-14 bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/40 dark:border-slate-700/50 shadow-lg flex items-center justify-between px-4 lg:px-6 shrink-0 sticky top-4 z-30 mx-4 lg:mx-8 mb-6 rounded-2xl transition-all duration-300">
+      {/* Left side: Org Name & Mobile Menu */}
+      <div className="flex items-center gap-3">
+        <button 
+          onClick={onMenuClick}
+          className="lg:hidden p-2 -ml-2 text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 rounded-xl transition-colors"
+        >
+          <Menu size={24} />
+        </button>
+        
+        <div className="lg:hidden flex items-center gap-2">
+          <span className="font-sans font-bold text-base md:text-lg text-slate-900 dark:text-white tracking-tight">
+            {getPageTitle(currentView || '')}
+          </span>
+        </div>
+
+        <div className="hidden lg:flex items-center gap-2">
+          <span className="font-sans font-bold text-lg md:text-xl text-slate-900 dark:text-white tracking-tight">
+            {getPageTitle(currentView || '')}
+          </span>
+        </div>
+      </div>
+
+      {/* Right side: Theme, Notifications & Profile */}
+      <div className="flex items-center gap-2 sm:gap-3 ms-auto">
+        {/* Theme Toggle Button */}
+        {toggleTheme && (
+          <button 
+            onClick={toggleTheme}
+            className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors focus:outline-none"
+            title={theme === 'light' ? t('nav.dark_mode') : t('nav.light_mode')}
+            aria-label="Toggle light and dark mode"
+          >
+            {theme === 'light' ? (
+              <Moon size={20} className="text-slate-600 dark:text-slate-300" />
+            ) : (
+              <Sun size={20} className="text-amber-400" />
+            )}
+          </button>
+        )}
+
+        {/* Notification Bell */}
+        <div className="relative" ref={notificationsRef}>
+          <button 
+            onClick={() => {
+              setShowNotifications(!showNotifications);
+              setShowProfileMenu(false);
+            }}
+            className="relative p-2 text-slate-500 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors"
+          >
+            <Bell size={20} />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-slate-950"></span>
+            )}
+          </button>
+
+          {/* Notifications Dropdown */}
+          {showNotifications && (
+            <div className="fixed top-[80px] left-4 right-4 sm:absolute sm:top-auto sm:-right-4 sm:left-auto sm:mt-4 sm:w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 max-w-[400px] mx-auto sm:mx-0">
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-slate-900 dark:text-white">Notifications</h3>
+                  <button 
+                    onClick={markAllAsRead}
+                    disabled={unreadCount === 0}
+                    className="text-xs text-[#0500e2] hover:text-[#0400c0] dark:text-[#4b53fa] font-medium flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                  >
+                    <Check size={14} /> Mark all read
+                  </button>
+                </div>
+                
+                {/* Filter Tabs */}
+                <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-lg">
+                  <button
+                    onClick={() => setNotificationFilter('all')}
+                    className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-all ${
+                      notificationFilter === 'all' 
+                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => setNotificationFilter('unread')}
+                    className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-all flex items-center justify-center gap-1.5 ${
+                      notificationFilter === 'unread' 
+                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                    }`}
+                  >
+                    Unread
+                    {unreadCount > 0 && (
+                      <span className="bg-[#0500e2] text-white text-[10px] px-1.5 py-0.5 rounded-full leading-none">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div className="max-h-[400px] overflow-y-auto">
+                {recentNotifications.length > 0 ? (
+                  recentNotifications.map(notification => (
+                    <div 
+                      key={notification.id} 
+                      className={`p-4 border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex gap-3 ${!notification.read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
+                    >
+                      <div className="shrink-0 mt-1">
+                        {notification.type === 'assignment' && <FileText size={18} className="text-blue-500" />}
+                        {notification.type === 'feedback' && <CheckCircle2 size={18} className="text-emerald-500" />}
+                        {notification.type === 'alert' && <AlertCircle size={18} className="text-red-500" />}
+                        {notification.type === 'performance' && <TrendingUp size={18} className="text-purple-500" />}
+                        {notification.type === 'system' && <Info size={18} className="text-slate-500" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start mb-1">
+                          <p className={`text-sm font-medium truncate ${!notification.read ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
+                            {notification.title}
+                          </p>
+                          <span className="text-xs text-slate-400 whitespace-nowrap ml-2">{formatTime(notification.timestamp)}</span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                          {notification.message}
+                        </p>
+                      </div>
+                      {!notification.read && (
+                        <button 
+                          onClick={() => markAsRead(notification.id)}
+                          className="shrink-0 text-slate-400 hover:text-[#0500e2] self-center p-1"
+                          title="Mark as read"
+                        >
+                          <div className="w-2 h-2 rounded-full bg-[#0500e2]"></div>
+                        </button>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-8 text-center flex flex-col items-center justify-center">
+                    <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-500/10 rounded-full flex items-center justify-center mb-4">
+                      <CheckCircle2 size={32} className="text-emerald-500" />
+                    </div>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white mb-1">All caught up!</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Your team is performing beautifully.</p>
+                  </div>
+                )}
+              </div>
+              <div className="p-3 border-t border-slate-100 dark:border-slate-800 text-center bg-slate-50/50 dark:bg-slate-800/20">
+                <button 
+                  onClick={() => {
+                    setShowNotifications(false);
+                    setView('notifications');
+                  }}
+                  className="text-sm text-[#0500e2] hover:text-[#0400c0] dark:text-[#4b53fa] font-medium"
+                >
+                  Show all
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* User Profile Dropdown */}
+        <div className="relative" ref={profileMenuRef}>
+          <button 
+            onClick={() => {
+              setShowProfileMenu(!showProfileMenu);
+              setShowNotifications(false);
+            }}
+            className="flex items-center gap-2 p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#0500e2]"
+          >
+            {user?.avatar_url ? (
+              <img src={user.avatar_url} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-medium text-sm">
+                {userInitials}
+              </div>
+            )}
+          </button>
+
+          {showProfileMenu && (
+            <div className="fixed top-[80px] left-4 right-4 sm:absolute sm:top-auto sm:right-0 sm:left-auto sm:mt-4 sm:w-64 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-700/50 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 max-w-[400px] mx-auto sm:mx-0">
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+                <p className="font-semibold text-slate-900 dark:text-white truncate">{user?.name || 'Guest User'}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{user?.email || 'guest@example.com'}</p>
+                
+                <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gradient-to-r from-amber-100 to-amber-50 dark:from-amber-900/40 dark:to-amber-900/20 border border-amber-200 dark:border-amber-800/50">
+                  <Crown size={14} className="text-amber-600 dark:text-amber-400" />
+                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">{planName}</span>
+                </div>
+              </div>
+              
+              <div className="p-2">
+                <button 
+                  onClick={() => {
+                    setView('account');
+                    setShowProfileMenu(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <UserIcon size={16} />
+                  {t('nav.account')}
+                </button>
+                <button 
+                  onClick={() => {
+                    setView('settings');
+                    setShowProfileMenu(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <Settings size={16} />
+                  {t('nav.settings')}
+                </button>
+              </div>
+              
+              <div className="p-2 border-t border-slate-100 dark:border-slate-800">
+                <button 
+                  onClick={() => {
+                    onLogout();
+                    setShowProfileMenu(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                >
+                  <LogOut size={16} />
+                  {t('nav.logout')}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+};
