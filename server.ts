@@ -348,7 +348,11 @@ async function startServer() {
           targetVoiceId = "c2ad7092-0447-47ea-948b-61fbb6faf153"; // Grace fallback
         }
 
-        const modelsToTry = ["sonic-3", "sonic-latest", "sonic-turbo"];
+        const isEnglish = !langCode || langCode === 'en';
+        const modelsToTry = isEnglish
+          ? ["sonic-multilingual", "sonic-english", "sonic", "sonic-turbo"]
+          : ["sonic-multilingual", "sonic-2.0", "sonic"];
+
         for (const modelId of modelsToTry) {
           try {
             const bodyObj: any = {
@@ -380,7 +384,9 @@ async function startServer() {
             });
 
             if (!response.ok && (response.status === 404 || response.status === 400 || response.status === 422)) {
-              const fallbackVoiceId = "c2ad7092-0447-47ea-948b-61fbb6faf153";
+              const fallbackVoiceId = langCode === 'tr'
+                ? "bb2347fe-69e9-4810-873f-ffd759fe8420"
+                : "c2ad7092-0447-47ea-948b-61fbb6faf153";
               bodyObj.voice.id = fallbackVoiceId;
               response = await fetch("https://api.cartesia.ai/tts/bytes", {
                 method: "POST",
