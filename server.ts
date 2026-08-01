@@ -848,7 +848,7 @@ async function startServer() {
 
           // Connect to Gemini Live
           session = await localAi.live.connect({
-            model: "gemini-3.1-flash-live-preview",
+            model: "gemini-2.0-flash-realtime-exp",
             config: {
               responseModalities: [Modality.AUDIO],
               speechConfig: {
