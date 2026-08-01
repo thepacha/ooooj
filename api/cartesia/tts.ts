@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { preprocessCartesiaText } from '../../lib/utils';
 
 const CARTESIA_LANG_MAP: Record<string, string> = {
   'english': 'en',
@@ -30,10 +29,52 @@ function getCartesiaLanguageCode(lang: string | undefined): string {
   return 'en';
 }
 
+function preprocessCartesiaText(text: string): string {
+  if (!text) return text;
+
+  let processed = text;
+
+  // 1. Strip markdown symbols that cause speech artifacts (*, _, #, ~)
+  processed = processed.replace(/[\*_~`#]/g, '');
+
+  // 2. Convert parenthetical or action descriptions into Cartesia sound tags
+  processed = processed.replace(/\(?(laughs|laughing|giggles|giggle|chuckles|chuckle|snickers|snicker|sighs|sigh)\)?/gi, (match, action) => {
+    const lower = action.toLowerCase();
+    if (lower.includes('chuckle') || lower.includes('snicker')) return '[chuckle]';
+    if (lower.includes('giggle')) return '[giggle]';
+    if (lower.includes('sigh')) return '[sigh]';
+    return '[laughter]';
+  });
+
+  // 3. Convert written laughter spellings ("hahaha", "haha", "ha-ha", "ha ha", "hehe", "hehehe", "lol", "lmao", "rofl")
+  // into Cartesia audio tags [laughter] or [chuckle]
+  processed = processed.replace(/\b(ha(ha)+|ha-ha|ha\sha|hehe(he)*|lol|rofl|lmao)\b/gi, (match) => {
+    if (match.toLowerCase().startsWith('he')) {
+      return '[chuckle]';
+    }
+    return '[laughter]';
+  });
+
+  // 4. Clean up repeated consecutive tags like "[laughter] [laughter]" -> "[laughter]"
+  processed = processed.replace(/(\[(laughter|chuckle|giggle|sigh)\]\s*)+/gi, '$1');
+
+  // 5. Ensure space after tags if followed immediately by text
+  processed = processed.replace(/(\[(laughter|chuckle|giggle|sigh)\])([A-Za-z])/g, '$1 $3');
+
+  // 6. Normalize multiple spaces
+  processed = processed.replace(/\s+/g, ' ').trim();
+
+  return processed;
+}
+
 async function tryDeepgramTTS(text: string): Promise<Buffer | null> {
   const apiKey = process.env.DEEPGRAM_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) {
+    console.warn("[TTS Fallback] DEEPGRAM_API_KEY is missing.");
+    return null;
+  }
   try {
+    console.log("[TTS Fallback] Attempting Deepgram TTS...");
     const res = await fetch("https://api.deepgram.com/v1/speak?model=aura-asteria-en", {
       method: "POST",
       headers: {
@@ -44,10 +85,14 @@ async function tryDeepgramTTS(text: string): Promise<Buffer | null> {
     });
     if (res.ok) {
       const arrayBuf = await res.arrayBuffer();
+      console.log("[TTS Fallback] Deepgram TTS succeeded.");
       return Buffer.from(arrayBuf);
+    } else {
+      const errText = await res.text();
+      console.error(`[TTS Fallback] Deepgram API returned status ${res.status}:`, errText);
     }
   } catch (e) {
-    console.error("Deepgram fallback error:", e);
+    console.error("[TTS Fallback] Deepgram fallback error:", e);
   }
   return null;
 }
@@ -59,6 +104,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const { text, voiceId, language } = req.body;
+    console.log(`[Cartesia TTS Route] Incoming request: voiceId="${voiceId}", language="${language}", textLength=${text?.length || 0}`);
     
     if (!text) {
       return res.status(400).json({ error: "Text is required" });
@@ -69,6 +115,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const apiKey = process.env.CARTESIA_API_KEY;
     const formattedTranscript = preprocessCartesiaText(text);
+
+    console.log(`[Cartesia TTS Route] CARTESIA_API_KEY presence: ${apiKey ? "YES (configured)" : "NO (missing)"}`);
 
     if (apiKey) {
       const langCode = getCartesiaLanguageCode(language);
@@ -81,6 +129,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       for (const modelId of modelsToTry) {
         try {
+          console.log(`[Cartesia TTS Route] Attempting model="${modelId}" for voiceId="${targetVoiceId}" and langCode="${langCode}"`);
           const bodyObj: any = {
             model_id: modelId,
             transcript: formattedTranscript,
@@ -110,6 +159,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           });
 
           if (!response.ok && (response.status === 404 || response.status === 400 || response.status === 422)) {
+            console.warn(`[Cartesia TTS Route] First attempt failed with status ${response.status}. Trying fallback voice ID...`);
             // Fallback voice ID according to language
             const fallbackVoiceId = langCode === 'tr' 
               ? "bb2347fe-69e9-4810-873f-ffd759fe8420" // Aylin (Turkish)
@@ -129,19 +179,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (response.ok) {
             const arrayBuffer = await response.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
+            console.log(`[Cartesia TTS Route] Cartesia generation succeeded. Audio size: ${buffer.length} bytes`);
             res.setHeader("Content-Type", "audio/wav");
             return res.send(buffer);
           } else {
             const errText = await response.text();
-            console.warn(`Cartesia model ${modelId} failed with status ${response.status}:`, errText);
+            console.warn(`[Cartesia TTS Route] Cartesia model ${modelId} failed with status ${response.status}:`, errText);
           }
         } catch (cartesiaErr) {
-          console.error(`Cartesia API request failed for model ${modelId}:`, cartesiaErr);
+          console.error(`[Cartesia TTS Route] Cartesia API request failed for model ${modelId}:`, cartesiaErr);
         }
       }
+    } else {
+      console.warn("[Cartesia TTS Route] Skipping Cartesia generation since CARTESIA_API_KEY is not defined in the environment.");
     }
 
     // Try Deepgram Fallback
+    console.log("[Cartesia TTS Route] Cartesia failed or was skipped. Trying Deepgram fallback...");
     const deepgramAudio = await tryDeepgramTTS(text);
     if (deepgramAudio) {
       res.setHeader("Content-Type", "audio/mpeg");
@@ -149,7 +203,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Try Gemini Audio Fallback
+    console.log("[Cartesia TTS Route] Deepgram fallback failed or skipped. Trying Gemini fallback...");
     const geminiApiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    console.log(`[Cartesia TTS Route] GEMINI_API_KEY presence: ${geminiApiKey ? "YES" : "NO"}`);
     if (geminiApiKey) {
       try {
         const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`, {
@@ -173,20 +229,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const part = candidate?.content?.parts?.find((p: any) => p.inlineData?.data);
           if (part?.inlineData?.data) {
             const audioBuffer = Buffer.from(part.inlineData.data, "base64");
+            console.log(`[Cartesia TTS Route] Gemini fallback succeeded. Audio size: ${audioBuffer.length} bytes`);
             res.setHeader("Content-Type", part.inlineData.mimeType || "audio/pcm");
             return res.send(audioBuffer);
+          } else {
+            console.error("[Cartesia TTS Route] Gemini response did not contain audio inlineData.");
           }
+        } else {
+          const errText = await geminiRes.text();
+          console.error(`[Cartesia TTS Route] Gemini fallback API returned status ${geminiRes.status}:`, errText);
         }
       } catch (gErr) {
-        console.error("Gemini TTS fallback error:", gErr);
+        console.error("[Cartesia TTS Route] Gemini TTS fallback error:", gErr);
       }
     }
 
-    return res.status(500).json({ error: "TTS unavailable. Please try again or use standard voice." });
+    console.error("[Cartesia TTS Route] All TTS options failed. Returning 500.");
+    return res.status(500).json({ error: "TTS unavailable. Please verify API keys are configured correctly or try again later." });
 
   } catch (error: any) {
-    console.error("Error in Cartesia TTS serverless route:", error);
+    console.error("[Cartesia TTS Route] Error in Cartesia TTS serverless route:", error);
     res.status(500).json({ error: error.message || "Internal server error" });
   }
 }
-
