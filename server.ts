@@ -348,10 +348,7 @@ async function startServer() {
           targetVoiceId = "c2ad7092-0447-47ea-948b-61fbb6faf153"; // Grace fallback
         }
 
-        const isEnglish = !langCode || langCode === 'en';
-        const modelsToTry = isEnglish
-          ? ["sonic-multilingual", "sonic-english", "sonic", "sonic-turbo"]
-          : ["sonic-multilingual", "sonic-2.0", "sonic"];
+        const modelsToTry = ["sonic-3", "sonic-latest"];
 
         for (const modelId of modelsToTry) {
           try {
