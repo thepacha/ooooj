@@ -1503,6 +1503,8 @@ function AppContent() {
             markAsRead={markAsRead}
             markAllAsRead={markAllAsRead}
             currentView={currentView}
+            theme={theme}
+            toggleTheme={toggleTheme}
           />
           <div className="p-4 lg:p-8 pt-6 lg:pt-8 max-w-6xl mx-auto print:max-w-none print:p-0">
             <div key={currentView} className="animate-fade-in-up">

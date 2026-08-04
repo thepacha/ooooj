@@ -75,7 +75,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
 
       {/* Sidebar Container */}
       <div className={`
-        fixed top-0 start-0 h-screen w-64 
+        fixed top-0 start-0 h-[100dvh] w-64 
         bg-white dark:bg-slate-950 border-e border-slate-200 dark:border-slate-800
         text-slate-900 dark:text-white 
         shadow-xl lg:shadow-none z-50 
@@ -83,7 +83,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
         flex flex-col
         ${isOpen ? 'translate-x-0' : (isRTL ? 'translate-x-full lg:translate-x-0' : '-translate-x-full lg:translate-x-0')}
       `}>
-        <div className="p-6 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 shrink-0">
+        <div className="p-4 md:p-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 shrink-0">
           <button 
             onClick={() => {
               setView('dashboard');
@@ -92,12 +92,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
             className="flex items-center gap-3 hover:opacity-80 transition-opacity focus:outline-none focus:ring-0 outline-none border-none p-0 cursor-pointer bg-transparent"
             aria-label="Go to Home"
           >
-            <RevuLogo className="h-12 md:h-14 w-auto" />
+            <RevuLogo className="h-10 md:h-12 w-auto" />
           </button>
-          {/* Close button for mobile */}
-          <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-slate-900 dark:hover:text-white">
-            <X size={24} />
-          </button>
+          <div className="flex items-center gap-1">
+            {/* Mobile quick theme toggle in sidebar header */}
+            <button 
+              onClick={toggleTheme}
+              className="lg:hidden p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+              title={theme === 'light' ? t('nav.dark_mode') : t('nav.light_mode')}
+              aria-label="Toggle Theme"
+            >
+              {theme === 'light' ? <Moon size={20} className="text-slate-600 dark:text-slate-300" /> : <Sun size={20} className="text-amber-400" />}
+            </button>
+            {/* Close button for mobile */}
+            <button onClick={onClose} className="lg:hidden p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-xl">
+              <X size={24} />
+            </button>
+          </div>
         </div>
 
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">

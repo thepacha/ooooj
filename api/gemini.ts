@@ -36,7 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'generate-content': {
         const { model, contents, config } = req.body;
         const response = await client.models.generateContent({
-          model: model || "gemini-3.5-flash",
+          model: model || "gemini-2.5-flash",
           contents,
           config
         });
@@ -50,7 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { model, history, message, config } = req.body;
         const cleanHistory = Array.isArray(history) && history.length > 0 ? history.slice(0, -1) : [];
         const chat = client.chats.create({
-          model: model || "gemini-3.5-flash",
+          model: model || "gemini-2.5-flash",
           history: cleanHistory,
           config
         });
@@ -62,7 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { model, history, message, config } = req.body;
         const cleanHistory = Array.isArray(history) && history.length > 0 ? history.slice(0, -1) : [];
         const chat = client.chats.create({
-          model: model || "gemini-3.5-flash",
+          model: model || "gemini-2.5-flash",
           history: cleanHistory,
           config
         });
@@ -108,7 +108,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         `;
 
         const response = await client.models.generateContent({
-          model: 'gemini-3.5-flash',
+          model: 'gemini-2.5-flash',
           contents: prompt,
           config: {
             responseMimeType: "application/json",
@@ -161,7 +161,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       case 'generate-mock-transcript': {
         const response = await client.models.generateContent({
-          model: 'gemini-3.5-flash',
+          model: 'gemini-2.5-flash',
           contents: "Generate a realistic 10-turn customer support transcript between an Agent and a Customer regarding a billing dispute. The customer should be slightly annoyed but the agent resolves it. Format it as plain text.",
         });
         return res.status(200).json({ text: response.text || "" });
@@ -170,7 +170,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'transcribe-media': {
         const { base64Data, mimeType } = req.body;
         const response = await client.models.generateContent({
-          model: 'gemini-3.5-flash',
+          model: 'gemini-2.5-flash',
           contents: {
             parts: [
               { inlineData: { mimeType, data: base64Data } },
@@ -209,7 +209,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           Return ONLY the text of the language scenario description. No JSON, no markdown, no quotes around the result.
         `;
         const response = await client.models.generateContent({
-          model: 'gemini-3.5-flash',
+          model: 'gemini-2.5-flash',
           contents: prompt
         });
         return res.status(200).json({ text: response.text?.trim().replace(/^"|"$/g, '') || "" });
@@ -264,7 +264,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         `;
 
         const response = await client.models.generateContent({
-          model: 'gemini-3.5-flash',
+          model: 'gemini-2.5-flash',
           contents: prompt,
           config: {
             responseMimeType: "application/json",
@@ -323,7 +323,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         `;
 
         const response = await client.models.generateContent({
-          model: 'gemini-3.5-flash',
+          model: 'gemini-2.5-flash',
           contents: prompt,
           config: {
             responseMimeType: "application/json",
@@ -382,7 +382,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         `;
 
         const response = await client.models.generateContent({
-          model: 'gemini-3.5-flash',
+          model: 'gemini-2.5-flash',
           contents: prompt,
           config: {
             responseMimeType: "application/json",
@@ -428,7 +428,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         `;
 
         const response = await client.models.generateContent({
-          model: 'gemini-3.5-flash',
+          model: 'gemini-2.5-flash',
           contents: prompt,
           config: {
             responseMimeType: "application/json",
@@ -487,7 +487,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { text, dialect, voice } = req.body;
         const prompt = `Speak this text in ${dialect} Arabic: ${text}`;
         const response = await client.models.generateContent({
-          model: "gemini-3.1-flash-tts-preview",
+          model: "gemini-2.0-flash",
           contents: [{ parts: [{ text: prompt }] }],
           config: {
             responseModalities: [Modality.AUDIO],
