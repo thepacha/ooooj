@@ -474,8 +474,7 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
                 },
                 body: JSON.stringify({
                     text: preprocessCartesiaText(text),
-                    voiceId: getCartesiaVoiceId(activeScenario?.voice || 'c2ad7092-0447-47ea-948b-61fbb6faf153', activeScenario?.language || 'English'),
-                    language: activeScenario?.language || 'English'
+                    voiceId: getCartesiaVoiceId(activeScenario?.voice || 'c2ad7092-0447-47ea-948b-61fbb6faf153', activeScenario?.language || 'English')
                 })
             });
 
@@ -960,8 +959,7 @@ CRITICAL MANDATES:
                 },
                 body: JSON.stringify({
                     text: item.text,
-                    voiceId: getCartesiaVoiceId(voiceId, activeScenario?.language || 'English'),
-                    language: activeScenario?.language || 'English'
+                    voiceId: getCartesiaVoiceId(voiceId, activeScenario?.language || 'English')
                 })
             });
             
@@ -990,34 +988,6 @@ CRITICAL MANDATES:
         }
     };
 
-    const speakWithWebSpeech = (text: string) => {
-        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-            try {
-                const utterance = new SpeechSynthesisUtterance(text);
-                const targetLang = activeScenario?.language || 'English';
-                const langMap: Record<string, string> = {
-                    'Turkish': 'tr-TR',
-                    'English': 'en-US',
-                    'Spanish': 'es-ES',
-                    'French': 'fr-FR',
-                    'German': 'de-DE',
-                    'Italian': 'it-IT',
-                    'Japanese': 'ja-JP',
-                    'Chinese': 'zh-CN',
-                    'Korean': 'ko-KR',
-                    'Portuguese': 'pt-BR',
-                    'Russian': 'ru-RU',
-                    'Dutch': 'nl-NL'
-                };
-                utterance.lang = langMap[targetLang] || 'en-US';
-                utterance.rate = 1.0;
-                window.speechSynthesis.speak(utterance);
-            } catch (e) {
-                console.warn("Web Speech API fallback failed:", e);
-            }
-        }
-    };
-
     const processCartesiaPlayQueue = async () => {
         if (isProcessingQueue.current) return;
         isProcessingQueue.current = true;
@@ -1037,7 +1007,6 @@ CRITICAL MANDATES:
                 }
                 
                 if (first.error || !first.audioBuffer) {
-                    speakWithWebSpeech(first.text);
                     cartesiaQueue.current.shift();
                     continue;
                 }
@@ -1129,7 +1098,7 @@ CRITICAL MANDATES:
                     scriptProcessor.connect(inputAudioContext.current.destination);
                 },
                 onMessage: async (message) => {
-                    const isCartesiaVoice = true; // Always use high-quality Cartesia TTS for all AI conversation responses
+                    const isCartesiaVoice = scenario.voice ? !VOICES.includes(scenario.voice) : false;
 
                     if (message.serverContent?.outputTranscription) {
                         // User has finished speaking because AI has started transcribing output.

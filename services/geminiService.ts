@@ -33,7 +33,7 @@ class ServerSideChatProxy {
   private config: any;
 
   constructor(config: any) {
-    this.model = config?.model || 'gemini-2.5-flash';
+    this.model = config?.model || 'gemini-3.5-flash';
     this.config = config || {};
     if (this.config.systemInstruction) {
       this.history.push({ role: 'user', parts: [{ text: this.config.systemInstruction }] });
@@ -152,7 +152,7 @@ export const getAI = () => {
 
 export const createChatSession = (): any => {
   return new ServerSideChatProxy({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.5-flash',
     systemInstruction: "You are RevuBot, a helpful QA assistant for customer support teams. You help analyze performance, suggest coaching tips, and explain metrics. Be professional and encouraging."
   });
 };
@@ -261,7 +261,7 @@ export const createTrainingSession = (scenario: TrainingScenario): any => {
   `;
 
   return new ServerSideChatProxy({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.5-flash',
     systemInstruction: strictProtocol,
     temperature: 0.7,
     topK: 64,
@@ -517,7 +517,7 @@ export const connectLiveTraining = async (scenario: TrainingScenario, callbacks:
         console.log("Direct connection established. Sending setup message...");
         const setupMessage = {
           setup: {
-            model: "models/gemini-2.0-flash-exp",
+            model: "models/gemini-3.1-flash-live-preview",
             generationConfig: {
               responseModalities: ["AUDIO"],
               temperature: 0.7,

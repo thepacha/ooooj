@@ -32,7 +32,7 @@ const CARTESIA_MODELS = [
   { id: '4853bafa-52cc-48c8-86a1-1edf8c76e429', name: 'Alonso', language: 'Spanish', gender: 'Masculine', description: 'Professional, Confident' },
 
   // French
-  { id: 'c96a7d7d-3457-4979-8665-522f7b3e36fb', name: 'Amélie', language: 'French', gender: 'Feminine', description: 'Elegant, Natural, Friendly' },
+  { id: 'b6cbde9b-00e3-4a57-9955-0703001e3231', name: 'Amélie', language: 'French', gender: 'Feminine', description: 'Elegant, Natural, Friendly' },
   { id: 'c96a7d7d-3457-4979-8665-522f7b3e36fb', name: 'Léa', language: 'French', gender: 'Feminine', description: 'Warm, Expressive' },
   { id: '0418348a-0ca2-4e90-9986-800fb8b3bbc0', name: 'Antoine', language: 'French', gender: 'Masculine', description: 'Clear, Professional' },
   { id: '93c98a2b-7d15-4f7b-8236-294b1e02b1c0', name: 'Mathieu', language: 'French', gender: 'Masculine', description: 'Natural, Friendly' },
@@ -209,31 +209,6 @@ export const DeepgramTTS: React.FC = () => {
         });
     };
 
-    const speakWithWebSpeech = (textToSpeak: string) => {
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(textToSpeak);
-            const currentLang = selectedModelDetails?.language || 'English';
-            if (currentLang.includes('Spanish')) utterance.lang = 'es-ES';
-            else if (currentLang.includes('French')) utterance.lang = 'fr-FR';
-            else if (currentLang.includes('German')) utterance.lang = 'de-DE';
-            else if (currentLang.includes('Turkish')) utterance.lang = 'tr-TR';
-            else if (currentLang.includes('Italian')) utterance.lang = 'it-IT';
-            else if (currentLang.includes('Japanese')) utterance.lang = 'ja-JP';
-            else if (currentLang.includes('Chinese')) utterance.lang = 'zh-CN';
-            else if (currentLang.includes('Korean')) utterance.lang = 'ko-KR';
-            else if (currentLang.includes('Portuguese')) utterance.lang = 'pt-BR';
-            else if (currentLang.includes('Russian')) utterance.lang = 'ru-RU';
-            else if (currentLang.includes('Dutch')) utterance.lang = 'nl-NL';
-            else if (currentLang.includes('Danish')) utterance.lang = 'da-DK';
-            else utterance.lang = 'en-US';
-
-            window.speechSynthesis.speak(utterance);
-            return true;
-        }
-        return false;
-    };
-
     const handleGenerate = async () => {
         if (!text.trim()) {
             setError('Please enter some text to check pronunciation.');
@@ -244,69 +219,43 @@ export const DeepgramTTS: React.FC = () => {
         setError(null);
         setAudioUrl(null);
 
-        let audioBlob: Blob | null = null;
-
-        // 1. Primary: Cartesia TTS
         try {
-            const selectedLang = CARTESIA_MODELS.find(m => m.id === selectedModel)?.language || 'English';
             const response = await fetch('/api/cartesia/tts', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({
                     text,
-                    voiceId: selectedModel,
-                    language: selectedLang
+                    voiceId: selectedModel
                 })
             });
 
-            if (response.ok) {
-                audioBlob = await response.blob();
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.error || 'Cartesia TTS API error');
             }
-        } catch (cartesiaErr) {
-            console.warn('Cartesia TTS call failed, attempting fallback...', cartesiaErr);
-        }
 
-        // 2. Secondary: Deepgram TTS fallback
-        if (!audioBlob) {
-            try {
-                const response = await fetch('/api/deepgram/tts', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text, model: 'aura-asteria-en' })
-                });
-
-                if (response.ok) {
-                    audioBlob = await response.blob();
-                }
-            } catch (deepgramErr) {
-                console.warn('Deepgram TTS fallback failed:', deepgramErr);
-            }
-        }
-
-        if (audioBlob) {
-            const url = URL.createObjectURL(audioBlob);
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
             setAudioUrl(url);
+
+            // Save to History
             saveToHistory(text, selectedModel, url);
 
+            // Auto play
             setTimeout(() => {
                 if (audioRef.current) {
-                    audioRef.current.play().catch(e => console.error('Audio play error:', e));
+                    audioRef.current.play();
                 }
             }, 100);
-            setIsGenerating(false);
-            return;
-        }
 
-        // 3. Ultimate Browser Web Speech Fallback
-        const webSpeechSuccess = speakWithWebSpeech(text);
-        if (webSpeechSuccess) {
-            saveToHistory(text, selectedModel, '');
+        } catch (e: any) {
+            console.error('TTS Error:', e);
+            setError(e.message || 'An unexpected error occurred.');
+        } finally {
             setIsGenerating(false);
-            return;
         }
-
-        setError('Unable to generate speech audio. Please check network connection.');
-        setIsGenerating(false);
     };
 
     const handleLoadHistoryItem = (item: PronunciationHistoryItem) => {

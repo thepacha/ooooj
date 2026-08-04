@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Search, User as UserIcon, Settings, LogOut, Check, CheckCircle2, AlertCircle, FileText, Crown, Menu, TrendingUp, Info, Sun, Moon } from 'lucide-react';
+import { Bell, Search, User as UserIcon, Settings, LogOut, Check, CheckCircle2, AlertCircle, FileText, Crown, Menu, TrendingUp, Info } from 'lucide-react';
 import { User } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { RevuLogo } from './RevuLogo';
@@ -14,11 +14,9 @@ interface TopHeaderProps {
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   currentView?: string;
-  theme?: 'light' | 'dark';
-  toggleTheme?: () => void;
 }
 
-export const TopHeader: React.FC<TopHeaderProps> = ({ user, onLogout, setView, onMenuClick, notifications, markAsRead, markAllAsRead, currentView, theme, toggleTheme }) => {
+export const TopHeader: React.FC<TopHeaderProps> = ({ user, onLogout, setView, onMenuClick, notifications, markAsRead, markAllAsRead, currentView }) => {
   const { t } = useLanguage();
 
   const getPageTitle = (view: string) => {
@@ -110,24 +108,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ user, onLogout, setView, o
         </div>
       </div>
 
-      {/* Right side: Theme, Notifications & Profile */}
-      <div className="flex items-center gap-2 sm:gap-3 ms-auto">
-        {/* Theme Toggle Button */}
-        {toggleTheme && (
-          <button 
-            onClick={toggleTheme}
-            className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors focus:outline-none"
-            title={theme === 'light' ? t('nav.dark_mode') : t('nav.light_mode')}
-            aria-label="Toggle light and dark mode"
-          >
-            {theme === 'light' ? (
-              <Moon size={20} className="text-slate-600 dark:text-slate-300" />
-            ) : (
-              <Sun size={20} className="text-amber-400" />
-            )}
-          </button>
-        )}
-
+      {/* Right side: Notifications & Profile */}
+      <div className="flex items-center gap-4 ms-auto">
         {/* Notification Bell */}
         <div className="relative" ref={notificationsRef}>
           <button 
