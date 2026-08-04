@@ -17,7 +17,17 @@ const getGeminiClient = () => {
 };
 
 const isBillingError = (e: any): boolean => {
-  const errMsg = String(e?.message || e || '').toLowerCase();
+  if (!e) return false;
+  const errMsg = String(e?.message || '').toLowerCase();
+  const errStatus = String(e?.status || e?.statusCode || '').toLowerCase();
+  const errName = String(e?.name || '').toLowerCase();
+  let errFull = '';
+  try {
+    errFull = JSON.stringify(e).toLowerCase();
+  } catch (err) {
+    errFull = String(e).toLowerCase();
+  }
+
   return errMsg.includes('dunning') || 
          errMsg.includes('deny') || 
          errMsg.includes('forbidden') || 
@@ -27,7 +37,14 @@ const isBillingError = (e: any): boolean => {
          errMsg.includes('payment') || 
          errMsg.includes('permission_denied') ||
          errMsg.includes('unauthorized') ||
-         errMsg.includes('limit');
+         errMsg.includes('limit') ||
+         errStatus.includes('403') ||
+         errStatus.includes('429') ||
+         errName.includes('apierror') ||
+         errFull.includes('403') ||
+         errFull.includes('apierror') ||
+         errFull.includes('forbidden') ||
+         errFull.includes('dunning');
 };
 
 const getSmartFallbackResponse = (message: string, systemInstruction: string = '', history: any[] = []) => {

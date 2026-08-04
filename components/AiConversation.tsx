@@ -1248,39 +1248,13 @@ CRITICAL MANDATES:
                 } 
             });
 
-            // Smart connection strategy:
-            // 1. Try to fetch a temporary token from our secure server to connect directly to Deepgram.
-            // This is the preferred method as it avoids proxy latency, reduces audio lag, and works on serverless platforms like Vercel.
-            let ws: WebSocket;
+            // Establish Local Deepgram Live WebSocket Proxy connection
+            const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
             const deepgramLangCode = (scenario.language && DEEPGRAM_LANG_MAP[scenario.language]) || 'en';
+            const socketUrl = `${protocol}//${window.location.host}/api/deepgram-live?language=${deepgramLangCode}`;
+            console.log("Connecting client to Deepgram live proxy at:", socketUrl);
             
-            console.log("[Voice Setup] Attempting to retrieve temporary Deepgram token for direct client connection...");
-            let tokenData: { access_token: string } | null = null;
-            try {
-                const tokenRes = await fetch('/api/deepgram/token');
-                if (tokenRes.ok) {
-                    tokenData = await tokenRes.json();
-                } else {
-                    console.warn(`[Voice Setup] Token retrieval failed with status: ${tokenRes.status}`);
-                }
-            } catch (tokenErr) {
-                console.warn("[Voice Setup] Network error fetching temporary Deepgram token:", tokenErr);
-            }
-
-            if (tokenData && tokenData.access_token) {
-                const directUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&punctuate=true&encoding=linear16&sample_rate=16000&channels=1&interim_results=true&smart_format=true&language=${deepgramLangCode}`;
-                console.log(`[Voice Setup] Direct connection possible. Connecting directly to Deepgram: ${directUrl}`);
-                // Browser WebSocket constructor allows passing subprotocols.
-                // Deepgram accepts "token" and the token itself as the second subprotocol.
-                ws = new WebSocket(directUrl, ["token", tokenData.access_token]);
-            } else {
-                // Fallback to the local WebSocket proxy connection (works in local dev / persistent container hosting)
-                const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-                const socketUrl = `${protocol}//${window.location.host}/api/deepgram-live?language=${deepgramLangCode}`;
-                console.log(`[Voice Setup] Falling back to local Deepgram WebSocket proxy: ${socketUrl}`);
-                ws = new WebSocket(socketUrl);
-            }
-
+            const ws = new WebSocket(socketUrl);
             voiceWs.current = ws;
 
             ws.onopen = () => {
