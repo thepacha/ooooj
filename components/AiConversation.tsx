@@ -118,6 +118,22 @@ const GEMINI_TO_CARTESIA_MAP: Record<string, Record<string, string>> = {
   }
 };
 
+const DEEPGRAM_LANG_MAP: Record<string, string> = {
+  'English': 'en',
+  'Spanish': 'es',
+  'French': 'fr',
+  'German': 'de',
+  'Italian': 'it',
+  'Japanese': 'ja',
+  'Chinese': 'zh-CN',
+  'Korean': 'ko',
+  'Portuguese': 'pt',
+  'Russian': 'ru',
+  'Turkish': 'tr',
+  'Danish': 'da',
+  'Dutch': 'nl'
+};
+
 const getCartesiaVoiceId = (voiceName: string, language: string): string => {
     if (!voiceName) return 'c2ad7092-0447-47ea-948b-61fbb6faf153';
     if (voiceName.includes('-')) return voiceName; // Already a valid Cartesia UUID
@@ -644,6 +660,10 @@ CRITICAL MANDATES:
     const [isMicMuted, setIsMicMuted] = useState(false);
     const isMicMutedRef = useRef(false);
     
+    const voiceWs = useRef<WebSocket | null>(null);
+    const silenceTimer = useRef<any>(null);
+    const isSendingVoiceMessage = useRef(false);
+    
     useEffect(() => {
         isMicMutedRef.current = isMicMuted;
     }, [isMicMuted]);
@@ -1070,6 +1090,128 @@ CRITICAL MANDATES:
         }
     };
 
+    const stopAllSpeech = () => {
+        sources.current.forEach(src => {
+            try { src.stop(); } catch (e) {}
+        });
+        sources.current.clear();
+        nextStartTime.current = 0;
+        resetCartesiaQueue();
+
+        if (currentAudioRef.current) {
+            currentAudioRef.current.pause();
+            currentAudioRef.current = null;
+        }
+        isRepeatingAudioRef.current = false;
+        setPlayingMsgIdx(null);
+    };
+
+    const handleVoiceTurnComplete = async () => {
+        if (silenceTimer.current) {
+            clearTimeout(silenceTimer.current);
+            silenceTimer.current = null;
+        }
+
+        const userText = currentInputTranscription.current.trim();
+        if (!userText || isSendingVoiceMessage.current) return;
+        
+        isSendingVoiceMessage.current = true;
+        
+        // Stop any active Cartesia speech (barge-in!)
+        stopAllSpeech();
+
+        // 1. Commit user's transcription to messages
+        setMessages(prev => [
+            ...prev,
+            { role: 'user', text: userText },
+            { role: 'model', text: '' } // Prepare empty model slot
+        ]);
+
+        // Reset transcriptions for the next turn
+        currentInputTranscription.current = '';
+        setLiveInputTranscription('');
+        
+        try {
+            // 2. Stream AI response from standard Chat (Gemini Flash REST via Proxy)
+            if (!chatSession.current) {
+                throw new Error("Chat session not initialized");
+            }
+            const result = await chatSession.current.sendMessageStream({ message: userText });
+            
+            let fullModelResponse = '';
+            cartesiaSentenceBuffer.current = '';
+
+            for await (const chunk of result) {
+                const chunkText = chunk.text;
+                if (chunkText) {
+                    fullModelResponse += chunkText;
+                    
+                    // Update model message in real-time
+                    setMessages(prev => {
+                        const newHistory = [...prev];
+                        const lastMsg = newHistory[newHistory.length - 1];
+                        if (lastMsg && lastMsg.role === 'model') {
+                            lastMsg.text = fullModelResponse;
+                        }
+                        return newHistory;
+                    });
+
+                    // Parse sentences and queue them for low-latency Cartesia speech!
+                    cartesiaSentenceBuffer.current += chunkText;
+                    
+                    const sentenceRegex = /([^.?!,;:。？！，；：\n\r]+[.?!,;:。？！，；：\n\r]+)/g;
+                    let match;
+                    let lastIndex = 0;
+                    const currentBufferText = cartesiaSentenceBuffer.current;
+                    
+                    while ((match = sentenceRegex.exec(currentBufferText)) !== null) {
+                        const sentence = match[1].trim();
+                        if (sentence.length > 0) {
+                            queueAndFetchSentence(sentence, activeScenario?.voice || '');
+                        }
+                        lastIndex = sentenceRegex.lastIndex;
+                    }
+                    
+                    if (lastIndex > 0) {
+                        cartesiaSentenceBuffer.current = currentBufferText.substring(lastIndex);
+                    }
+
+                    // Fallback split for run-on sentences
+                    if (cartesiaSentenceBuffer.current.length > 50) {
+                        const lastSpace = cartesiaSentenceBuffer.current.lastIndexOf(' ');
+                        if (lastSpace > 15) {
+                            const sentence = cartesiaSentenceBuffer.current.substring(0, lastSpace).trim();
+                            if (sentence.length > 0) {
+                                queueAndFetchSentence(sentence, activeScenario?.voice || '');
+                            }
+                            cartesiaSentenceBuffer.current = cartesiaSentenceBuffer.current.substring(lastSpace + 1);
+                        }
+                    }
+                }
+            }
+
+            // Flush any remaining text in the sentence buffer
+            const remainingText = cartesiaSentenceBuffer.current.trim();
+            if (remainingText.length > 0) {
+                queueAndFetchSentence(remainingText, activeScenario?.voice || '');
+                cartesiaSentenceBuffer.current = '';
+            }
+
+        } catch (err) {
+            console.error("Voice stream mind error:", err);
+            setMessages(prev => {
+                const newHistory = [...prev];
+                const lastMsg = newHistory[newHistory.length - 1];
+                if (lastMsg && lastMsg.role === 'model') {
+                    lastMsg.text = "⚠️ Connection error. Please try again.";
+                }
+                return newHistory;
+            });
+        } finally {
+            isSendingVoiceMessage.current = false;
+        }
+    };
+
     const startVoiceConnection = async (scenario: TrainingScenario) => {
         setIsVoiceActive(true);
         setIsMicMuted(false);
@@ -1080,8 +1222,12 @@ CRITICAL MANDATES:
         setLiveOutputTranscription('');
         nextStartTime.current = 0;
         resetCartesiaQueue();
+        isSendingVoiceMessage.current = false;
 
         try {
+            // Initialize cheap standard LLM Chat Session (the "mind")
+            chatSession.current = createTrainingSession(scenario);
+
             const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
             if (!AudioContextClass) {
                 throw new Error("Audio Context not supported");
@@ -1102,248 +1248,85 @@ CRITICAL MANDATES:
                 } 
             });
 
-            const sessionPromise = connectLiveTraining(scenario, {
-                onOpen: () => {
-                    console.log("Language Voice Session Open");
-                    if (!inputAudioContext.current) return;
-                    
-                    const source = inputAudioContext.current.createMediaStreamSource(stream);
-                    const scriptProcessor = inputAudioContext.current.createScriptProcessor(2048, 1, 1);
-                    
-                    scriptProcessor.onaudioprocess = (e) => {
-                        if (isMicMutedRef.current) {
-                            return; // Do not transmit audio when muted
-                        }
-                        const inputData = e.inputBuffer.getChannelData(0);
-                        const audioData = createAudioData(inputData);
-                        sessionPromise.then(session => {
-                            try {
-                                session.sendRealtimeInput({ media: audioData });
-                            } catch(err) {
-                                console.warn("Failed to send audio", err);
-                            }
-                        });
-                    };
-                    
-                    source.connect(scriptProcessor);
-                    scriptProcessor.connect(inputAudioContext.current.destination);
-                },
-                onMessage: async (message) => {
-                    const isCartesiaVoice = true; // Always use high-quality Cartesia TTS for all AI conversation responses
-
-                    if (message.serverContent?.outputTranscription) {
-                        // User has finished speaking because AI has started transcribing output.
-                        // Commit the user's input transcription to message history in real-time.
-                        const userText = currentInputTranscription.current;
-                        if (userText.trim()) {
-                            setMessages(prev => {
-                                const lastUserMsg = [...prev].reverse().find(m => m.role === 'user');
-                                if (lastUserMsg && lastUserMsg.text === userText) return prev;
-                                return [...prev, {role: 'user', text: userText}];
-                            });
-                            currentInputTranscription.current = '';
-                            setLiveInputTranscription('');
-                        }
-
-                        const newText = message.serverContent.outputTranscription.text;
-                        currentOutputTranscription.current += newText;
-                        setLiveOutputTranscription(currentOutputTranscription.current);
-                        setLiveInputTranscription(''); // Clear user input text as AI responds
-
-                        if (isCartesiaVoice) {
-                            cartesiaSentenceBuffer.current += newText;
-                            
-                            // Match sentences or clauses ending with standard punctuation, commas, colons, semicolons, or newlines
-                            const sentenceRegex = /([^.?!,;:。？！，；：\n\r]+[.?!,;:。？！，；：\n\r]+)/g;
-                            let match;
-                            let lastIndex = 0;
-                            const currentBufferText = cartesiaSentenceBuffer.current;
-                            
-                            while ((match = sentenceRegex.exec(currentBufferText)) !== null) {
-                                const sentence = match[1].trim();
-                                if (sentence.length > 0) {
-                                    queueAndFetchSentence(sentence, scenario.voice || '');
-                                }
-                                lastIndex = sentenceRegex.lastIndex;
-                            }
-                            
-                            if (lastIndex > 0) {
-                                cartesiaSentenceBuffer.current = currentBufferText.substring(lastIndex);
-                            }
-
-                            // Fallback split: If the pending buffer is growing long (e.g., > 50 characters) and has a space,
-                            // split at the last space to avoid delayed playback for long run-on sentences.
-                            if (cartesiaSentenceBuffer.current.length > 50) {
-                                const lastSpace = cartesiaSentenceBuffer.current.lastIndexOf(' ');
-                                if (lastSpace > 15) {
-                                    const sentence = cartesiaSentenceBuffer.current.substring(0, lastSpace).trim();
-                                    if (sentence.length > 0) {
-                                        queueAndFetchSentence(sentence, scenario.voice || '');
-                                    }
-                                    cartesiaSentenceBuffer.current = cartesiaSentenceBuffer.current.substring(lastSpace + 1);
-                                }
-                            }
-                        }
-                    }
-
-                    if (message.serverContent?.interrupted) {
-                        // User speech detected (barge-in interruption)! Stop all playing audio immediately
-                        sources.current.forEach(src => {
-                            try { src.stop(); } catch(e){}
-                        });
-                        sources.current.clear();
-                        nextStartTime.current = 0;
-                        if (isCartesiaVoice) {
-                            resetCartesiaQueue();
-                        }
-
-                        // Stop repeated audio if playing
-                        if (currentAudioRef.current) {
-                            currentAudioRef.current.pause();
-                            currentAudioRef.current = null;
-                        }
-                        isRepeatingAudioRef.current = false;
-                        setPlayingMsgIdx(null);
-                        
-                        // Commit whatever partial response the AI was saying before being interrupted
-                        const modelText = currentOutputTranscription.current;
-                        if (modelText.trim()) {
-                            const cleanText = stripAudioTags(modelText);
-                            if (cleanText) {
-                                setMessages(prev => {
-                                    const lastModelMsg = [...prev].reverse().find(m => m.role === 'model');
-                                    if (lastModelMsg && lastModelMsg.text.startsWith(cleanText)) return prev;
-                                    return [...prev, {role: 'model', text: cleanText + '...'}];
-                                });
-                            }
-                        }
-                        currentOutputTranscription.current = '';
-                        setLiveOutputTranscription(''); // User cut-off the AI
-                    } else if (message.serverContent?.inputTranscription) {
-                        const rawText = message.serverContent.inputTranscription.text;
-                        const cleanChunk = sanitizeTranscription(rawText, scenario.language || 'English');
-                        currentInputTranscription.current += cleanChunk;
-                        setLiveInputTranscription(currentInputTranscription.current);
-                        setLiveOutputTranscription(''); // Clear output while user speaks
-                        
-                        // Stop repeated audio if playing
-                        if (currentAudioRef.current) {
-                            currentAudioRef.current.pause();
-                            currentAudioRef.current = null;
-                        }
-                        isRepeatingAudioRef.current = false;
-                        setPlayingMsgIdx(null);
-
-                        // User started speaking/interrupted! Stop all playing audio immediately and clear the queue
-                        sources.current.forEach(src => {
-                            try { src.stop(); } catch(e){}
-                        });
-                        sources.current.clear();
-                        nextStartTime.current = 0;
-                        if (isCartesiaVoice) {
-                            resetCartesiaQueue();
-                        }
-                    }
-
-                    if (message.serverContent?.turnComplete) {
-                        const userText = currentInputTranscription.current;
-                        const modelText = currentOutputTranscription.current;
-                        
-                        if (userText.trim()) {
-                            setMessages(prev => {
-                                const lastUserMsg = [...prev].reverse().find(m => m.role === 'user');
-                                if (lastUserMsg && lastUserMsg.text === userText) return prev;
-                                return [...prev, {role: 'user', text: userText}];
-                            });
-                        }
-                        if (modelText.trim()) {
-                            const cleanText = stripAudioTags(modelText);
-                            if (cleanText) {
-                                setMessages(prev => {
-                                    const lastModelMsg = [...prev].reverse().find(m => m.role === 'model');
-                                    if (lastModelMsg && lastModelMsg.text === cleanText) return prev;
-                                    return [...prev, {role: 'model', text: cleanText}];
-                                });
-                            }
-
-                            if (isCartesiaVoice) {
-                                // Flush any remaining text in the sentence buffer
-                                const remainingText = cartesiaSentenceBuffer.current.trim();
-                                if (remainingText.length > 0) {
-                                    queueAndFetchSentence(remainingText, scenario.voice || '');
-                                    cartesiaSentenceBuffer.current = '';
-                                }
-                            }
-                        }
-
-                        currentInputTranscription.current = '';
-                        currentOutputTranscription.current = '';
-                        setLiveInputTranscription('');
-                        setLiveOutputTranscription('');
-                    }
-
-                    const parts = message.serverContent?.modelTurn?.parts;
-                    const base64Audio = parts?.[0]?.inlineData?.data;
-
-                    // If we receive the AI response parts/audio, make sure user speech was committed
-                    if (base64Audio) {
-                        const userText = currentInputTranscription.current;
-                        if (userText.trim()) {
-                            setMessages(prev => {
-                                const lastUserMsg = [...prev].reverse().find(m => m.role === 'user');
-                                if (lastUserMsg && lastUserMsg.text === userText) return prev;
-                                return [...prev, {role: 'user', text: userText}];
-                            });
-                            currentInputTranscription.current = '';
-                            setLiveInputTranscription('');
-                        }
-                    }
-
-                    if (base64Audio && outputAudioContext.current && !isCartesiaVoice) {
-                        const ctx = outputAudioContext.current;
-                        if (ctx.state === 'suspended') {
-                            await ctx.resume();
-                        }
-
-                        nextStartTime.current = Math.max(nextStartTime.current, ctx.currentTime);
-                        
-                        try {
-                            const audioBuffer = await decodeAudioData(
-                                decode(base64Audio),
-                                ctx,
-                                24000,
-                                1
-                            );
-                            
-                            const source = ctx.createBufferSource();
-                            source.buffer = audioBuffer;
-                            source.connect(ctx.destination);
-                            
-                            source.addEventListener('ended', () => {
-                                sources.current.delete(source);
-                            });
-                            
-                            source.start(nextStartTime.current);
-                            nextStartTime.current += audioBuffer.duration;
-                            sources.current.add(source);
-                        } catch (e) {
-                            console.error("Audio decode error", e);
-                        }
-                    }
-                },
-                onError: (e) => {
-                    console.error("Voice Error", e);
-                    setConnectionError("Voice session disconnected. Please check your network connection.");
-                    setIsVoiceActive(false);
-                    stopVoiceSession();
-                },
-                onClose: () => {
-                    console.log("Voice Session Closed");
-                    setIsVoiceActive(false);
-                }
-            });
+            // Establish Local Deepgram Live WebSocket Proxy connection
+            const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+            const deepgramLangCode = (scenario.language && DEEPGRAM_LANG_MAP[scenario.language]) || 'en';
+            const socketUrl = `${protocol}//${window.location.host}/api/deepgram-live?language=${deepgramLangCode}`;
+            console.log("Connecting client to Deepgram live proxy at:", socketUrl);
             
-            chatSession.current = sessionPromise; 
+            const ws = new WebSocket(socketUrl);
+            voiceWs.current = ws;
+
+            ws.onopen = () => {
+                console.log("Deepgram Voice Connection Established");
+                if (!inputAudioContext.current) return;
+                
+                const source = inputAudioContext.current.createMediaStreamSource(stream);
+                const scriptProcessor = inputAudioContext.current.createScriptProcessor(2048, 1, 1);
+                
+                scriptProcessor.onaudioprocess = (e) => {
+                    if (isMicMutedRef.current) {
+                        return; // Do not transmit audio when muted
+                    }
+                    const inputData = e.inputBuffer.getChannelData(0);
+                    // Convert Float32Array to 16-bit PCM Int16Array
+                    const int16 = new Int16Array(inputData.length);
+                    for (let i = 0; i < inputData.length; i++) {
+                        int16[i] = inputData[i] * 32768;
+                    }
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(int16.buffer);
+                    }
+                };
+                
+                source.connect(scriptProcessor);
+                scriptProcessor.connect(inputAudioContext.current.destination);
+            };
+
+            ws.onmessage = async (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === "error") {
+                        console.error("Deepgram live proxy error message:", data.error);
+                        return;
+                    }
+
+                    const transcript = data.channel?.alternatives?.[0]?.transcript;
+                    const isFinal = data.is_final;
+
+                    if (transcript && transcript.trim()) {
+                        // Barge-in interruption! Stop current playbacks when user speaks
+                        stopAllSpeech();
+
+                        setLiveInputTranscription(currentInputTranscription.current + ' ' + transcript);
+
+                        if (isFinal) {
+                            currentInputTranscription.current = (currentInputTranscription.current + ' ' + transcript).trim();
+                            setLiveInputTranscription(currentInputTranscription.current);
+
+                            // Trigger Automatic VAD Silence detection
+                            if (silenceTimer.current) clearTimeout(silenceTimer.current);
+                            silenceTimer.current = setTimeout(() => {
+                                handleVoiceTurnComplete();
+                            }, 1500);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error parsing Deepgram proxy message:", e);
+                }
+            };
+
+            ws.onerror = (e) => {
+                console.error("Deepgram Proxy connection error", e);
+                setConnectionError("Voice session disconnected. Please check your network connection.");
+                setIsVoiceActive(false);
+                stopVoiceSession();
+            };
+
+            ws.onclose = () => {
+                console.log("Deepgram Proxy connection closed");
+                setIsVoiceActive(false);
+            };
 
         } catch (e: any) {
             console.error("Voice setup failed", e);
@@ -1356,6 +1339,23 @@ CRITICAL MANDATES:
         setIsVoiceActive(false);
         setLiveInputTranscription('');
         setLiveOutputTranscription('');
+        isSendingVoiceMessage.current = false;
+
+        if (silenceTimer.current) {
+            clearTimeout(silenceTimer.current);
+            silenceTimer.current = null;
+        }
+
+        if (voiceWs.current) {
+            try {
+                if (voiceWs.current.readyState === WebSocket.OPEN) {
+                    voiceWs.current.send(JSON.stringify({ type: "CloseStream" }));
+                }
+                voiceWs.current.close();
+            } catch (e) {}
+            voiceWs.current = null;
+        }
+
         if (inputAudioContext.current) {
             inputAudioContext.current.close().catch(console.error);
             inputAudioContext.current = null;
@@ -1366,14 +1366,7 @@ CRITICAL MANDATES:
         }
         
         resetCartesiaQueue();
-
-        if (chatSession.current && typeof chatSession.current.then === 'function') {
-             chatSession.current.then((session: any) => {
-                 try {
-                    session.close();
-                 } catch(e) { console.warn("Session already closed"); }
-             }).catch(() => {});
-        }
+        chatSession.current = null;
     };
 
     const sendMessage = async () => {
