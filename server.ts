@@ -488,6 +488,38 @@ async function startServer() {
     }
   });
 
+  app.get("/api/deepgram/token", async (req, res) => {
+    try {
+        const apiKey = process.env.DEEPGRAM_API_KEY;
+        if (!apiKey) {
+            return res.status(500).json({ error: "DEEPGRAM_API_KEY is not configured" });
+        }
+
+        console.log("Generating temporary Deepgram token in server.ts...");
+        const response = await fetch('https://api.deepgram.com/v1/auth/grant', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Token ${apiKey.trim()}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                ttl_seconds: 1800 // 30 minutes
+            })
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`Failed to generate token: ${response.status} - ${errText}`);
+        }
+
+        const data = await response.json();
+        res.status(200).json({ token: data.access_token, expires_in: data.expires_in || 1800 });
+    } catch (error: any) {
+        console.error("Error generating Deepgram token:", error);
+        res.status(500).json({ error: `Deepgram Token Error: ${error.message || "Unknown error"}` });
+    }
+  });
+
   app.post("/api/contact", async (req, res) => {
     try {
       const { name, email, message, company, topic } = req.body;

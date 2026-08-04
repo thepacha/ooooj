@@ -1248,13 +1248,32 @@ CRITICAL MANDATES:
                 } 
             });
 
-            // Establish Local Deepgram Live WebSocket Proxy connection
-            const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+            // Establish Deepgram Live connection (prefer direct client-to-Deepgram with short-lived token, fallback to proxy)
             const deepgramLangCode = (scenario.language && DEEPGRAM_LANG_MAP[scenario.language]) || 'en';
-            const socketUrl = `${protocol}//${window.location.host}/api/deepgram-live?language=${deepgramLangCode}`;
-            console.log("Connecting client to Deepgram live proxy at:", socketUrl);
-            
-            const ws = new WebSocket(socketUrl);
+            let ws: WebSocket;
+
+            try {
+                console.log("Fetching temporary Deepgram token for direct connection...");
+                const tokenResponse = await fetch("/api/deepgram/token");
+                if (!tokenResponse.ok) {
+                    throw new Error(`Token route returned status ${tokenResponse.status}`);
+                }
+                const tokenData = await tokenResponse.json();
+                if (!tokenData.token) {
+                    throw new Error("Token payload did not contain 'token'");
+                }
+
+                const directUrl = `wss://api.deepgram.com/v1/listen?model=nova-2&punctuate=true&encoding=linear16&sample_rate=16000&channels=1&interim_results=true&smart_format=true&language=${deepgramLangCode}`;
+                console.log("Connecting directly to Deepgram using temporary token");
+                ws = new WebSocket(directUrl, ["token", tokenData.token]);
+            } catch (tokenErr) {
+                console.warn("Failed to initiate direct Deepgram connection, falling back to proxy socket:", tokenErr);
+                const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+                const socketUrl = `${protocol}//${window.location.host}/api/deepgram-live?language=${deepgramLangCode}`;
+                console.log("Connecting client to Deepgram live proxy at:", socketUrl);
+                ws = new WebSocket(socketUrl);
+            }
+
             voiceWs.current = ws;
 
             ws.onopen = () => {
