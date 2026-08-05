@@ -301,7 +301,7 @@ async function startServer() {
 
   app.post("/api/cartesia/tts", async (req, res) => {
     try {
-      const { text, voiceId } = req.body;
+      const { text, voiceId } = req.body || {};
       
       if (!text) {
         return res.status(400).json({ error: "Text is required" });
@@ -339,9 +339,9 @@ async function startServer() {
         })
       });
 
-      if (!response.ok && response.status === 404) {
-        console.warn(`Cartesia voice '${voiceId}' returned 404. Retrying with guaranteed valid multilingual voice ID...`);
-        // Fallback to Grace (c2ad7092-0447-47ea-948b-61fbb6faf153)
+      // Fallback to Grace if voiceId is not found (404) or bad request due to invalid voice (400)
+      if (!response.ok && (response.status === 404 || response.status === 400)) {
+        console.warn(`Cartesia voice '${voiceId}' returned status ${response.status}. Retrying with guaranteed valid fallback voice ID...`);
         const fallbackVoiceId = "c2ad7092-0447-47ea-948b-61fbb6faf153";
         response = await fetch("https://api.cartesia.ai/tts/bytes", {
           method: "POST",
@@ -369,55 +369,15 @@ async function startServer() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Cartesia API Error:", errorText);
-        return res.status(response.status).json({ error: `Cartesia API error: ${errorText}` });
+        return res.status(response.status).json({ error: `Cartesia API error (${response.status}): ${errorText}` });
       }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
 
       res.setHeader("Content-Type", "audio/wav");
-      res.setHeader("Transfer-Encoding", "chunked");
-
-      if (response.body) {
-        // If it's a node-style stream (e.g. from node-fetch)
-        if (typeof (response.body as any).pipe === "function") {
-          (response.body as any).pipe(res);
-        } else if (typeof response.body.getReader === "function") {
-          // If it's a web-style ReadableStream (standard fetch in Node 18+)
-          const reader = response.body.getReader();
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              res.write(Buffer.from(value));
-            }
-            res.end();
-          } catch (streamError) {
-            console.error("Error reading stream from Cartesia:", streamError);
-            if (!res.headersSent) {
-              res.status(500).end();
-            }
-          } finally {
-            reader.releaseLock();
-          }
-        } else if (Symbol.asyncIterator in response.body) {
-          // If it's an async iterable
-          try {
-            for await (const chunk of (response.body as any)) {
-              res.write(Buffer.from(chunk));
-            }
-            res.end();
-          } catch (streamError) {
-            console.error("Error iterating stream from Cartesia:", streamError);
-            if (!res.headersSent) {
-              res.status(500).end();
-            }
-          }
-        } else {
-          // Fallback to reading the full buffer if streaming isn't directly supported by this response shape
-          const arrayBuffer = await response.arrayBuffer();
-          res.send(Buffer.from(arrayBuffer));
-        }
-      } else {
-        res.status(500).json({ error: "Empty response body from Cartesia" });
-      }
+      res.setHeader("Content-Length", buffer.length.toString());
+      res.send(buffer);
 
     } catch (error: any) {
       console.error("Error in Cartesia TTS route:", error);

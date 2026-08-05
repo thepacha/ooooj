@@ -479,7 +479,19 @@ export const AiConversation: React.FC<AiConversationProps> = ({ user, history, o
             });
 
             if (!response.ok) {
-                throw new Error("TTS request failed");
+                let errMsg = 'TTS request failed';
+                try {
+                    const errData = await response.json();
+                    errMsg = errData.error || errMsg;
+                } catch {
+                    try {
+                        const errText = await response.text();
+                        if (errText && errText.length < 500) {
+                            errMsg = errText;
+                        }
+                    } catch {}
+                }
+                throw new Error(errMsg);
             }
 
             const arrayBuffer = await response.arrayBuffer();

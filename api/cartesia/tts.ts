@@ -1,5 +1,34 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { preprocessCartesiaText } from '../../lib/utils';
+
+// Inline self-contained text preprocessor for Cartesia TTS to avoid external bundle/path issues on Vercel
+function preprocessCartesiaText(text: string): string {
+  if (!text) return text;
+  let processed = text;
+  // 1. Strip markdown symbols that cause speech artifacts (*, _, #, ~)
+  processed = processed.replace(/[\*_~`#]/g, '');
+  // 2. Convert parenthetical or action descriptions into Cartesia sound tags
+  processed = processed.replace(/\(?(laughs|laughing|giggles|giggle|chuckles|chuckle|snickers|snicker|sighs|sigh)\)?/gi, (match, action) => {
+    const lower = action.toLowerCase();
+    if (lower.includes('chuckle') || lower.includes('snicker')) return '[chuckle]';
+    if (lower.includes('giggle')) return '[giggle]';
+    if (lower.includes('sigh')) return '[sigh]';
+    return '[laughter]';
+  });
+  // 3. Convert written laughter spellings ("hahaha", "haha", "ha-ha", "ha ha", "hehe", "hehehe", "lol", "lmao", "rofl")
+  processed = processed.replace(/\b(ha(ha)+|ha-ha|ha\sha|hehe(he)*|lol|rofl|lmao)\b/gi, (match) => {
+    if (match.toLowerCase().startsWith('he')) {
+      return '[chuckle]';
+    }
+    return '[laughter]';
+  });
+  // 4. Clean up repeated consecutive tags like "[laughter] [laughter]" -> "[laughter]"
+  processed = processed.replace(/(\[(laughter|chuckle|giggle|sigh)\]\s*)+/gi, '$1');
+  // 5. Ensure space after tags if followed immediately by text
+  processed = processed.replace(/(\[(laughter|chuckle|giggle|sigh)\])([A-Za-z])/g, '$1 $3');
+  // 6. Normalize multiple spaces
+  processed = processed.replace(/\s+/g, ' ').trim();
+  return processed;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -7,7 +36,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { text, voiceId } = req.body;
+    // Safely parse request body if Vercel doesn't pre-parse it
+    let body = req.body;
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch (parseError) {
+        return res.status(400).json({ error: "Invalid JSON request body." });
+      }
+    }
+
+    const { text, voiceId } = body || {};
     
     if (!text) {
       return res.status(400).json({ error: "Text is required" });
@@ -18,7 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const apiKey = process.env.CARTESIA_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: "CARTESIA_API_KEY is not configured in environment variables." });
+      return res.status(500).json({ error: "CARTESIA_API_KEY is not configured in your server environment variables. Please configure this key in your project settings." });
     }
 
     const formattedTranscript = preprocessCartesiaText(text);
@@ -45,8 +84,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     });
 
-    if (!response.ok && response.status === 404) {
-      // Fallback to Grace (c2ad7092-0447-47ea-948b-61fbb6faf153)
+    // Fallback to Grace if voiceId is not found (404) or bad request due to invalid voice (400)
+    if (!response.ok && (response.status === 404 || response.status === 400)) {
+      console.warn(`Cartesia voice '${voiceId}' returned status ${response.status}. Retrying with guaranteed valid fallback voice ID...`);
       const fallbackVoiceId = "c2ad7092-0447-47ea-948b-61fbb6faf153";
       response = await fetch("https://api.cartesia.ai/tts/bytes", {
         method: "POST",
@@ -74,13 +114,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Cartesia API Error:", errorText);
-      return res.status(response.status).json({ error: `Cartesia API error: ${errorText}` });
+      return res.status(response.status).json({ error: `Cartesia API error (${response.status}): ${errorText}` });
     }
 
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
     res.setHeader("Content-Type", "audio/wav");
+    res.setHeader("Content-Length", buffer.length.toString());
     res.send(buffer);
 
   } catch (error: any) {

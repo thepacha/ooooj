@@ -232,8 +232,19 @@ export const DeepgramTTS: React.FC = () => {
             });
 
             if (!response.ok) {
-                const errData = await response.json().catch(() => ({}));
-                throw new Error(errData.error || 'Cartesia TTS API error');
+                let errMsg = 'Cartesia TTS API error';
+                try {
+                    const errData = await response.json();
+                    errMsg = errData.error || errMsg;
+                } catch {
+                    try {
+                        const errText = await response.text();
+                        if (errText && errText.length < 500) {
+                            errMsg = errText;
+                        }
+                    } catch {}
+                }
+                throw new Error(errMsg);
             }
 
             const blob = await response.blob();
